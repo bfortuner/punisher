@@ -1,0 +1,18 @@
+import datetime
+>>> now = datetime.datetime.now()
+>>> prior = now = datetime.time
+datetime.time(       datetime.timedelta(  datetime.timezone(
+>>> prior = now - datetime.timedelta(minutes=30)
+>>> prior
+datetime.datetime(2017, 12, 30, 8, 35, 26, 122889)
+>>> now - prior
+datetime.timedelta(0, 1800)
+>>> now.to
+now.today(      now.toordinal(
+>>> now.iso
+now.isocalendar(  now.isoformat(    now.isoweekday(
+>>> now.isoformat()
+'2017-12-30T09:05:26.122889'
+>>> public_client.get_product_historic_rates('ETH-USD', start=prior.isogranularity=3000)
+prior.isocalendar(  prior.isoformat(    prior.isoweekday(
+>>> public_client.get_product_historic_rates('ETH-USD', start=prior.isoformat(), end=now.isoformat()) #,granularity=3000)   
