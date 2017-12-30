@@ -23,16 +23,26 @@ AWS_ACCOUNT_ID = 'account_id'
 AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY_ID', 'password')
 AWS_SECRET_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', 'password')
 
-# Exchanges
-GDAX_ACCOUNT_ID = os.environ.get('GDAX_ACCOUNT_ID', 'gdax_id')
-GDAX_API_KEY = os.environ.get('GDAX_ACCOUNT_ID', 'gdax_id')
-GDAX_API_SECRET_KEY = os.environ.get('GDAX_ACCOUNT_ID', 'gdax_id')
-GDAX_ENDPOINT = os.environ.get('GDAX_ENDPOINT', 'prod_endpoint')
+
+### Exchanges ###
+
+# GDAX
+GDAX_ACCOUNT_ID = os.environ.get('GDAX_ACCOUNT_ID', 'none')
+GDAX_API_KEY = os.environ.get('GDAX_API_KEY', 'none')
+GDAX_API_SECRET_KEY = os.environ.get('GDAX_API_SECRET_KEY', 'none')
+GDAX_PASSPHRASE = os.environ.get('GDAX_PASSPHRASE', 'none')
+GDAX_ENDPOINT = os.environ.get('GDAX_ENDPOINT', 'none')
+GDAX_WEBSOCKET = os.environ.get('GDAX_WEBSOCKET', 'none')
+GDAX_BTC_ACCOUNT = os.environ.get('GDAX_BTC_ACCOUNT', 'none')
+GDAX_ETH_ACCOUNT = os.environ.get('GDAX_ETH_ACCOUNT', 'none')
+GDAX_LTC_ACCOUNT = os.environ.get('GDAX_LTC_ACCOUNT', 'none')
+GDAX_USD_ACCOUNT = os.environ.get('GDAX_USD_ACCOUNT', 'none')
+
+
+### News ###
 
 # Twitter
 TWITTER_CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY', 'none')
 TWITTER_CONSUMER_SECRET = os.environ.get('TWITTER_CONSUMER_SECRET', 'none')
 TWITTER_ACCESS_TOKEN = os.environ.get('TWITTER_ACCESS_TOKEN', 'none')
 TWITTER_ACCESS_TOKEN_SECRET = os.environ.get('TWITTER_ACCESS_TOKEN_SECRET', 'none')
-
-print(TWITTER_ACCESS_TOKEN)
