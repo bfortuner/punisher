@@ -29,4 +29,10 @@ GDAX_API_KEY = os.environ.get('GDAX_ACCOUNT_ID', 'gdax_id')
 GDAX_API_SECRET_KEY = os.environ.get('GDAX_ACCOUNT_ID', 'gdax_id')
 GDAX_ENDPOINT = os.environ.get('GDAX_ENDPOINT', 'prod_endpoint')
 
-print(GDAX_ACCOUNT_ID, AWS_REGION, APP_NAME)
+# Twitter
+TWITTER_CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY', 'none')
+TWITTER_CONSUMER_SECRET = os.environ.get('TWITTER_CONSUMER_SECRET', 'none')
+TWITTER_ACCESS_TOKEN = os.environ.get('TWITTER_ACCESS_TOKEN', 'none')
+TWITTER_ACCESS_TOKEN_SECRET = os.environ.get('TWITTER_ACCESS_TOKEN_SECRET', 'none')
+
+print(TWITTER_ACCESS_TOKEN)
