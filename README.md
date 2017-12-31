@@ -18,6 +18,12 @@ jupyter nbextension enable --py --sys-prefix widgetsnbextension
 conda install -c tim_shawver/label/dev qgrid==1.0.0b10
 ```
 
+## Config
+
+* Create an external directory to store your data inside (ask for data)
+* Ask for .env file template
+* Replace .env variables with your own values (GDAX, twitter, etc)
+
 ## Clients
 
 * https://chrisjean.com/git-submodules-adding-using-removing-and-updating/
