@@ -18,7 +18,9 @@ jupyter nbextension enable --py --sys-prefix widgetsnbextension
 conda install -c tim_shawver/label/dev qgrid==1.0.0b10
 ```
 
-## APIs
+## Clients
+
+* https://chrisjean.com/git-submodules-adding-using-removing-and-updating/
 
 ### GDAX
 
