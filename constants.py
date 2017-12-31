@@ -19,6 +19,7 @@ COINBASE = 'coinbase'
 GEMINI = 'gemini'
 BINANCE = 'binance'
 POLONIEX = 'poloniex'
+BNC = 'bravenewcoin'
 
 # Currencies
 BTC = 'BTC'

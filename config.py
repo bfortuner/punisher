@@ -39,7 +39,10 @@ GDAX_LTC_ACCOUNT = os.environ.get('GDAX_LTC_ACCOUNT', 'none')
 GDAX_USD_ACCOUNT = os.environ.get('GDAX_USD_ACCOUNT', 'none')
 
 
-### News ###
+### Data ###
+
+# Brave New Coin
+BNC_API_KEY = os.environ.get('BNC_API_KEY', 'none')
 
 # Twitter
 TWITTER_CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY', 'none')

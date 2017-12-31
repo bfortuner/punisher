@@ -8,6 +8,7 @@ from glob import glob
 import operator
 import copy
 import traceback
+import requests
 
 import numpy as np
 import pandas as pd
