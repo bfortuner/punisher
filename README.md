@@ -1,4 +1,6 @@
-# My Man
+# Punisher Bot
+
+If the Punisher traded crypto..
 
 ## Requirements
 
