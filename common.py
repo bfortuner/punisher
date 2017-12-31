@@ -31,4 +31,4 @@ import config as cfg
 import constants as c
 
 # Clients
-from clients import gdax_client
+from clients.gdax_client import gdax
