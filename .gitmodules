@@ -3,4 +3,4 @@
 	url = git@github.com:bfortuner/gdax-python.git
 [submodule "clients/backtester"]
 	path = clients/backtester
-	url = git@github.com:Crypto-AI/Gemini.git
+	url = git@github.com:/bfortuner/cryptocurrency.backtester.git
