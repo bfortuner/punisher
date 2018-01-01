@@ -26,6 +26,7 @@ BTC = 'BTC'
 ETH = 'ETH'
 LTC = 'LTC'
 USD = 'USD'
+XRP = 'XRP'
 
 # Pairs
 BTC_USD = 'BTC-USD'

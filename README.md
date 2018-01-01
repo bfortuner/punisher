@@ -35,3 +35,12 @@ If you don't have credentials use this client:
 ```
 gdax_client = gdax.PublicClient()
 ```
+
+
+## Data Sources
+
+* https://www.dropbox.com/home/punisher
+* https://www.quandl.com/collections/markets/bitcoin-data
+* https://market.mashape.com/bravenewcoin/digital-currency-tickers
+* https://bravenewcoin.com/
+* https://coinmetrics.io/data-downloads/

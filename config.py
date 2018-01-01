@@ -10,7 +10,7 @@ load_dotenv(dotenv_path, verbose=True)
 # App
 APP_NAME = os.environ.get('APP_NAME', 'PUNISHER')
 APP_SECRET_KEY = os.environ.get('APP_SECRET_KEY', 'secret_key')
-DATA_DIR = os.environ.get('DATA_DIR', '/bigguy/data/punisher')
+DATA_DIR = os.environ.get('DATA_DIR', 'data/')
 TESTING = os.environ.get('TESTING', False)
 DEBUG = os.environ.get('DEBUG', True)
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -43,6 +43,7 @@ GDAX_USD_ACCOUNT = os.environ.get('GDAX_USD_ACCOUNT', 'none')
 
 # Brave New Coin
 BNC_API_KEY = os.environ.get('BNC_API_KEY', 'none')
+BNC_ENDPOINT = 'https://bravenewcoin-mwa-historic-v1.p.mashape.com'
 
 # Twitter
 TWITTER_CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY', 'none')
