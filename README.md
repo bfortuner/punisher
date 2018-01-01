@@ -37,10 +37,43 @@ gdax_client = gdax.PublicClient()
 ```
 
 
-## Data Sources
+## Data 
 
 * https://www.dropbox.com/home/punisher
 * https://www.quandl.com/collections/markets/bitcoin-data
 * https://market.mashape.com/bravenewcoin/digital-currency-tickers
 * https://bravenewcoin.com/
 * https://coinmetrics.io/data-downloads/
+
+
+## Resources
+
+### Exchanges
+
+* https://www.coinigy.com
+* https://poloniex.com
+* https://www.gdax.com/
+* https://gemini.com/
+* https://www.binance.com/
+* https://www.kraken.com/
+
+### Research
+
+* https://arxiv.org/archive/q-fin
+
+### Tutorials
+
+* [Buy/Sell/Short on Poloneix](https://www.youtube.com/watch?v=YwmoHfZ-qm8)
+
+### Blogs/News
+
+* TODO 
+
+### Tools / Charts
+
+* https://zeroblock.com/
+* https://www.tradingview.com/
+
+### Repos
+
+* https://github.com/Crypto-AI/Gemini
