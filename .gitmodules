@@ -1,6 +1,3 @@
 [submodule "clients/gdax_client"]
 	path = clients/gdax_client
 	url = git@github.com:bfortuner/gdax-python.git
-[submodule "clients/pypoloniex"]
-	path = clients/pypoloniex
-	url = git@github.com:Crypto-AI/pypoloniex.git
