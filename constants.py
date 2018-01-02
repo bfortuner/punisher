@@ -45,3 +45,6 @@ LTC_USD = 'LTC-USD'
 MARKET = 'market'
 LIMIT = 'limit'
 STOP = 'stop'
+
+# Metadata
+OHLCV_COLUMNS = ['time', 'open', 'high', 'low', 'close', 'volume']
