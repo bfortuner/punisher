@@ -31,6 +31,10 @@ XMR = 'XMR'
 USDT = 'USDT'
 DASH = 'DASH'
 XEM = 'XEM'
+ZEC = 'ZEC'
+NXT = 'NXT'
+STR = 'STR'
+REP = 'REP'
 
 # Pairs
 BTC_USD = 'BTC-USD'
