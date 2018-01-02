@@ -1,0 +1,5 @@
+poloniex==0.0.12
+graphviz==0.8.2
+python-dotenv==0.7.1
+pymongo==3.6.0
+

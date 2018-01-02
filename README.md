@@ -16,8 +16,9 @@ If the Punisher traded crypto..
 conda install ipywidgets
 jupyter nbextension enable --py --sys-prefix widgetsnbextension
 conda install -c tim_shawver/label/dev qgrid==1.0.0b10
+conda install graphviz
 
-pip install poloniex
+pip install -r requirements.txt
 ```
 
 ## Config
@@ -29,6 +30,11 @@ pip install poloniex
 ## Clients
 
 * https://chrisjean.com/git-submodules-adding-using-removing-and-updating/
+
+```
+git submodule init
+git submodule update
+```
 
 ### GDAX
 
