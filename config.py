@@ -27,17 +27,20 @@ AWS_SECRET_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', 'password')
 ### Exchanges ###
 
 # GDAX
-GDAX_ACCOUNT_ID = os.environ.get('GDAX_ACCOUNT_ID', 'none')
-GDAX_API_KEY = os.environ.get('GDAX_API_KEY', 'none')
-GDAX_API_SECRET_KEY = os.environ.get('GDAX_API_SECRET_KEY', 'none')
-GDAX_PASSPHRASE = os.environ.get('GDAX_PASSPHRASE', 'none')
-GDAX_ENDPOINT = os.environ.get('GDAX_ENDPOINT', 'none')
-GDAX_WEBSOCKET = os.environ.get('GDAX_WEBSOCKET', 'none')
-GDAX_BTC_ACCOUNT = os.environ.get('GDAX_BTC_ACCOUNT', 'none')
-GDAX_ETH_ACCOUNT = os.environ.get('GDAX_ETH_ACCOUNT', 'none')
-GDAX_LTC_ACCOUNT = os.environ.get('GDAX_LTC_ACCOUNT', 'none')
-GDAX_USD_ACCOUNT = os.environ.get('GDAX_USD_ACCOUNT', 'none')
+GDAX_ACCOUNT_ID = os.environ.get('GDAX_ACCOUNT_ID')
+GDAX_API_KEY = os.environ.get('GDAX_API_KEY')
+GDAX_API_SECRET_KEY = os.environ.get('GDAX_API_SECRET_KEY')
+GDAX_PASSPHRASE = os.environ.get('GDAX_PASSPHRASE')
+GDAX_ENDPOINT = os.environ.get('GDAX_ENDPOINT')
+GDAX_WEBSOCKET = os.environ.get('GDAX_WEBSOCKET')
+GDAX_BTC_ACCOUNT = os.environ.get('GDAX_BTC_ACCOUNT')
+GDAX_ETH_ACCOUNT = os.environ.get('GDAX_ETH_ACCOUNT')
+GDAX_LTC_ACCOUNT = os.environ.get('GDAX_LTC_ACCOUNT')
+GDAX_USD_ACCOUNT = os.environ.get('GDAX_USD_ACCOUNT')
 
+# Poloniex
+POLONIEX_API_KEY = os.environ.get('POLONIEX_API_KEY')
+POLONIEX_API_SECRET_KEY = os.environ.get('POLONIEX_API_SECRET_KEY')
 
 ### Data ###
 
@@ -46,7 +49,7 @@ BNC_API_KEY = os.environ.get('BNC_API_KEY', 'none')
 BNC_ENDPOINT = 'https://bravenewcoin-mwa-historic-v1.p.mashape.com'
 
 # Twitter
-TWITTER_CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY', 'none')
-TWITTER_CONSUMER_SECRET = os.environ.get('TWITTER_CONSUMER_SECRET', 'none')
-TWITTER_ACCESS_TOKEN = os.environ.get('TWITTER_ACCESS_TOKEN', 'none')
-TWITTER_ACCESS_TOKEN_SECRET = os.environ.get('TWITTER_ACCESS_TOKEN_SECRET', 'none')
+TWITTER_CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY')
+TWITTER_CONSUMER_SECRET = os.environ.get('TWITTER_CONSUMER_SECRET')
+TWITTER_ACCESS_TOKEN = os.environ.get('TWITTER_ACCESS_TOKEN')
+TWITTER_ACCESS_TOKEN_SECRET = os.environ.get('TWITTER_ACCESS_TOKEN_SECRET')

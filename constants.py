@@ -27,6 +27,10 @@ ETH = 'ETH'
 LTC = 'LTC'
 USD = 'USD'
 XRP = 'XRP'
+XMR = 'XMR'
+USDT = 'USDT'
+DASH = 'DASH'
+XEM = 'XEM'
 
 # Pairs
 BTC_USD = 'BTC-USD'
