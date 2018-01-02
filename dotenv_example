@@ -1,0 +1,43 @@
+# https://github.com/theskumar/python-dotenv
+# Examples:
+# CONFIG_PATH=${HOME}/.config/foo
+# DOMAIN=example.org
+# EMAIL=admin@${DOMAIN}
+
+
+# App
+APP_NAME = 'PUNISHER'
+DATA_DIR = 'data/'
+
+# AWS
+
+
+# GDAX
+GDAX_ACCOUNT_ID=''
+GDAX_API_KEY=''
+GDAX_API_SECRET_KEY=''
+GDAX_PASSPHRASE=''
+GDAX_ENDPOINT='https://api.gdax.com'
+GDAX_WEBSOCKET='wss://ws-feed.gdax.com'
+# Requires different API keys
+# https://api-public.sandbox.gdax.com'
+GDAX_BTC_ACCOUNT=''
+GDAX_ETH_ACCOUNT=''
+GDAX_LTC_ACCOUNT=''
+GDAX_USD_ACCOUNT=''
+
+# Poloniex
+POLONIEX_API_KEY=''
+POLONIEX_API_SECRET_KEY=''
+
+# Binance
+
+
+# Twitter
+TWITTER_CONSUMER_KEY=''
+TWITTER_CONSUMER_SECRET=''
+TWITTER_ACCESS_TOKEN=''
+TWITTER_ACCESS_TOKEN_SECRET=''
+
+# Brave New Coin
+BNC_API_KEY = ''
