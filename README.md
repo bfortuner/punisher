@@ -19,6 +19,7 @@ conda install -c tim_shawver/label/dev qgrid==1.0.0b10
 conda install graphviz
 conda create --name catalyst python=2.7 scipy zlib
 source activate catalyst
+conda install -c conda-forge python.app 
 
 pip install -r requirements.txt
 ```
