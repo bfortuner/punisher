@@ -47,4 +47,4 @@ LIMIT = 'limit'
 STOP = 'stop'
 
 # Metadata
-OHLCV_COLUMNS = ['time', 'open', 'high', 'low', 'close', 'volume']
+OHLCV_COLUMNS = ['time_epoch', 'open', 'high', 'low', 'close', 'volume']
