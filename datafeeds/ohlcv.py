@@ -4,17 +4,15 @@ import pandas as pd
 
 import config as cfg
 import constants as c
+
 import utils.dates
+from utils.coins import get_symbol
 
 
 def get_price_data_fpath(coin, market, exchange_id, period):
     fname = '{:s}_{:s}_{:s}_{:s}.csv'.format(
         exchange_id, coin, market, str(period))
     return os.path.join(cfg.DATA_DIR, fname)
-
-
-def get_symbol(coin, market):
-    return coin + '/' + market
 
 
 def fetch_ohlcv_data(exchange, coin, market, period, start, end=None):

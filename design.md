@@ -13,7 +13,6 @@
     * OrderStatus
     * OrderType
     * Position
-    * OrderType
     * TradeMode
     * Metric <- name
 

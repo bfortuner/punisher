@@ -39,6 +39,11 @@ from datafeeds.feed import CSVDataFeed, ExchangeDataFeed
 # Utils
 import utils.dates
 import utils.charts
+import utils.coins
+
+# Trading
+from trading.orders import Order
+from trading.orders import OrderStatus, OrderType
 
 # Clients
 import ccxt
