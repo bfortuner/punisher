@@ -10,7 +10,7 @@ class DataFeed():
         self.start = start
         self.end = end
         self.prior_time = None
-        self.history = None
+        self.feed = None
                            
     def initialize(self):
         print("Loading feed:", self.fpath)
@@ -20,12 +20,18 @@ class DataFeed():
     
     def update(self):
         pass
-            
+
+    def history(self, t_minus=0):
+        """Return t_minus rows from feed
+        Which should represent the latest dates
+        """
+        return self.feed.iloc[-t_minus:]
+
     def next(self, refresh=False):
         if refresh: 
             self.end = datetime.datetime.utcnow()
             self.update()
-        data = self.history[self.history.index > utils.dates.utc_to_epoch(self.prior_time)]
+        data = self.feed[self.feed.index > utils.dates.utc_to_epoch(self.prior_time)]
         if len(data) > 0:
             row = data.iloc[0]
             self.prior_time = row['time_utc']
@@ -34,7 +40,7 @@ class DataFeed():
         return None
     
     def __len__(self):
-        return len(self.history)
+        return len(self.feed)
 
     
 class CSVDataFeed(DataFeed):
@@ -46,7 +52,7 @@ class CSVDataFeed(DataFeed):
         self.update()
     
     def update(self):
-        self.history = ohlcv.load_chart_data_from_file(
+        self.feed = ohlcv.load_chart_data_from_file(
             self.fpath, self.prior_time, self.end)
 
 
@@ -67,7 +73,7 @@ class ExchangeDataFeed(DataFeed):
         self._download(self.prior_time, self.end)
         
         if len(self.coins) > 1:
-            self.history = ohlcv.load_multi_coin_data(
+            self.feed = ohlcv.load_multi_coin_data(
                 self.exchange.id, self.coins, 
                 self.market, self.period, 
                 self.start, self.end)
@@ -75,7 +81,7 @@ class ExchangeDataFeed(DataFeed):
             coin_fpath = ohlcv.get_price_data_fpath(
                 self.coins[0], self.market, 
                 self.exchange.id, self.period)
-            self.history = ohlcv.load_chart_data_from_file(
+            self.feed = ohlcv.load_chart_data_from_file(
                 coin_fpath, self.start, self.end)
         
     def _download(self, start, end):
