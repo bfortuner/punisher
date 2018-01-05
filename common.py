@@ -32,5 +32,14 @@ import seaborn as sns
 import config as cfg
 import constants as c
 
+# Data providers
+from datafeeds import ohlcv
+from datafeeds.feed import CSVDataFeed, ExchangeDataFeed
+
+# Utils
+import utils.dates
+import utils.charts
+
 # Clients
+import ccxt
 from clients.gdax_client import gdax

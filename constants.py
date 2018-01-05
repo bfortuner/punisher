@@ -35,6 +35,7 @@ ZEC = 'ZEC'
 NXT = 'NXT'
 STR = 'STR'
 REP = 'REP'
+BCH = 'BCH'
 
 # Pairs
 BTC_USD = 'BTC-USD'
