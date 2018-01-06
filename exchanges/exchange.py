@@ -53,11 +53,11 @@ class Exchange(metaclass=abc.ABCMeta):
         self.config = config
 
     @abc.abstractmethod
-    def fetch_markets(self):
+    def load_markets(self, reload=False):
         pass
 
     @abc.abstractmethod
-    def load_markets(self, reload=False):
+    def get_markets(self):
         pass
 
     @abc.abstractmethod
@@ -81,7 +81,7 @@ class Exchange(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def fetch_tickers(self, symbol):
+    def fetch_tickers(self):
         pass
 
     @abc.abstractmethod
@@ -89,7 +89,7 @@ class Exchange(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def createOrder(self, symbol, type, side, amount):
+    def create_order(self, symbol, type, side, amount):
         pass
 
     @abc.abstractmethod
@@ -113,7 +113,7 @@ class Exchange(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def fetch_order(self, order_id, symbol):
+    def fetch_order(self, order_id):
         pass
 
     @abc.abstractmethod
@@ -144,6 +144,14 @@ class Exchange(metaclass=abc.ABCMeta):
     def withdraw(self, symbol):
         pass
 
+    @staticmethod
+    def calculate_market_price(order_book):
+        bid = orderbook['bids'][0][0] if len (orderbook['bids']) > 0 else None
+        ask = orderbook['asks'][0][0] if len (orderbook['asks']) > 0 else None
+        spread = (ask - bid) if (bid and ask) else None
+        print ('market price', { 'bid': bid, 'ask': ask, 'spread': spread })
+        return bid, ask, spread
+
     @abc.abstractmethod
     def calculate_fee(self):
         pass
@@ -154,8 +162,7 @@ class CCXTExchange(Exchange):
     def __init__(self, client):
         super().__init__(name, config)
         self.client = EXCHANGE_CLIENTS(name)(config)
-
-    def fetch_markets(self):
+        # TODO: figure out if we need to fetch markets here
         self.client.fetch_markets()
 
     def load_markets(self, reload=False):
@@ -164,64 +171,96 @@ class CCXTExchange(Exchange):
         If you want more control over the execution of your logic,
         preloading markets by hand is recommended.
         """
-        self.client.load_markets(reload)
+        return self.client.load_markets(reload)
+
+    def get_markets(self):
+        return self.client.markets if (self.client.markets) else self.load_markets()
+
+    def fetch_ohlcv(self, symbol, timeframe):
+        """
+        Returns OHLCV for the symbol based on the time_period
+        ex. fetch_ohlcv(btcusd, 1d)
+        To see all timeframes for an exchange use timeframes property
+        when hasFetchTickers is True as well
+        """
+        assert client.hasFetchOHLCV
+        return self.client.fetch_ohlcv(symbol, timeframe)
 
     def fetch_order_book(self, symbol):
-        self.client.fetch_order_book(symbol)
-
-    def fetch_ohlcv(self, symbol):
-        self.client.fetch_ohlcv(symbol)
+        """
+        L1 order book aggregation is useless so we use L2:
+        """
+        return self.fetch_l2_price_aggregated_order_book(symbol)
 
     def fetch_l2_price_aggregated_order_book(self, symbol):
-        self.client.fetch_l2_order_book(symbol)
+        """
+        Returns sample-data/order-book.json
+        The bids array is sorted by price in descending order.
+        The asks array is sorted by price in ascending order.
+        """
+        return self.client.fetch_l2_order_book(symbol)
 
     def fetch_trades(self, symbol):
-        self.client.fetch_trades(symbol)
+        """Returns flat array. (Most recent trade first)"""
+        return self.client.fetch_trades(symbol)
 
-    def fetch_my_trades(self, symbol):
-        self.client.fetch_my_trades(symbol)
+    def fetch_my_trades(self, symbol, since, limit, params={}):
+        """Returns flat array. (Most recent trade first)"""
+        return self.client.fetch_my_trades(symbol, since, limit, params)
 
     def fetch_ticker(self, symbol):
-        self.client.fetch_ticker(symbol)
+        assert client.hasFetchTickers
+        return self.client.fetch_ticker(symbol)
 
-    def fetch_tickers(self, symbol):
-        self.client.fetch_tickers(symbol)
+    def fetch_tickers(self):
+        """Fetch all tickers at once"""
+        assert client.hasFetchTickers
+        return self.client.fetch_tickers()
 
     def fetch_balance(self):
-        self.client.fetch_balance(symbol)
+        """Returns json in the format of sample-data/account_balance"""
+        return self.client.fetch_balance()
 
-    def create_order(self, symbol, type, side, amount):
-        self.client.create_order(symbol, type, side, amount)
+    def create_limit_buy_order(self, symbol, amount, price, params={}):
+        self.client.create_limit_buy_order(symbol, amount, price, params)
 
-    def create_limit_sell_order(self, symbol, amount, price):
-        self.client.create_limit_sell_order(symbol, type, side, amount)
+    def create_limit_sell_order(self, symbol, amount, price, params={}):
+        self.client.create_limit_sell_order(symbol, amount, price, params)
 
-    def create_market_buy_order(self, symbol, amount):
-        self.client.create_market_buy_order(symbol, amount)
+    def create_market_buy_order(self, symbol, amount, params={}):
+        self.client.create_market_buy_order(symbol, amount, params)
 
-    def create_market_sell_order(self, symbol, amount):
-        self.client.create_market_sell_order(symbol, amount)
+    def create_market_sell_order(self, symbol, amount, params={}):
+        self.client.create_market_sell_order(symbol, amount, params)
 
-    def cancel_order(self, order_id):
-        self.client.cancel_order(order_id)
+    def cancel_order(self, order_id, symbol, params={}):
+        # TODO: figure out if we need to add a symbol
+        # and if this returns a response
+        # https://github.com/ccxt/ccxt/wiki/Manual#cancelling-orders
+        return self.client.cancel_order(order_id)
 
-    def fetch_order(self, order_id, symbol):
-        self.client.fetch_order(order_id, symbol)
+    def fetch_order(self, order_id, params={}):
+        return self.client.fetch_order(order_id, params)
 
-    def fetch_orders(self, symbol):
-        self.client.fetch_orders(symbol)
+    def fetch_orders(self, symbol, since, limit, params={}):
+        return self.client.fetch_orders(symbol, since, limit, params)
 
-    def fetch_open_orders(self, symbol):
-        self.client.fetch_open_orders(symbol)
+    def fetch_open_orders(self, symbol, since, limit, params={}):
+        return self.client.fetch_open_orders(symbol, since, limit, params)
 
-    def fetch_closed_orders(self, symbol):
-        self.client.fetch_closed_orders(symbol)
+    def fetch_closed_orders(self, symbol, since, limit, params={}):
+        return self.client.fetch_closed_orders(symbol, since, limit, params)
 
     def deposit(self, symbol):
-        self.client.fetch_closed_orders(symbol)
+        return NotImplemented
 
-    def withdraw(self, symbol, amount, wallet):
-        self.client.withdraw(symbol, amount, wallet)
+    def withdraw(self, currency, amount, address, params={}):
+        """Returns json response sample-data/withdraw-response.json"""
+        return self.client.withdraw(currency, amount, wallet)
+
+    def get_timeframes(self):
+        assert client.hasFetchTickers
+        return self.client.timeframes
 
     def calculate_fee(self):
         pass
@@ -229,16 +268,15 @@ class CCXTExchange(Exchange):
     def order_on_margin(self, price):
         assert margin_is_available(self.client.id)
 
-
 class PaperExchange(Exchange):
     def __init__(self, name, config):
         super().__init__(name, config)
 
     def fetch_ohlcv(self):
         pass
-    def fetch_markets(self):
-        pass
     def load_markets(self, reload=False):
+        pass
+    def get_markets(self):
         pass
     def fetch_order_book(self, symbol):
         pass
@@ -250,11 +288,11 @@ class PaperExchange(Exchange):
         pass
     def fetch_ticker(self, symbol):
         pass
-    def fetch_tickers(self, symbol):
+    def fetch_tickers(self):
         pass
     def fetch_balance(self):
         pass
-    def create_order(self, symbol, type, side, amount):
+    def create_limit_buy_order(self, symbol, amount, price):
         pass
     def create_limit_sell_order(self, symbol, amount, price):
         pass
@@ -264,7 +302,7 @@ class PaperExchange(Exchange):
         pass
     def cancel_order(self, order_id):
         pass
-    def fetch_order(self, order_id, symbol):
+    def fetch_order(self, order_id):
         pass
     def fetch_orders(self, symbol):
         pass

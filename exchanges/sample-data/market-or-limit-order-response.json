@@ -1,0 +1,4 @@
+{
+    'id': 'string',  // order id
+    'info': { ... }, // decoded original JSON response from the exchange as is
+}

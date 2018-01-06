@@ -1,0 +1,33 @@
+{
+    'info':  { ... },    // the original untouched non-parsed reply with details
+
+    //-------------------------------------------------------------------------
+    // indexed by availability of funds first, then by currency
+
+    'free':  {           // money, available for trading, by currency
+        'BTC': 321.00,   // floats...
+        'USD': 123.00,
+        ...
+    },
+
+    'used':  { ... },    // money on hold, locked, frozen, or pending, by currency
+
+    'total': { ... },    // total (free + used), by currency
+
+    //-------------------------------------------------------------------------
+    // indexed by currency first, then by availability of funds
+
+    'BTC':   {           // string, three-letter currency code, uppercase
+        'free': 321.00   // float, money available for trading
+        'used': 234.00,  // float, money on hold, locked, frozen or pending
+        'total': 555.00, // float, total balance (free + used)
+    },
+
+    'USD':   {           // ...
+        'free': 123.00   // ...
+        'used': 456.00,
+        'total': 579.00,
+    },
+
+    ...
+}

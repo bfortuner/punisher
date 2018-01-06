@@ -1,0 +1,4 @@
+{
+    'info' { ... },      // unparsed reply from the exchange, as is
+    'id': '12345567890', // string withdrawal id, if any
+}
