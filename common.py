@@ -50,4 +50,4 @@ from trading.orders import load_order_from_json
 
 # Clients
 import ccxt
-from clients.gdax_client import gdax
+#from clients.gdax_client import gdax
