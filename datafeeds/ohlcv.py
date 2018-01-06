@@ -31,7 +31,7 @@ def fetch_ohlcv_data(exchange, coin, market, period, start, end=None):
 def fetch_and_save_ohlcv_data(exchange, coin, market, period, start, end=None):
     df = fetch_ohlcv_data(exchange, coin, market, period, start, end)
     fpath = get_price_data_fpath(coin, market, exchange.id, period)
-    df.to_csv(fpath, index=True, date_format=utils.dates.ISO_UTC_FORMAT)
+    df.to_csv(fpath, index=True)
     return df
 
 
@@ -90,5 +90,5 @@ def merge_local_csv_feeds(new_data, fpath):
     new_df = pd.DataFrame(new_data)
     cur_df = pd.concat([cur_df, new_df])
     cur_df = cur_df[~cur_df.index.duplicated(keep='last')]
-    cur_df.to_csv(fpath, index=True, date_format=utils.dates.ISO_UTC_FORMAT)
+    cur_df.to_csv(fpath, index=True)
     return cur_df

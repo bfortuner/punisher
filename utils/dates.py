@@ -5,7 +5,6 @@ import dateutil.parser
 import pandas as pd
 import numpy as np
 
-ISO_UTC_FORMAT = "%Y-%m-%dT%H:%M:%S"
 # https://dateutil.readthedocs.io/en/stable/examples.html
 
 PANDAS_ITERABLE_TYPES = [pd.Series, np.ndarray, pd.DataFrame]
