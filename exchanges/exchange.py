@@ -3,10 +3,14 @@ import ccxt
 import constants as c
 import config as cfg
 
+import config as cfg
+import constants as c
+
+
 EXCHANGE_CLIENTS = {
     c.BINANCE: ccxt.binance,
     c.POLONIEX: ccxt.poloniex,
-    c.GDAX = ccxt.gdax,
+    c.GDAX: ccxt.gdax,
 }
 
 EXCHANGE_CONFIGS = {
@@ -14,16 +18,14 @@ EXCHANGE_CONFIGS = {
         'apiKey': cfg.POLONIEX_API_KEY,
         'secret': cfg.POLONIEX_API_SECRET_KEY,
     },
-    c.GDAX = {
+    c.GDAX: {
         'apiKey': cfg.GDAX_API_KEY,
         'secret': cfg.GDAX_API_SECRET_KEY,
         'password': cfg.GDAX_PASSPHRASE,
         'verbose':False,
     },
-    c.BINANCE = {
-    },
-    c.PAPER = {
-    }
+    c.BINANCE: {},
+    c.PAPER: {}
 }
 
 
@@ -277,6 +279,8 @@ class PaperExchange(Exchange):
     def calculate_fee(self):
         pass
     def order_on_margin(self, price):
+        pass
+    def cancel_order(self, order):
         pass
 
 # hitbtc = ccxt.hitbtc({'verbose': True})

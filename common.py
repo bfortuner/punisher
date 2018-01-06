@@ -32,7 +32,7 @@ import seaborn as sns
 import config as cfg
 import constants as c
 
-# Data providers
+# Data
 from datafeeds import ohlcv
 from datafeeds.feed import CSVDataFeed, ExchangeDataFeed
 
@@ -48,6 +48,11 @@ from trading.orders import Order
 from trading.orders import OrderStatus, OrderType
 from trading.orders import load_order_from_json
 
+# Exchanges
+from exchanges.exchange import load_exchange
+from exchanges.exchange import CCXTExchange
+from exchanges.exchange import PaperExchange
+
+
 # Clients
 import ccxt
-#from clients.gdax_client import gdax
