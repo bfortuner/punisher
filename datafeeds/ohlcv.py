@@ -9,7 +9,7 @@ import utils.dates
 from utils.dates import get_time_range
 from utils.dates import epoch_to_utc, utc_to_epoch
 from utils.dates import str_to_date
-from utils.coins import get_symbol
+from trading.coins import get_symbol
 
 
 def get_price_data_fpath(coin, market, exchange_id, period):
@@ -47,8 +47,8 @@ def update_local_ohlcv_data(exchange, coin, market, period, start, end=None):
 
 def load_chart_data_from_file(fpath, start=None, end=None):
     df = pd.read_csv(
-        fpath, index_col='time_epoch', 
-        parse_dates=['time_utc'], 
+        fpath, index_col='time_epoch',
+        parse_dates=['time_utc'],
         date_parser=str_to_date)
     df.sort_index(inplace=True)
     df = get_time_range(df, start, end)
@@ -75,7 +75,7 @@ def load_multi_coin_data(exchange_id, coins, market, period, start, end=None):
 def make_ohlcv_df(data, start=None, end=None):
     df = pd.DataFrame(data, columns=c.OHLCV_COLUMNS)
     df['time_epoch'] = df['time_epoch'] // 1000 # ccxt includes millis
-    df['time_utc'] = [epoch_to_utc(t) for t in df['time_epoch']] 
+    df['time_utc'] = [epoch_to_utc(t) for t in df['time_epoch']]
     df.set_index('time_epoch', inplace=True)
     df.sort_index(inplace=True)
     df = get_time_range(df, start, end)
@@ -84,8 +84,8 @@ def make_ohlcv_df(data, start=None, end=None):
 
 def merge_local_csv_feeds(new_data, fpath):
     cur_df = pd.read_csv(
-        fpath, index_col='time_epoch', 
-        parse_dates=['time_utc'], 
+        fpath, index_col='time_epoch',
+        parse_dates=['time_utc'],
         date_parser=str_to_date)
     new_df = pd.DataFrame(new_data)
     cur_df = pd.concat([cur_df, new_df])

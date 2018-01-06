@@ -19,8 +19,16 @@ class Asset():
 
     @property
     def id(self):
-        return self.base + self.quote
+        return self.base + '_' + self.quote
 
     @property
     def symbol(self):
-        return self.base + '/' self.quote
+        return self.base + '/' + self.quote
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'symbol': self.symbol,
+            'base': self.base,
+            'quote': self.quote,
+        }

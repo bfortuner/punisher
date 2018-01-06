@@ -42,7 +42,7 @@ class Order():
         self.asset = asset
         self.price = price
         self.quantity = quantity
-        self.filled = 0
+        self.filled = 0 # ratio or quantity?
         self.order_type = self.set_order_type(order_type)
         self.status = OrderStatus.NEW
         self.created_time = datetime.utcnow()
@@ -67,9 +67,29 @@ class Order():
         dct = {name: getattr(self, name) for name in self.__slots__}
         dct['status'] = self.status.name
         dct['order_type'] = self.order_type.name
+        dct['order_type'] = self.order_type.name
         return dct
 
-    def from_dict(self)
+    @classmethod
+    def from_dict(self, dct):
+        order = Order(
+            ex_id=d['exchange_id'],
+            coin=d['coin'],
+            market=d['market'],
+            price=d['price'],
+            quantity=d['quantity'],
+            order_type=OrderType[d['order_type']],
+        )
+        order.order_id = d['order_id']
+        order.exchange_order_id = d['exchange_order_id']
+        order.order_status = OrderStatus[d['order_status']]
+        order.created_time = str_to_date(d['created_time'])
+        order.opened_time = str_to_date(d['opened_time'])
+        order.filled_time = str_to_date(d['filled_time'])
+        order.canceled_time = str_to_date(d['canceled_time'])
+        order.retries = d['retries']
+        return order
+
 
     def __repr__(self):
         return str(vars(self))
