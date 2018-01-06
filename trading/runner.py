@@ -2,53 +2,61 @@ import time
 from enum import Enum, unique
 
 
-@unique
-class TradeMode(Enum):
-    BACKTEST = 0
-    SIMULATE = 1
-    LIVE = 2
 
 
-class Punisher():
-    def __init__(self, exchange, feed, strategy, record):
-        self.exchange = exchange
-        self.feed = feed
-        self.strategy = strategy
-        self.record = record
-        
-    def backtest(self):
-        results = []
+def run_from_config(config_fpath):
+    cfg = load_config()
+    exchange = make_exchange(cfg.exchange)
+    strategy = load_strategy(cfg.strategy)
+    feed = load_feed(cfg.feed)
+    record = make_record(cfg.record)
+    context = Context(
+        exchange=exchange,
+        strategy=strategy,
+        feed=feed,
+        record=record,
+        trade_mode=cfg.trade_mode
+    )
+    punisher.run(context)
+
+
+def run(context):
+    if context.trade_mode == 'backtest':
+        return backtest(context)
+    elif context.trade_mode == 'simulate':
+        return simulate(context)
+    elif context.trade_mode == 'live':
+        return live(context)
+
+
+def backtest(context):
+    print("Backtesting ...")
+    record = Record(record_cfg)
+    row = feed.next()
+    while row is not None:
+        print("Timestep", row['time_utc'], "Price", row['close'])
+        row = feed.next()
+        if row is not None:
+            context = strategy(row, context)
+        executor.execute_orders(context)
+        time.sleep(1)
+        record.save(context)
+    return record
+
+def screw_you(exchange, strategy, config, data):
+    print("Paper trading ...")
+    while True:
         row = self.feed.next()
-        while row is not None:
-            print("Timestep", row['time_utc'], "Price", row['close'])
-            row = self.feed.next()
+        if row is not None:
             output = self.strategy(row, self.exchange, self.feed)
-            results.append(output)
-        return results
-    
-    def simulate(self):
-        while True:
-            row = self.feed.next()
-            if row is not None:
-                output = self.strategy(row, self.exchange, self.feed)
-                self.record['test'].append(output)
-            time.sleep(2)
+            self.record['test'].append(output)
+        time.sleep(2)
 
-    def live(self):
-        while True:
-            row = self.feed.next()
-            if row is not None:
-                output = self.strategy(row, self.exchange, self.feed)
-                self.record['live'].append(output)
-            time.sleep(2)
-    
-    def punish(self, mode=False):
-        if mode == TradeMode.BACKTEST:
-            print("Backtesting ...")
-            self.backtest()
-        elif mode == TradeMode.SIMULATE:
-            print("Simulating orders ...")
-            self.simulate()
-        elif mode == TradeMode.LIVE:
-            print("LIVE TRADING! CAREFUL!")
-            self.live()
+def live_trade():
+    print("LIVE TRADING! CAREFUL!")
+    while True:
+        row = self.feed.next()
+        if row is not None:
+            output = self.strategy(row, self.exchange, self.feed)
+            self.record['live'].append(output)
+        time.sleep(2)

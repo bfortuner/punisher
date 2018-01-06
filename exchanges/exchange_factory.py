@@ -1,4 +1,5 @@
 import config as cfg
+import ccxt
 from live_exchange import LiveExchange
 from simulated_exchange import SimulatedExchange
 
