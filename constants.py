@@ -42,10 +42,11 @@ BTC_USD = 'BTC-USD'
 ETH_USD = 'ETH-USD'
 LTC_USD = 'LTC-USD'
 
-# Order Type
-MARKET = 'market'
-LIMIT = 'limit'
-STOP = 'stop'
-
 # Metadata
 OHLCV_COLUMNS = ['time_epoch', 'open', 'high', 'low', 'close', 'volume']
+
+# Record
+ORDERS_FNAME = 'orders.csv'
+DECISIONS_FNAME = 'decisions.csv'
+RECORD_DATA_FNAME = 'data.csv'
+CONFIG_FNAME = 'config.json'

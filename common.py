@@ -40,10 +40,13 @@ from datafeeds.feed import CSVDataFeed, ExchangeDataFeed
 import utils.dates
 import utils.charts
 import utils.coins
+import utils.general
+import utils.encoders
 
 # Trading
 from trading.orders import Order
 from trading.orders import OrderStatus, OrderType
+from trading.orders import load_order_from_json
 
 # Clients
 import ccxt

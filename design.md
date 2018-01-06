@@ -111,7 +111,7 @@ Instance variables
 
 Methods
 * get_orders()
-* get_positions()
+* get_positions() <-- this is a tricky/fun one
 * get_balance()
 * get_summary()
 * update_orders()
