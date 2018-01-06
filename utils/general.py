@@ -1,6 +1,4 @@
 import uuid
 
-ORDER_ID_PREFIX = "OD"
-
-def generate_order_id(length=10):
-    return ORDER_ID_PREFIX + str(uuid.uuid4()).upper().replace('-','')[:length]
+def make_id(length=32):
+    return uuid.uuid4().hex[:length]

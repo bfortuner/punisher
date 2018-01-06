@@ -20,6 +20,7 @@ GEMINI = 'gemini'
 BINANCE = 'binance'
 POLONIEX = 'poloniex'
 BNC = 'bravenewcoin'
+PAPER = 'paper'
 
 # Currencies
 BTC = 'BTC'

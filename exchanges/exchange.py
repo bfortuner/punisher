@@ -1,10 +1,14 @@
 import abc
 import ccxt
 
+import config as cfg
+import constants as c
+
+
 EXCHANGE_CLIENTS = {
     c.BINANCE: ccxt.binance,
     c.POLONIEX: ccxt.poloniex,
-    c.GDAX = ccxt.gdax,
+    c.GDAX: ccxt.gdax,
 }
 
 EXCHANGE_CONFIGS = {
@@ -12,18 +16,15 @@ EXCHANGE_CONFIGS = {
         'apiKey': cfg.POLONIEX_API_KEY,
         'secret': cfg.POLONIEX_API_SECRET_KEY,
     },
-    c.GDAX = {
+    c.GDAX: {
         'apiKey': cfg.GDAX_API_KEY,
         'secret': cfg.GDAX_API_SECRET_KEY,
         'password': cfg.GDAX_PASSPHRASE,
         'verbose':False,
     },
-    c.BINANCE = {
-    },
-    c.PAPER = {
-    }
+    c.BINANCE: {},
+    c.PAPER: {}
 }
-
 
 
 def load_exchange(name, config=None):
@@ -85,7 +86,7 @@ class CCXTExchange(Exchange):
         super().__init__(name, config)
         self.client = EXCHANGE_CLIENTS(name)
 
-    def fetch_ohlcv(self, symbol, ...):
+    def fetch_ohlcv(self, symbol):
         self.client.fetch_ohlcv(symbol)
 
     def fetch_balance(self):
@@ -133,6 +134,7 @@ class PaperExchange(Exchange):
         pass
 
     def cancel_order(self, order):
+        pass
 
 
 
