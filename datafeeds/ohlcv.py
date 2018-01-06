@@ -10,38 +10,39 @@ from utils.dates import get_time_range
 from utils.dates import epoch_to_utc, utc_to_epoch
 from utils.dates import str_to_date
 from trading.coins import get_symbol
+from portfolio.asset import Asset
 
 
-def get_price_data_fpath(coin, market, exchange_id, period):
-    fname = '{:s}_{:s}_{:s}_{:s}.csv'.format(
-        exchange_id, coin, market, str(period))
+def get_price_data_fpath(asset, exchange_id, period):
+    fname = '{:s}_{:s}_{:s}.csv'.format(
+        exchange_id, asset.id, str(period))
     return os.path.join(cfg.DATA_DIR, fname)
 
 
-def fetch_ohlcv_data(exchange, coin, market, period, start, end=None):
-    print("Downloading:", get_symbol(coin, market))
+def fetch_ohlcv_data(exchange, asset, period, start, end=None):
+    print("Downloading:", asset.symbol)
     assert period in exchange.timeframes
     end = datetime.datetime.utcnow() if end is None else end
-    data = exchange.fetch_ohlcv(get_symbol(coin, market), period)
+    data = exchange.fetch_ohlcv(asset.symbol, period)
     df = make_ohlcv_df(data, start, end)
     print("Downloaded rows:", len(df))
     return df
 
 
-def fetch_and_save_ohlcv_data(exchange, coin, market, period, start, end=None):
-    df = fetch_ohlcv_data(exchange, coin, market, period, start, end)
-    fpath = get_price_data_fpath(coin, market, exchange.id, period)
+def fetch_and_save_ohlcv_data(exchange, asset, period, start, end=None):
+    df = fetch_ohlcv_data(exchange, asset, period, start, end)
+    fpath = get_price_data_fpath(asset, exchange.id, period)
     df.to_csv(fpath, index=True)
     return df
 
 
-def update_local_ohlcv_data(exchange, coin, market, period, start, end=None):
-    fpath = get_price_data_fpath(coin, market, exchange.id, period)
+def update_local_ohlcv_data(exchange, asset, period, start, end=None):
+    fpath = get_price_data_fpath(asset, exchange.id, period)
     if os.path.exists(fpath):
-        df = fetch_ohlcv_data(exchange, coin, market, period, start, end)
+        df = fetch_ohlcv_data(exchange, asset, period, start, end)
         df = merge_local_csv_feeds(df, fpath)
     else:
-        df = fetch_and_save_ohlcv_data(exchange, coin, market, period, start, end)
+        df = fetch_and_save_ohlcv_data(exchange, asset, period, start, end)
     return df
 
 
@@ -55,18 +56,17 @@ def load_chart_data_from_file(fpath, start=None, end=None):
     return df
 
 
-def download_chart_data(exchange, coins, market, period, start, end=None):
-    for coin in coins:
-        update_local_ohlcv_data(exchange, coin, market, period, start, end)
+def download_chart_data(exchange, assets, period, start, end=None):
+    for asset in assets:
+        update_local_ohlcv_data(exchange, asset, period, start, end)
 
 
-def load_multi_coin_data(exchange_id, coins, market, period, start, end=None):
+def load_multiple_assets(exchange_id, assets, period, start, end=None):
     df = pd.DataFrame()
-    for coin in coins:
-        symbol = get_symbol(coin, market)
-        fpath = get_price_data_fpath(coin, market, exchange_id, period)
+    for asset in assets:
+        fpath = get_price_data_fpath(asset, exchange_id, period)
         data = load_chart_data_from_file(fpath, start, end)
-        df[symbol] = data['close']
+        df[asset.id] = data['close']
     df.dropna(inplace=True)
     df['time_utc'] = [epoch_to_utc(t) for t in df.index]
     return df
