@@ -39,20 +39,21 @@ from datafeeds.feed import CSVDataFeed, ExchangeDataFeed
 # Utils
 import utils.dates
 import utils.charts
-import utils.coins
 import utils.general
 import utils.encoders
 
 # Trading
-from trading.orders import Order
-from trading.orders import OrderStatus, OrderType
-from trading.orders import load_order_from_json
+from trading.order import Order
+from trading.order import OrderStatus, OrderType
+import trading.coins
 
 # Exchanges
 from exchanges.exchange import load_exchange
 from exchanges.exchange import CCXTExchange
 from exchanges.exchange import PaperExchange
 
+# Portfolio
+from portfolio.asset import Asset
 
 # Clients
 import ccxt

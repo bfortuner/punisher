@@ -11,7 +11,7 @@ class DataFeed():
         self.end = end
         self.prior_time = None
         self.feed = None
-                           
+
     def initialize(self):
         print("Loading feed:", self.fpath)
         if self.start is None:
@@ -19,7 +19,7 @@ class DataFeed():
         print("START", self.start)
         self.prior_time = self.start - datetime.timedelta(minutes=1)
         print("PRIOR", self.prior_time)
-    
+
     def update(self):
         pass
 
@@ -30,21 +30,22 @@ class DataFeed():
         return self.feed.iloc[-t_minus:]
 
     def next(self, refresh=False):
-        if refresh: 
+        if refresh:
             self.end = datetime.datetime.utcnow()
             self.update()
-        data = self.feed[self.feed.index > utils.dates.utc_to_epoch(self.prior_time)]
+        data = self.feed[self.feed.index > utils.dates.utc_to_epoch(
+            self.prior_time)]
         if len(data) > 0:
             row = data.iloc[0]
             self.prior_time = row['time_utc']
             return row
         print("No data after prior poll:", self.prior_time)
         return None
-    
+
     def __len__(self):
         return len(self.feed)
 
-    
+
 class CSVDataFeed(DataFeed):
     def __init__(self, fpath, start=None, end=None):
         super().__init__(fpath, start, end)
@@ -52,42 +53,37 @@ class CSVDataFeed(DataFeed):
     def initialize(self):
         super().initialize()
         self.update()
-    
+
     def update(self):
         self.feed = ohlcv.load_chart_data_from_file(
             self.fpath, self.prior_time, self.end)
 
 
 class ExchangeDataFeed(DataFeed):
-    def __init__(self, exchange, coins, market, 
-                 period, fpath, start, end=None):
+    def __init__(self, exchange, assets, period,
+                 fpath, start, end=None):
         super().__init__(fpath, start, end)
         self.exchange = exchange
-        self.coins = coins
-        self.market = market
+        self.assets = assets
         self.period = period
 
     def initialize(self):
         super().initialize()
         self.update()
-        
+
     def update(self):
         self._download(self.prior_time, self.end)
-        
-        if len(self.coins) > 1:
-            self.feed = ohlcv.load_multi_coin_data(
-                self.exchange.id, self.coins, 
-                self.market, self.period, 
+
+        if len(self.assets) > 1:
+            self.feed = ohlcv.load_multiple_assets(
+                self.exchange.id, self.assets, self.period,
                 self.start, self.end)
         else:
             coin_fpath = ohlcv.get_price_data_fpath(
-                self.coins[0], self.market, 
-                self.exchange.id, self.period)
+                self.assets[0], self.exchange.id, self.period)
             self.feed = ohlcv.load_chart_data_from_file(
                 coin_fpath, self.start, self.end)
-        
+
     def _download(self, start, end):
         ohlcv.download_chart_data(
-            self.exchange, self.coins, 
-            self.market, self.period, 
-            start, end)
+            self.exchange, self.assets, self.period, start, end)

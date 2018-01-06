@@ -1,9 +1,11 @@
 import copy
 import json
+import uuid
 from datetime import datetime
 from enum import Enum, unique
 
-from utils.dates import str_to_date
+from portfolio.asset import Asset
+from utils.dates import str_to_date, date_to_str
 from trading.coins import get_symbol
 from utils.encoders import EnumEncoder
 
@@ -33,7 +35,6 @@ class Order():
         "quantity", "filled", "order_type", "status", "created_time",
         "opened_time", "filled_time", "canceled_time", "retries"
     ]
-    ORDER_FIELDS_TO_IGNORE = []
 
     def __init__(self, exchange_id, asset, price, quantity, order_type):
         self.id = self.make_id()
@@ -42,7 +43,7 @@ class Order():
         self.asset = asset
         self.price = price
         self.quantity = quantity
-        self.filled = 0
+        self.filled = 0 # ratio or quantity?
         self.order_type = self.set_order_type(order_type)
         self.status = OrderStatus.NEW
         self.created_time = datetime.utcnow()
@@ -56,42 +57,55 @@ class Order():
 
     def set_order_type(self, order_type):
         assert order_type in OrderType
-        self.type = order_type
-        return self.type
+        self.order_type = order_type
+        return self.order_type
 
     def set_status(self, status):
         assert status in OrderStatus
         self.status = status
 
     def to_dict(self):
-        dct = {name: getattr(self, name) for name in self.__slots__}
-        dct['status'] = self.status.name
-        dct['order_type'] = self.order_type.name
-        return dct
+        d = {
+            name: getattr(self, name)
+            for name in self.__slots__
+        }
+        d['asset'] = self.asset.to_dict()
+        d['status'] = self.status.name
+        d['order_type'] = self.order_type.name
+        d['created_time'] = date_to_str(self.created_time)
+        d['opened_time'] = date_to_str(self.opened_time)
+        d['filled_time'] = date_to_str(self.filled_time)
+        d['canceled_time'] = date_to_str(self.canceled_time)
+        return d
 
-    def from_dict(self)
+    @classmethod
+    def from_dict(self, d):
+        order = Order(
+            exchange_id=d['exchange_id'],
+            asset=Asset(d['asset']['base'], d['asset']['quote']),
+            price=d['price'],
+            quantity=d['quantity'],
+            order_type=OrderType[d['order_type']],
+        )
+        order.id = d['id']
+        order.exchange_order_id = d['exchange_order_id']
+        order.filled = d['filled']
+        order.status = OrderStatus[d['status']]
+        order.created_time = str_to_date(d['created_time'])
+        order.opened_time = str_to_date(d['opened_time'])
+        order.filled_time = str_to_date(d['filled_time'])
+        order.canceled_time = str_to_date(d['canceled_time'])
+        order.retries = d['retries']
+        return order
+
+    def to_json(self):
+        dct = self.to_dict()
+        return json.dumps(dct, cls=EnumEncoder, indent=4)
+
+    @classmethod
+    def from_json(self, json_str):
+        dct = json.loads(json_str)
+        return self.from_dict(dct)
 
     def __repr__(self):
-        return str(vars(self))
-
-
-
-def load_order_from_json(json_str):
-    d = json.loads(json_str)
-    order = Order(
-        ex_id=d['exchange_id'],
-        coin=d['coin'],
-        market=d['market'],
-        price=d['price'],
-        quantity=d['quantity'],
-        order_type=OrderType[d['order_type']],
-    )
-    order.order_id = d['order_id']
-    order.exchange_order_id = d['exchange_order_id']
-    order.order_status = OrderStatus[d['order_status']]
-    order.created_time = str_to_date(d['created_time'])
-    order.opened_time = str_to_date(d['opened_time'])
-    order.filled_time = str_to_date(d['filled_time'])
-    order.canceled_time = str_to_date(d['canceled_time'])
-    order.retries = d['retries']
-    return order
+        return self.to_json()
