@@ -45,7 +45,6 @@ import utils.encoders
 # Trading
 from trading.order import Order
 from trading.order import OrderStatus, OrderType
-from trading.order import load_order_from_json
 import trading.coins
 
 # Exchanges

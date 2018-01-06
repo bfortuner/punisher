@@ -17,7 +17,7 @@ def str_to_date(date_str):
         if len(date_str) > 0 and date_str[0].isdigit():
             return date_str
         return dateutil.parser.parse(date_str)
-    
+
     # Leave Epoch Time Alone
     if date_str.isdigit():
         return date_str
@@ -25,7 +25,7 @@ def str_to_date(date_str):
 
 
 def date_to_str(date):
-    return date.isoformat()
+    return date.isoformat() if date is not None else None
 
 
 def utc_to_epoch(utc_time):
