@@ -1,5 +1,7 @@
 import abc
 import ccxt
+import constants as c
+import config as cfg
 
 EXCHANGE_CLIENTS = {
     c.BINANCE: ccxt.binance,
@@ -23,7 +25,6 @@ EXCHANGE_CONFIGS = {
     c.PAPER = {
     }
 }
-
 
 
 def load_exchange(name, config=None):
@@ -50,7 +51,35 @@ class Exchange(metaclass=abc.ABCMeta):
         self.config = config
 
     @abc.abstractmethod
-    def fetch_ohlcv(self):
+    def fetch_markets(self):
+        pass
+
+    @abc.abstractmethod
+    def load_markets(self, reload=False):
+        pass
+
+    @abc.abstractmethod
+    def fetch_order_book(self, symbol):
+        pass
+
+    @abc.abstractmethod
+    def fetch_l2_price_aggregated_order_book(self, symbol):
+        pass
+
+    @abc.abstractmethod
+    def fetch_trades(self, symbol):
+        pass
+
+    @abc.abstractmethod
+    def fetch_my_trades(self, symbol):
+        pass
+
+    @abc.abstractmethod
+    def fetch_ticker(self, symbol):
+        pass
+
+    @abc.abstractmethod
+    def fetch_tickers(self, symbol):
         pass
 
     @abc.abstractmethod
@@ -58,56 +87,145 @@ class Exchange(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
+    def createOrder(self, symbol, type, side, amount):
+        pass
+
+    @abc.abstractmethod
+    def create_limit_buy_order(self, symbol, amount, price):
+        pass
+
+    @abc.abstractmethod
+    def create_limit_sell_order(self, symbol, amount, price):
+        pass
+
+    @abc.abstractmethod
+    def create_market_buy_order(self, symbol, amount):
+        pass
+
+    @abc.abstractmethod
+    def create_market_sell_order(self, symbol, amount):
+        pass
+
+    @abc.abstractmethod
+    def cancel_order(self, order_id):
+        pass
+
+    @abc.abstractmethod
+    def fetch_order(self, order_id, symbol):
+        pass
+
+    @abc.abstractmethod
+    def fetch_orders(self, symbol):
+        pass
+
+    @abc.abstractmethod
+    def fetch_order_book(self, symbol):
+        pass
+
+    @abc.abstractmethod
+    def fetch_ohlcv(self, symbol):
+        pass
+
+    @abc.abstractmethod
+    def fetch_open_orders(self, symbol):
+        pass
+
+    @abc.abstractmethod
+    def fetch_closed_orders(self, symbol):
+        pass
+
+    @abc.abstractmethod
+    def deposit(self, symbol):
+        pass
+
+    @abc.abstractmethod
+    def withdraw(self, symbol):
+        pass
+
+    @abc.abstractmethod
     def calculate_fee(self):
-        pass
-
-    @abc.abstractmethod
-    def fetch_order(self, order):
-        """:order Order object"""
-        pass
-
-    @abc.abstractmethod
-    def create_limit_buy_order(self):
-        pass
-
-    @abc.abstractmethod
-    def create_limit_sell_order(self):
-        pass
-
-    @abc.abstractmethod
-    def cancel_order(self, order):
         pass
 
 
 class CCXTExchange(Exchange):
 
-    def __init__(self, name, config):
+    def __init__(self, client):
         super().__init__(name, config)
-        self.client = EXCHANGE_CLIENTS(name)
+        self.client = EXCHANGE_CLIENTS(name)(config)
 
-    def fetch_ohlcv(self, symbol, ...):
+    def fetch_markets(self):
+        self.client.fetch_markets()
+
+    def load_markets(self, reload=False):
+        """
+        Returns an associative array of markets indexed by trading symbol.
+        If you want more control over the execution of your logic,
+        preloading markets by hand is recommended.
+        """
+        self.client.load_markets(reload)
+
+    def fetch_order_book(self, symbol):
+        self.client.fetch_order_book(symbol)
+
+    def fetch_ohlcv(self, symbol):
         self.client.fetch_ohlcv(symbol)
+
+    def fetch_l2_price_aggregated_order_book(self, symbol):
+        self.client.fetch_l2_order_book(symbol)
+
+    def fetch_trades(self, symbol):
+        self.client.fetch_trades(symbol)
+
+    def fetch_my_trades(self, symbol):
+        self.client.fetch_my_trades(symbol)
+
+    def fetch_ticker(self, symbol):
+        self.client.fetch_ticker(symbol)
+
+    def fetch_tickers(self, symbol):
+        self.client.fetch_tickers(symbol)
 
     def fetch_balance(self):
         self.client.fetch_balance(symbol)
 
+    def create_order(self, symbol, type, side, amount):
+        self.client.create_order(symbol, type, side, amount)
+
+    def create_limit_sell_order(self, symbol, amount, price):
+        self.client.create_limit_sell_order(symbol, type, side, amount)
+
+    def create_market_buy_order(self, symbol, amount):
+        self.client.create_market_buy_order(symbol, amount)
+
+    def create_market_sell_order(self, symbol, amount):
+        self.client.create_market_sell_order(symbol, amount)
+
+    def cancel_order(self, order_id):
+        self.client.cancel_order(order_id)
+
+    def fetch_order(self, order_id, symbol):
+        self.client.fetch_order(order_id, symbol)
+
+    def fetch_orders(self, symbol):
+        self.client.fetch_orders(symbol)
+
+    def fetch_open_orders(self, symbol):
+        self.client.fetch_open_orders(symbol)
+
+    def fetch_closed_orders(self, symbol):
+        self.client.fetch_closed_orders(symbol)
+
+    def deposit(self, symbol):
+        self.client.fetch_closed_orders(symbol)
+
+    def withdraw(self, symbol, amount, wallet):
+        self.client.withdraw(symbol, amount, wallet)
+
     def calculate_fee(self):
-        self.ex.calculate_fee()
-
-    def fetch_order(self, order):
-        self.ex.fetch_order()
-
-    def create_limit_buy_order(self):
-        self.ex.create_limit_buy_order()
-
-    def create_limit_sell_order(self):
-        self.ex.create_limit_sell_order()
-
-    def cancel_order(self, order):
-        self.ex.cancel_order()
+        pass
 
     def order_on_margin(self, price):
-        assert margin_is_available(self.ex.id)
+        assert margin_is_available(self.client.id)
 
 
 class PaperExchange(Exchange):
@@ -116,26 +234,50 @@ class PaperExchange(Exchange):
 
     def fetch_ohlcv(self):
         pass
-
+    def fetch_markets(self):
+        pass
+    def load_markets(self, reload=False):
+        pass
+    def fetch_order_book(self, symbol):
+        pass
+    def fetch_l2_price_aggregated_order_book(self, symbol):
+        pass
+    def fetch_trades(self, symbol):
+        pass
+    def fetch_my_trades(self, symbol):
+        pass
+    def fetch_ticker(self, symbol):
+        pass
+    def fetch_tickers(self, symbol):
+        pass
     def fetch_balance(self):
         pass
-
+    def create_order(self, symbol, type, side, amount):
+        pass
+    def create_limit_sell_order(self, symbol, amount, price):
+        pass
+    def create_market_buy_order(self, symbol, amount):
+        pass
+    def create_market_sell_order(self, symbol, amount):
+        pass
+    def cancel_order(self, order_id):
+        pass
+    def fetch_order(self, order_id, symbol):
+        pass
+    def fetch_orders(self, symbol):
+        pass
+    def fetch_open_orders(self, symbol):
+        pass
+    def fetch_closed_orders(self, symbol):
+        pass
+    def deposit(self, symbol):
+        pass
+    def withdraw(self, symbol, amount, wallet):
+        pass
     def calculate_fee(self):
         pass
-
-    def fetch_order(self, order):
+    def order_on_margin(self, price):
         pass
-
-    def create_limit_buy_order(self):
-        pass
-
-    def create_limit_sell_order(self):
-        pass
-
-    def cancel_order(self, order):
-
-
-
 
 # hitbtc = ccxt.hitbtc({'verbose': True})
 # bitmex = ccxt.bitmex()

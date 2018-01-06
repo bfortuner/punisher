@@ -1,0 +1,20 @@
+{
+    'id':     'btcusd',   // string literal for referencing within an exchange
+    'symbol': 'BTC/USD',  // uppercase string literal of a pair of currencies
+    'base':   'BTC',      // uppercase string, base currency, 3 or more letters
+    'quote':  'USD',      // uppercase string, quote currency, 3 or more letters
+    'precision': {        // number of decimal digits "after the dot"
+        'price': 8,       // integer
+        'amount': 8,      // integer
+        'cost': 8,        // integer
+    },
+    'limits': {           // value limits when placing orders on this market
+        'amount': {
+            'min': 0.01,  // order amount should be > min
+            'max': 1000,  // order amount should be < max
+        },
+        'price': { ... }, // same min/max limits for the price of the order
+        'cost':  { ... }, // same limits for order cost = price * amount
+    }
+    'info':      { ... }, // the original unparsed market info from the exchange
+}
