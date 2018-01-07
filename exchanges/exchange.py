@@ -32,21 +32,21 @@ EXCHANGE_CONFIGS = {
 }
 
 
-def load_exchange(ex_id, config=None):
+def load_exchange(id_, config=None):
     """
     exchange_id: ['poloniex', 'simulate', 'gdax']
     c.EX
     """
-    if ex_id not in EXCHANGE_CONFIGS.keys():
+    if id_ not in EXCHANGE_CONFIGS.keys():
         raise NotImplemented
 
     if config is None:
-        config = EXCHANGE_CONFIGS[ex_id]
+        config = EXCHANGE_CONFIGS[id_]
 
-    if ex_id == c.PAPER:
-        return PaperExchange(ex_id, config)
+    if id_ == c.PAPER:
+        return PaperExchange(id_, config)
 
-    return CCXTExchange(ex_id, config)
+    return CCXTExchange(id_, config)
 
 
 class Exchange(metaclass=abc.ABCMeta):
