@@ -4,16 +4,27 @@ from trading.orders import OrderType, OrderStatus
 
 import utils.files
 
+# https://www.backtrader.com/docu/position.html
+# https://www.backtrader.com/docu/order.html
+# https://www.backtrader.com/docu/trade.html#backtrader.trade.Trade
+# https://www.backtrader.com/docu/datafeed.html
+# https://www.backtrader.com/docu/writer.html
+# https://www.backtrader.com/docu/plotting/plotting.html
+# https://www.backtrader.com/docu/live/live.html
+# https://www.backtrader.com/docu/broker.html
+# https://www.backtrader.com/docu/strategy.html
+# https://www.backtrader.com/docu/cerebro.html
+
 
 class RecordConfig():
     """
-    Not required (could replace w Dictionary), but a 
+    Not required (could replace w Dictionary), but a
     good place to show what values we need in the dict
     """
     def __init__(self, dict_):
         self.values = {
             'root': dict_['root'], # path to csv files
-            'strategy': dict_['strategy'], # name of strategy 
+            'strategy': dict_['strategy'], # name of strategy
             'assets': dict_['assets'], # optional
             'exchanges': dict_['exchanges'],
             'cash_asset': dict_['cash_asset'],
@@ -22,7 +33,7 @@ class RecordConfig():
 
 
 class Record():
-    def __init__(self, config):        
+    def __init__(self, config):
         # Keys - Directory, Strategy, Time, Symbol, FPath
         self.cfg = config.values
         self.orders = {} # dataframe?
@@ -73,7 +84,7 @@ class Record():
             if order.get_status() in [OrderStatus.NEW, OrderStatus.ATTEMPED]:
                 pending_orders.append(order)
         return pending_orders
-    
+
     def get_order_by_id(self, order_id):
         return self.orders['order_id']
 
@@ -108,4 +119,3 @@ class Record():
 
     def load_record(self):
         return None
-

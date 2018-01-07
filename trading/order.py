@@ -12,7 +12,7 @@ from utils.encoders import EnumEncoder
 
 @unique
 class OrderStatus(Enum):
-    NEW = "Order not yet submitted to exchange"
+    CREATED = "Order not yet submitted to exchange"
     OPEN = "Order successfully created on exchange"
     FILLED = "Order completely filled on exchange"
     CANCELED = "Order canceled by user"
@@ -45,7 +45,7 @@ class Order():
         self.quantity = quantity
         self.filled = 0 # ratio or quantity?
         self.order_type = self.set_order_type(order_type)
-        self.status = OrderStatus.NEW
+        self.status = OrderStatus.CREATED
         self.created_time = datetime.utcnow()
         self.opened_time = None
         self.filled_time = None
