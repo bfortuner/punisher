@@ -19,10 +19,10 @@ class Position():
 
     def update(self, txn_quantity, txn_price):
         """
-        txt_quantity: # of shares of transaction
+        txn_quantity: # of shares of transaction
             positive = buy
             negative = sell
-        txt_price: price of transaction
+        txn_price: price of transaction
 
         Cost calculated with Average Cost Basis method
         https://www.investopedia.com/terms/a/averagecostbasismethod.asp
@@ -55,6 +55,13 @@ class Position():
     @property
     def total_value(self):
         return self.quantity * self.cost_price
+
+    def cash_value(self, cost_price_in_cash):
+        """
+        Return value of position in cash currency
+        e.g. Asset is ETH/BTC, but we want to know its value in USD.
+        """
+        return self.total_value() * cost_price_in_cash
 
     def to_dict(self):
         return {
