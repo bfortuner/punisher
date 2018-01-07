@@ -160,17 +160,14 @@ class Exchange(metaclass=abc.ABCMeta):
 
         self._ensure_asset_in_balance(asset)
 
+        # Check if the quantity needed to purchase/sell is
+        # less/more than the quantity in your available balance
         if order_type in buy_order_types():
-            available_quote_quantity = self.exchange_balance.get(
-                asset.quote).get(BalanceType.AVAILABLE)
-            # Check if you quantity needed to purchase is
-            # more than the quantity in your balance
-            return price * quantity <= available_quote_quantity:
-
+            return price * quantity <= self.exchange_balance.get(
+                asset.quote).get(BalanceType.AVAILABLE):
         elif order_type in sell_order_types():
-            available_base_quantity = self.exchange_balance.get(
-                asset.base).get(BalanceType.AVAILABLE)
-            return quantity >= available_base_quantity:
+            return quantity >= self.exchange_balance.get(
+                asset.base).get(BalanceType.AVAILABLE):
         else:
             print("Order type {} not supported".format(order_type))
             return False
