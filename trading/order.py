@@ -12,7 +12,7 @@ from utils.encoders import EnumEncoder
 
 @unique
 class OrderStatus(Enum):
-    NEW = "Order not yet submitted to exchange"
+    CREATED = "Order not yet submitted to exchange"
     OPEN = "Order successfully created on exchange"
     FILLED = "Order completely filled on exchange"
     CANCELED = "Order canceled by user"
