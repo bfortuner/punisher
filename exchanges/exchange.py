@@ -4,8 +4,10 @@ import constants as c
 import config as cfg
 import uuid
 
-from portfolio.asset import Asset, BalanceType, DEFAULT_BALANCE
-from trading.order import Order, OrderType
+from portfolio.asset import Asset
+from portfolio.balance import (BalanceType, DEFAULT_BALANCE,
+                              add_asset_to_balance, update_balance)
+from trading.order import Order, OrderType, buy_order_types, sell_order_types
 
 
 EXCHANGE_CLIENTS = {
@@ -46,10 +48,10 @@ def load_exchange(ex_id, config=None):
 
     # TODO: add historical paper trading data provider
     if name == c.PAPER:
-        data_provider = CCXTExchange(EXCHANGE_CLIENTS(name)(config))
-        return PaperExchange(data_provider)
+        data_provider = CCXTExchange(config.DATA_PROVIDER_NAME, config.DATA_PROVIDER_CONFIG)
+        return PaperExchange("paper", config, data_provider)
 
-    return CCXTExchange(EXCHANGE_CLIENTS(name)(config))
+    return CCXTExchange(name, config)
 
 
 class Exchange(metaclass=abc.ABCMeta):
@@ -84,19 +86,19 @@ class Exchange(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def create_limit_buy_order(self, asset, base_quantity, quote_quantity):
+    def create_limit_buy_order(self, asset, quantity, price):
         pass
 
     @abc.abstractmethod
-    def create_limit_sell_order(self, asset, base_quantity, quote_quantity):
+    def create_limit_sell_order(self, asset, quantity, price):
         pass
 
     @abc.abstractmethod
-    def create_market_buy_order(self, asset, base_quantity):
+    def create_market_buy_order(self, asset, quantity):
         pass
 
     @abc.abstractmethod
-    def create_market_sell_order(self, asset, base_quantity):
+    def create_market_sell_order(self, asset, quantity):
         pass
 
     @abc.abstractmethod
@@ -305,7 +307,7 @@ class PaperExchange(Exchange):
         """Fetch all tickers at once"""
         return self.data_provider.fetch_tickers()
 
-    """Paper trading methods"""
+    # Paper trading methods
 
     def fetch_balance(self):
         """Returns json in the format of sample-data/account_balance"""
@@ -315,7 +317,7 @@ class PaperExchange(Exchange):
         return self._create_order(asset, quantity, price, OrderType.LIMIT_BUY)
 
     def create_limit_sell_order(self, asset, quantity, price):
-        return self._create_order(self.client.id, asset, quantity, price, OrderType.LIMIT_SELL)
+        return self._create_order(asset, quantity, price, OrderType.LIMIT_SELL)
 
     def create_market_buy_order(self, asset, quantity):
         # Getting next market price
@@ -382,7 +384,7 @@ class PaperExchange(Exchange):
         # TODO: update Order class to have a update_filled_quantity method
         # TODO: update Order class to have a trades (partially filled orders)
 
-        order = Order(self.client.id, asset, price, quantity,
+        order = Order(self.id_, asset, price, quantity,
                 order_type, self._create_exchange_order_id())
         order.set_status(OrderType.CREATED)
         self.orders.append(order)
@@ -409,21 +411,26 @@ class PaperExchange(Exchange):
         # TODO: set the filled time/canceled time, opened time etc somewhere?
         # TODO: change to request_fill_order based on volume
         # TODO: write a cleaner fill order that doesnt need to check order type
-        # TODO: figure out a better way to keep the total up to date
 
         if order.order_type in buy_order_types():
-            self.exchange_balance[order.asset.quote].get(BalanceType.AVAILABLE) -= order.price * quantity
-            self.exchange_balance[order.asset.quote].get(BalanceType.TOTAL) -= order.price * quantity
+            # subtract from the quote asset's balance
+            self.exchange_balance = update_balance(
+                order.asset.quote, -(order.price * order.quantity),
+                0.0, self.exchange_balance)
 
-            self.exchange_balance[order.asset.base].get(BalanceType.AVAILABLE) += order.quantity
-            self.exchange_balance[order.asset.base].get(BalanceType.TOTAL) += order.quantity
+            # add to the base asset's balance
+            self.exchange_balance = update_balance(
+                order.asset.base, order.quantity, 0.0, self.exchange_balance)
 
         elif order_type in sell_order_types():
-            self.exchange_balance[order.asset.quote].get(BalanceType.AVAILABLE) += order.price * quantity
-            self.exchange_balance[order.asset.quote].get(BalanceType.TOTAL) += order.price * quantity
+            # add to the quote asset's balance
+            self.exchange_balance = update_balance(
+                order.asset.quote, (order.price * order.quantity),
+                0.0, self.exchange_balance)
 
-            self.exchange_balance[order.asset.base].get(BalanceType.AVAILABLE) -= order.quantity
-            self.exchange_balance[orer.asset.base].get(BalanceType.TOTAL) -= order.quantity
+            # subtract from the base asset's balance
+            self.exchange_balance = update_balance(
+                order.asset.base, -order.quantity, 0.0, self.exchange_balance)
 
         order.set_status(OrderType.FILLED)
         order.filled_quantity = order.quantity
@@ -433,22 +440,8 @@ class PaperExchange(Exchange):
         return uuid.uuid4().hex
 
 
-"""Balance Helpers"""
-
-def buy_order_types():
-    return [OrderType.LIMIT_BUY, OrderType.MARKET_BUY, OrderType.STOP_LIMIT_BUY]
-
-def sell_order_types():
-    return [OrderType.LIMIT_SELL, OrderTYpe.MARKET_SELL, OrderType.STOP_LIMIT_SELL]
 
 
-def add_asset_to_balance(symbol, available_quantity, used_quantity, balance):
-    balance[symbol] = {
-        BalanceType.FREE: available_quantity,
-        BalanceType.USED: used_quantity,
-        BalanceType.TOTAL: available_quantity + used_quantity
-    }
-    return balance
 
 
 # hitbtc = ccxt.hitbtc({'verbose': True})
