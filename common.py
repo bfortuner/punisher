@@ -54,6 +54,7 @@ from exchanges.exchange import PaperExchange
 
 # Portfolio
 from portfolio.asset import Asset
+from portfolio.position import Position
 
 # Clients
 import ccxt

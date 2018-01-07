@@ -35,20 +35,21 @@ EXCHANGE_CONFIGS = {
 }
 
 
-def load_exchange(ex_id, config=None):
+def load_exchange(id_, config=None):
     """
     exchange_id: ['poloniex', 'simulate', 'gdax']
     c.EX
     """
-    if ex_id not in EXCHANGE_CONFIGS.keys():
+    if id_ not in EXCHANGE_CONFIGS.keys():
         raise NotImplemented
 
     if config is None:
-        config = EXCHANGE_CONFIGS[ex_id]
+        config = EXCHANGE_CONFIGS[id_]
 
     # TODO: add historical paper trading data provider
     if name == c.PAPER:
-        data_provider = CCXTExchange(config.DATA_PROVIDER_NAME, config.DATA_PROVIDER_CONFIG)
+        data_provider = CCXTExchange(
+            config.DATA_PROVIDER_NAME, config.DATA_PROVIDER_CONFIG)
         return PaperExchange("paper", config, data_provider)
 
     return CCXTExchange(name, config)
@@ -146,23 +147,29 @@ class Exchange(metaclass=abc.ABCMeta):
 
     def _ensure_asset_in_balance(self, asset):
         # add base and quote symbols to balance if necessary
-        # TODO: think about another way to ensure the balance has each asset we need
+        # TODO: think about another way to ensure the
+        #       balance has each asset we need
         if asset.base not in self.exchange_balance:
-            self.exchange_balance = add_asset_to_balance(asset.base, 0, 0, self.exchange_balance)
+            self.exchange_balance = add_asset_to_balance(
+                asset.base, 0, 0, self.exchange_balance)
         if asset.quote not in self.exchange_balance:
-            self.exchange_balance = add_asset_to_balance(asset.quote, 0, 0, self.exchange_balance)
+            self.exchange_balance = add_asset_to_balance(
+                asset.quote, 0, 0, self.exchange_balance)
 
     def is_balance_sufficient(self, asset, quantity, price, order_type):
 
         self._ensure_asset_in_balance(asset)
 
         if order_type in buy_order_types():
-            available_quote_quantity = self.exchange_balance.get(asset.quote).get(BalanceType.AVAILABLE)
-            # Check if you quantity needed to purchase is more than the quantity in your balance
+            available_quote_quantity = self.exchange_balance.get(
+                asset.quote).get(BalanceType.AVAILABLE)
+            # Check if you quantity needed to purchase is
+            # more than the quantity in your balance
             return price * quantity <= available_quote_quantity:
 
         elif order_type in sell_order_types():
-            available_base_quantity = self.exchange_balance.get(asset.base).get(BalanceType.AVAILABLE)
+            available_base_quantity = self.exchange_balance.get(
+                asset.base).get(BalanceType.AVAILABLE)
             return quantity >= available_base_quantity:
         else:
             print("Order type {} not supported".format(order_type))
@@ -231,16 +238,20 @@ class CCXTExchange(Exchange):
         return self.client.fetch_balance()
 
     def create_limit_buy_order(self, asset, quantity, price, params=None):
-        return self.client.create_limit_buy_order(asset.symbol, quantity, price, params)
+        return self.client.create_limit_buy_order(
+            asset.symbol, quantity, price, params)
 
     def create_limit_sell_order(self, asset, quantity, price, params=None):
-        return self.client.create_limit_sell_order(asset.symbol, quantity, price, params)
+        return self.client.create_limit_sell_order(
+            asset.symbol, quantity, price, params)
 
     def create_market_buy_order(self, asset, quantity, params=None):
-        return self.client.create_market_buy_order(asset.symbol, quantity, params)
+        return self.client.create_market_buy_order(
+            asset.symbol, quantity, params)
 
     def create_market_sell_order(self, asset, quantity, params=None):
-        return self.client.create_market_sell_order(asset.symbol, quantity, params)
+        return self.client.create_market_sell_order(
+            asset.symbol, quantity, params)
 
     def cancel_order(self, order_id, asset=None, params=None):
         """
@@ -256,10 +267,12 @@ class CCXTExchange(Exchange):
         return self.client.fetch_orders(asset.symbol, since, limit, params)
 
     def fetch_open_orders(self, asset, since=None, limit=None, params=None):
-        return self.client.fetch_open_orders(asset.symbol, since, limit, params)
+        return self.client.fetch_open_orders(
+            asset.symbol, since, limit, params)
 
     def fetch_closed_orders(self, asset, since=None, limit=None, params=None):
-        return self.client.fetch_closed_orders(asset.symbol, since, limit, params)
+        return self.client.fetch_closed_orders(
+            asset.symbol, since, limit, params)
 
     def deposit(self, asset):
         return NotImplemented
@@ -272,8 +285,10 @@ class CCXTExchange(Exchange):
     def timeframes(self):
         return self.client.timeframes
 
-    def calculate_fee(self, asset, type, side, quantity, price, taker_or_maker='taker', params=None):
-        return self.client.calculate_fee(asset.symbol, type, side, quantity, price, taker_or_maker, params)
+    def calculate_fee(self, asset, type, side, quantity,
+                      price, taker_or_maker='taker', params=None):
+        return self.client.calculate_fee(asset.symbol, type, side,
+            quantity, price, taker_or_maker, params)
 
 
 class PaperExchange(Exchange):
@@ -298,7 +313,8 @@ class PaperExchange(Exchange):
 
     def fetch_my_trades(self, asset, since, limit, params=None):
         """Returns list of most recent trades for a particular symbol"""
-        return self.data_provider.fetch_my_trades(asset.symbol, since, limit, params)
+        return self.data_provider.fetch_my_trades(
+            asset.symbol, since, limit, params)
 
     def fetch_ticker(self, asset):
         return self.data_provider.fetch_ticker(asset.symbol)
@@ -321,16 +337,18 @@ class PaperExchange(Exchange):
 
     def create_market_buy_order(self, asset, quantity):
         # Getting next market price
-        # TODO: Decide if we should use the ticker or the orderbook for market Price
-        # if we use orderbook consider using the calculate_market_price method
+        # TODO: Decide if we should use the ticker
+        #       or the orderbook for market Price
+        # if we use orderbook, consider using the calculate_market_price method
         price = self.get_ticker(asset).get("ask")
         return self._create_order(asset, quantity, price, OrderType.MARKET_BUY)
 
 
     def create_market_sell_order(self, asset, quantity):
         # Getting next market price
-        # TODO: Decide if we should use the ticker or the orderbook for market Price
-        # if we use orderbook consider using the calculate_market_price method
+        # TODO: Decide if we should use the ticker
+        #       or the orderbook for market Price
+        # if we use orderbook, consider using the calculate_market_price method
         price = self.get_ticker(asset).get("bid")
         return self._create_order(asset, quantity, price, OrderType.MARKET_SELL)
 
