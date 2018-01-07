@@ -16,9 +16,7 @@ class DataFeed():
         print("Loading feed:", self.fpath)
         if self.start is None:
             self.start = datetime.datetime(1, 1, 1, 1, 1)
-        print("START", self.start)
         self.prior_time = self.start - datetime.timedelta(minutes=1)
-        print("PRIOR", self.prior_time)
 
     def update(self):
         pass

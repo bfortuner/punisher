@@ -42,6 +42,11 @@ GDAX_USD_ACCOUNT = os.environ.get('GDAX_USD_ACCOUNT')
 POLONIEX_API_KEY = os.environ.get('POLONIEX_API_KEY')
 POLONIEX_API_SECRET_KEY = os.environ.get('POLONIEX_API_SECRET_KEY')
 
+# Poloniex
+BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
+BINANCE_API_SECRET_KEY = os.environ.get('BINANCE_API_SECRET_KEY')
+
+
 ### Data ###
 
 # Brave New Coin

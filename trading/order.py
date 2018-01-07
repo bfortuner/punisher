@@ -32,18 +32,19 @@ class OrderType(Enum):
 class Order():
     __slots__ = [
         "id", "exchange_id", "exchange_order_id", "asset", "price",
-        "quantity", "filled", "order_type", "status", "created_time",
+        "quantity", "filled_quantity", "order_type", "status", "created_time",
         "opened_time", "filled_time", "canceled_time", "retries"
     ]
 
-    def __init__(self, exchange_id, asset, price, quantity, order_type):
+    def __init__(self, exchange_id, asset, price, quantity,
+                 order_type, exchange_order_id=None):
         self.id = self.make_id()
         self.exchange_id = exchange_id
-        self.exchange_order_id = None
+        self.exchange_order_id = exchange_order_id
         self.asset = asset
         self.price = price
-        self.quantity = quantity
-        self.filled = 0 # ratio or quantity?
+        self.quantity = quantity # e.g. # of bitcoins
+        self.filled_quantity = 0.0
         self.order_type = self.set_order_type(order_type)
         self.status = OrderStatus.CREATED
         self.created_time = datetime.utcnow()
@@ -89,7 +90,7 @@ class Order():
         )
         order.id = d['id']
         order.exchange_order_id = d['exchange_order_id']
-        order.filled = d['filled']
+        order.filled = d['filled_quantity']
         order.status = OrderStatus[d['status']]
         order.created_time = str_to_date(d['created_time'])
         order.opened_time = str_to_date(d['opened_time'])

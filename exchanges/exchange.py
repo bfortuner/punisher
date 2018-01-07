@@ -24,32 +24,35 @@ EXCHANGE_CONFIGS = {
         'password': cfg.GDAX_PASSPHRASE,
         'verbose':False,
     },
-    c.BINANCE: {},
+    c.BINANCE: {
+        'apiKey': cfg.BINANCE_API_KEY,
+        'secret': cfg.BINANCE_API_SECRET_KEY,
+    },
     c.PAPER: {}
 }
 
 
-def load_exchange(name, config=None):
+def load_exchange(ex_id, config=None):
     """
     exchange_id: ['poloniex', 'simulate', 'gdax']
     c.EX
     """
-    if name not in EXCHANGE_CONFIGS.keys():
+    if ex_id not in EXCHANGE_CONFIGS.keys():
         raise NotImplemented
 
     if config is None:
-        config = EXCHANGE_CONFIGS[name]
+        config = EXCHANGE_CONFIGS[ex_id]
 
-    if name == c.PAPER:
-        return PaperExchange(name, config)
+    if ex_id == c.PAPER:
+        return PaperExchange(ex_id, config)
 
-    return CCXTExchange(name, config)
+    return CCXTExchange(ex_id, config)
 
 
 class Exchange(metaclass=abc.ABCMeta):
 
-    def __init__(self, name, config):
-        self.name = name
+    def __init__(self, id_, config):
+        self.id = id_
         self.config = config
 
     @abc.abstractmethod
@@ -65,23 +68,11 @@ class Exchange(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def fetch_my_trades(self, symbol):
-        pass
-
-    @abc.abstractmethod
     def fetch_ticker(self, symbol):
         pass
 
     @abc.abstractmethod
-    def fetch_tickers(self):
-        pass
-
-    @abc.abstractmethod
     def fetch_balance(self):
-        pass
-
-    @abc.abstractmethod
-    def create_order(self, symbol, type, side, amount):
         pass
 
     @abc.abstractmethod
@@ -148,20 +139,23 @@ class Exchange(metaclass=abc.ABCMeta):
     def calculate_fee(self):
         pass
 
+    def get_default_params_if_none(self, params):
+        return {} if params is None else params
+
 
 class CCXTExchange(Exchange):
 
-    def __init__(self, client):
-        super().__init__(name, config)
-        self.client = EXCHANGE_CLIENTS(name)(config)
+    def __init__(self, id_, config):
+        super().__init__(id_, config)
+        self.client = EXCHANGE_CLIENTS[id_](config)
         self.client.fetch_markets()
 
     def get_markets(self):
         if self.client.markets is None:
-            return self.load_markets(reload=True)
+            return self.client.load_markets(reload=True)
         return self.client.markets
 
-    def fetch_ohlcv(self, symbol, timeframe):
+    def fetch_ohlcv(self, symbol, period):
         """
         Returns OHLCV for the symbol based on the time_period
         ex. fetch_ohlcv(btcusd, 1d)
@@ -169,7 +163,8 @@ class CCXTExchange(Exchange):
         when hasFetchTickers is True as well
         """
         assert self.client.hasFetchOHLCV
-        return self.client.fetch_ohlcv(symbol, timeframe)
+        assert period in self.timeframes
+        return self.client.fetch_ohlcv(symbol, period)
 
     def fetch_order_book(self, symbol):
         """
@@ -182,75 +177,81 @@ class CCXTExchange(Exchange):
         The bids array is sorted by price in descending order.
         The asks array is sorted by price in ascending order.
         """
-        return self.fetch_l2_order_book(symbol)
+        return self.client.fetch_l2_order_book(symbol)
 
     def fetch_public_trades(self, symbol):
         """Returns list of most recent trades for a particular symbol"""
         return self.client.fetch_trades(symbol)
 
-    def fetch_my_trades(self, symbol, since, limit, params=None):
-        """Returns list of most recent trades for a particular symbol"""
-        return self.client.fetch_my_trades(symbol, since, limit, params)
-
     def fetch_ticker(self, symbol):
-        assert self.client.hasFetchTickers
         return self.client.fetch_ticker(symbol)
-
-    def fetch_tickers(self):
-        """Fetch all tickers at once"""
-        assert self.client.hasFetchTickers
-        return self.client.fetch_tickers()
 
     def fetch_balance(self):
         """Returns json in the format of sample-data/account_balance"""
         return self.client.fetch_balance()
 
     def create_limit_buy_order(self, symbol, amount, price, params=None):
-        self.client.create_limit_buy_order(symbol, amount, price, params)
+        params = self.get_default_params_if_none(params)
+        return self.client.create_limit_buy_order(symbol, amount, price, params)
 
     def create_limit_sell_order(self, symbol, amount, price, params=None):
-        self.client.create_limit_sell_order(symbol, amount, price, params)
+        params = self.get_default_params_if_none(params)
+        return self.client.create_limit_sell_order(symbol, amount, price, params)
 
     def create_market_buy_order(self, symbol, amount, params=None):
-        self.client.create_market_buy_order(symbol, amount, params)
+        params = self.get_default_params_if_none(params)
+        return self.client.create_market_buy_order(symbol, amount, params)
 
     def create_market_sell_order(self, symbol, amount, params=None):
-        self.client.create_market_sell_order(symbol, amount, params)
+        params = self.get_default_params_if_none(params)
+        return self.client.create_market_sell_order(symbol, amount, params)
 
     def cancel_order(self, order_id, symbol=None, params=None):
-        """
-        https://github.com/ccxt/ccxt/wiki/Manual#cancelling-orders"""
+        """https://github.com/ccxt/ccxt/wiki/Manual#cancelling-orders"""
+        params = self.get_default_params_if_none(params)
         return self.client.cancel_order(order_id)
 
-    def fetch_order(self, order_id, symbol=None, params=None):
+    def fetch_order(self, order_id, symbol, params=None):
         """https://github.com/ccxt/ccxt/wiki/Manual#orders"""
-        return self.client.fetch_order(order_id, params)
+        params = self.get_default_params_if_none(params)
+        return self.client.fetch_order(order_id, symbol, params)
 
     def fetch_orders(self, symbol, since=None, limit=None, params=None):
+        params = self.get_default_params_if_none(params)
         return self.client.fetch_orders(symbol, since, limit, params)
 
     def fetch_open_orders(self, symbol, since=None, limit=None, params=None):
+        params = self.get_default_params_if_none(params)
         return self.client.fetch_open_orders(symbol, since, limit, params)
 
     def fetch_closed_orders(self, symbol, since=None, limit=None, params=None):
+        params = self.get_default_params_if_none(params)
         return self.client.fetch_closed_orders(symbol, since, limit, params)
 
     def deposit(self, symbol):
         return NotImplemented
 
     def withdraw(self, currency, amount, address, params=None):
+        params = self.get_default_params_if_none(params)
         return NotImplemented
 
-    def get_timeframes(self):
+    @property
+    def timeframes(self):
         return self.client.timeframes
 
-    def calculate_fee(self, symbol, type, side, amount, price, taker_or_maker='taker', params=None):
-        return self.client.calculate_fee(symbol, type, side, amount, price, taker_or_maker, params)
+    def calculate_fee(self, symbol, type, side, amount, price,
+                      taker_or_maker='taker', params=None):
+        params = self.get_default_params_if_none(params)
+        return self.client.calculate_fee(
+            symbol, type, side, amount, price,
+            taker_or_maker, params)
+
+
 
 
 class PaperExchange(Exchange):
-    def __init__(self, name, config, data_provider):
-        super().__init__(name, config)
+    def __init__(self, id_, config, data_provider):
+        super().__init__(id_, config)
         self.data_provider = data_provider
         self.orders = []
         self.balance = {}

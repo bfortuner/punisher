@@ -25,6 +25,9 @@ class Asset():
     def symbol(self):
         return self.base + '/' + self.quote
 
+    def reverse_symbol(self):
+        return self.quote + '/' + self.base
+
     def to_dict(self):
         return {
             'id': self.id,
