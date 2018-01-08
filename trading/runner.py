@@ -19,7 +19,6 @@ def run_from_config(config_fpath):
     )
     punisher.run(context)
 
-
 def run(context):
     if context.trade_mode == 'backtest':
         return backtest(context)

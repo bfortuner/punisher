@@ -20,7 +20,6 @@ def save_json(fpath, dict_):
     with open(fpath, 'w') as f:
         json.dump(dict_, f, indent=4, cls=EnumEncoder, ensure_ascii=False)
 
-
 def load_json(fpath):
     with open(fpath, 'r') as f:
         json_ = json.load(f)

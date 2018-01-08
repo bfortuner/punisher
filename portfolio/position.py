@@ -16,6 +16,7 @@ class Position():
         self.asset = asset
         self.quantity = quantity
         self.cost_price = cost_price
+        self.latest_price = cost_price
 
     def update(self, txn_quantity, txn_price):
         """
@@ -51,17 +52,11 @@ class Position():
                 self.cost_price = total_value / total_quantity
 
         self.quantity = total_quantity
+        self.latest_price = txn_price
 
     @property
-    def total_value(self):
-        return self.quantity * self.cost_price
-
-    def cash_value(self, cost_price_in_cash):
-        """
-        Return value of position in cash currency
-        e.g. Asset is ETH/BTC, but we want to know its value in USD.
-        """
-        return self.total_value() * cost_price_in_cash
+    def market_value(self):
+        return self.quantity * self.latest_price
 
     def to_dict(self):
         return {

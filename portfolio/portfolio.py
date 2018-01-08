@@ -2,71 +2,86 @@
 
 import datetime
 
-from .asset import get_symbol
+from .balance import Balance
+from .balance import get_total_value
+from utils.dates import Timeframe
 
 
 class PerformanceTracker():
-    def __init__(self, balance, timeframe, store):
-        self.timeframe = timeframe # '1m', '30m', '1h', '1d'
+    def __init__(self, starting_cash, timeframe, store=None):
+        self.starting_cash = starting_cash
+        self.timeframe = timeframe
         self.store = store
-        self.history = [balance]
+        self.periods = []
+        self.pnl = 0.0
+        self.returns = 0.0
 
-    def add_period(self, start, end, balance):
-        self.cash = balance.total_value
-        period_pnl = self.calc_pnl(balance)
-        period_returns = self.calc_returns(balance)
-        self.history.append({
+    def add_period(self, start, cash, positions):
+        if len(self.periods) == 0:
+            start_cash = self.starting_cash
+            start_pos_val = 0.0
+        else:
+            end_cash = self.periods[-1]['ending_cash']
+            start_pos_val = self.periods[-1]['ending_value']
+        positions_value = self.get_positions_value(positions)
+        end_val = positions_value + end_cash
+        start_val = start_pos_val + start_cash
+        pnl = self.calc_pnl(start_val, end_val)
+        returns = self.calc_returns(start_val, end_val)
+        self.periods.append({
             'start_time': start,
-            'end_time': end,
-            'balance': balance,
-            'pnl': period_pnl,
-            'returns': period_returns
+            'end_time': start + timeframe.value['delta'],
+            'starting_cash': start_cash,
+            'ending_cash': end_cash,
+            'starting_value': start_val
+            'ending_value': end_val
+            'positions': positions,
+            'pnl': pnl,
+            'returns': returns
         })
+        self.update_performance()
 
-    def calc_pnl(self, balance):
-        prior_bal = self.periods[-1]['balance']
-        return prior_bal.total_value - balance.total_value
+    def update_performance(self):
+        if len(self.periods) == 1:
+            self.pnl = self.periods[0]['pnl']
+            self.returns = self.periods[0]['returns']
+        else:
+            end_period = self.periods[-1]
+            self.pnl = self.calc_pnl(
+                self.starting_cash, end_period['ending_value'])
+            self.returns = self.calc_returns(
+                self.starting_cash, end_period['ending_value'])
+        self.save()
 
-    def calc_returns(self, balance):
-        prior_bal = self.periods[-1]['balance']
-        if prior_bal.total_value == 0:
+    def calc_pnl(self, start_val, end_val):
+        return end_val - start_val
+
+    def calc_returns(self, start_val, end_val):
+        if start_val == 0:
             return 0.0
-        pnl = self.calc_pnl(balance)
-        return pnl / prior_bal.total_value
+        pnl = self.calc_pnl(start_val, end_val)
+        return pnl / start_val
+
+    def get_positions_value(self, positions):
+        """
+        TODO: Update to handle assets where the quote cash_currency
+        is not the cash currency. E.g. Cash is USD but asset is ETH/BTC.
+
+        Right now it assumes all positions are quoted in cash.
+        """
+        total = 0.0
+        for pos in self.positions:
+            total += pos.market_value
+        return total
 
     def save(self):
-        self.store.save(self.to_dict())
-
-    def to_dict(self):
-        return vars(self)
-
-    @classmethod
-    def from_dict(self, d):
-        pass
-
-    def to_json(self):
-        return json.dumps(
-            self.to_dict(),
-            cls=EnumEncoder,
-            indent=4)
-
-    @classmethod
-    def from_json(self, json_str):
-        dct = json.loads(json_str)
-        return self.from_dict(dct)
-
-    def __repr__(self):
-        return self.to_json()
-
-
-
+        if store:
+            store.save(self.periods)
 
 
 class Portfolio():
     """
-    Keeps and updates the quantity and price of a position for an Asset.
-    The position price represents the average price of all orders placed
-    over time.
+
     Attributes:
       - asset (Asset): the asset held in the position
       - quantity (float): quantity in base currency (# of shares)
@@ -76,26 +91,26 @@ class Portfolio():
     https://github.com/quantopian/zipline/blob/master/zipline/protocol.py#L143
     """
 
-    def __init__(self, cash_currency, balance, positions, tracker):
-        self.cash_currency = cash_currency
-        self.starting_cash = balance[cash_currency]
-        self.balance = balance
-        self.positions = positions
-        self.pnl = 0.0
-        self.returns = 0.0
-        self.tracker = tracker
-        self.exchange_rates = exchange_rates
+    def __init__(self, starting_cash, perf_tracker, positions=None):
+        self.starting_cash = starting_cash
+        self.cash = starting_cash
+        self.positions = [] if positions is None else positions
+        self.positions_value = self.get_positions_cash_value()
+        self.perf = perf_tracker
 
-    def update(self, exchange_rates):
-        self.exchange_rates = exchange_rates
-        self.history.add_period(balance)
+    def get_position_weights(self):
+        """
+        https://github.com/quantopian/zipline/blob/master/zipline/protocol.py#L177
+        """
+        pass
 
-    @property
-    def cash_balance(self):
-        return self.balance[self.cash_currency]
+    def update(self, positions):
+        # do we adjust positions based on orders here?
+        start_time = datetime.datetime.utcnow()
+        self.tracker.add_period(start_time, self.cash, positions)
 
     def total_value(self):
-        return get_total_value(self.balance, self.exchange_rates)
+        return self.cash + self.positions_value
 
     def to_dict(self):
         return vars(self)
@@ -120,11 +135,12 @@ class Portfolio():
 
 
 
+# Later (when we need to handle non-cash quoted positions)
 def get_total_value(balance, cash_currency, exchange_rates):
     cash_value = 0.0
-    for currency in balance:
+    for currency in balance.currencies:
         symbol = get_symbol(currency, cash_currency)
-        quantity = balance[currency]
+        quantity = balance.get(currency[TOTAL])
         rate = exchange_rates[symbol]
         cash_value += quantity * exchange_rate
     return cash_value

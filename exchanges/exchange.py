@@ -7,7 +7,8 @@ import uuid
 from portfolio.asset import Asset
 from portfolio.balance import (BalanceType, DEFAULT_BALANCE,
                               add_asset_to_balance, update_balance)
-from trading.order import Order, OrderType, buy_order_types, sell_order_types
+from trading.order import Order, OrderType
+from trading.order import BUY_ORDER_TYPES, SELL_ORDER_TYPE
 
 
 EXCHANGE_CLIENTS = {
@@ -356,7 +357,6 @@ class PaperExchange(Exchange):
         price = self.get_ticker(asset).get("ask")
         return self._create_order(asset, quantity, price, OrderType.MARKET_BUY)
 
-
     def create_market_sell_order(self, asset, quantity):
         # Getting next market price
         # TODO: Decide if we should use the ticker
@@ -364,7 +364,6 @@ class PaperExchange(Exchange):
         # if we use orderbook, consider using the calculate_market_price method
         price = self.get_ticker(asset).get("bid")
         return self._create_order(asset, quantity, price, OrderType.MARKET_SELL)
-
 
     def cancel_order(self, order_id):
         # TODO: Implement this when we have pending orders
@@ -416,56 +415,43 @@ class PaperExchange(Exchange):
         # TODO: update Order class to have a trades (partially filled orders)
 
         order = Order(self.id_, asset, price, quantity,
-                order_type, self._create_exchange_order_id())
+                order_type, self._make_order_id())
         order.set_status(OrderType.CREATED)
         self.orders.append(order)
         # TODO: Implement pending/Open order phase
         order = self._fill_order(order)
         return order
 
-    def get_assets(self, balance_type):
-        """
-        Method to get balance data for a specific balance type free
-        Returns dict of assets for types:
-        :balance_type = "free", "used", "total"
-        """
-        assert balance_type in BalanceType
-        assets = {}
-        for asset_symbol, quantity in self.exchange_balance.items():
-            assets[asset_symbol] = quantity.get(balance_type)
-        return assets
-
-    def _open_order(self, order):
-        return NotImplemented
-
     def _fill_order(self, order):
         # TODO: set the filled time/canceled time, opened time etc somewhere?
         # TODO: change to request_fill_order based on volume
         # TODO: write a cleaner fill order that doesnt need to check order type
 
-        if order.order_type in buy_order_types():
+        if order.order_type in order():
             # subtract from the quote asset's balance
-            self.exchange_balance = update_balance(
+            self.balance.update(
                 order.asset.quote, -(order.price * order.quantity),
                 0.0, self.exchange_balance)
 
             # add to the base asset's balance
-            self.exchange_balance = update_balance(
-                order.asset.base, order.quantity, 0.0, self.exchange_balance)
+            self.balance.update(
+                order.asset.base, order.quantity,
+                0.0, self.exchange_balance)
 
         elif order_type in sell_order_types():
             # add to the quote asset's balance
-            self.exchange_balance = update_balance(
+            self.balance.update(
                 order.asset.quote, (order.price * order.quantity),
                 0.0, self.exchange_balance)
 
             # subtract from the base asset's balance
-            self.exchange_balance = update_balance(
-                order.asset.base, -order.quantity, 0.0, self.exchange_balance)
+            self.balance.update_currency(
+                order.asset.base, -order.quantity,
+                0.0, self.exchange_balance)
 
         order.set_status(OrderType.FILLED)
         order.filled_quantity = order.quantity
         return order
 
-    def _create_exchange_order_id(self):
+    def _make_order_id(self):
         return uuid.uuid4().hex
