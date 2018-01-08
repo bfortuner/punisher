@@ -414,6 +414,7 @@ EXCHANGE_CONFIGS = {
     c.BINANCE: {
         'apiKey': cfg.BINANCE_API_KEY,
         'secret': cfg.BINANCE_API_SECRET_KEY,
+        'verbose':False,
     },
     c.PAPER: {
         'data_provider': CCXTExchange(c.BINANCE, {}),

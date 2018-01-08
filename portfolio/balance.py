@@ -49,9 +49,14 @@ class Balance():
 
     @classmethod
     def from_dict(self, dct):
-        self.free = dct[BalanceType.FREE.value]
-        self.used = dct[BalanceType.USED.value]
-        self.total = dct[BalanceType.TOTAL.value]
+        bal = Balance(
+            cash_currency=c.BTC,
+            starting_cash=0.0
+            )
+        bal.free = dct[BalanceType.FREE.value]
+        bal.used = dct[BalanceType.USED.value]
+        bal.total = dct[BalanceType.TOTAL.value]
+        return bal
 
 
 @unique
