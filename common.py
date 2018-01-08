@@ -33,11 +33,12 @@ import config as cfg
 import constants as c
 
 # Data
-from datafeeds import ohlcv
-from datafeeds.feed import CSVDataFeed, ExchangeDataFeed
+from data import ohlcv
+from data.feed import CSVDataFeed, ExchangeDataFeed
 
 # Utils
 import utils.dates
+from utils.dates import Timeframe
 import utils.charts
 import utils.general
 import utils.encoders
@@ -55,6 +56,7 @@ from exchanges.exchange import PaperExchange
 # Portfolio
 from portfolio.asset import Asset
 from portfolio.position import Position
+from portfolio.balance import Balance
 
 # Clients
 import ccxt

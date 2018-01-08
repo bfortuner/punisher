@@ -5,10 +5,9 @@ import config as cfg
 import uuid
 
 from portfolio.asset import Asset
-from portfolio.balance import (BalanceType, DEFAULT_BALANCE,
-                              add_asset_to_balance, update_balance)
-from trading.order import Order, OrderType
-from trading.order import BUY_ORDER_TYPES, SELL_ORDER_TYPE
+from portfolio.balance import Balance, BalanceType
+from trading.order import Order, OrderType, OrderStatus
+from trading.order import BUY_ORDER_TYPES, SELL_ORDER_TYPES
 
 
 EXCHANGE_CLIENTS = {
@@ -33,8 +32,11 @@ EXCHANGE_CONFIGS = {
         'secret': cfg.BINANCE_API_SECRET_KEY,
     },
     c.PAPER: {
-        'data_provider_name': c.BACKTEST_DATA_PROVIDER_NAME,
-        'data_provider_config': None
+        'data_provider_name': c.BINANCE, #c.BACKTEST_DATA_PROVIDER_NAME,
+        'data_provider_config': {
+            'apiKey': cfg.BINANCE_API_KEY,
+            'secret': cfg.BINANCE_API_SECRET_KEY,
+        }
     }
 }
 
@@ -123,10 +125,6 @@ class Exchange(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def fetch_order_book(self, asset):
-        pass
-
-    @abc.abstractmethod
     def fetch_ohlcv(self, asset):
         pass
 
@@ -161,32 +159,16 @@ class Exchange(metaclass=abc.ABCMeta):
         spread = (ask - bid) if (bid and ask) else None
         return { 'bid': bid, 'ask': ask, 'spread': spread }
 
-    def _ensure_asset_in_balance(self, asset):
-        # add base and quote symbols to balance if necessary
-        # TODO: think about another way to ensure the
-        #       balance has each asset we need
-        if asset.base not in self.exchange_balance:
-            self.exchange_balance = add_asset_to_balance(
-                asset.base, 0, 0, self.exchange_balance)
-        if asset.quote not in self.exchange_balance:
-            self.exchange_balance = add_asset_to_balance(
-                asset.quote, 0, 0, self.exchange_balance)
-
     def is_balance_sufficient(self, asset, quantity, price, order_type):
-
         self._ensure_asset_in_balance(asset)
+        if order_type in BUY_ORDER_TYPES:
+            return price * quantity <= self.balance.get(
+                asset.quote)[BalanceType.FREE.value]
+        elif order_type in SELL_ORDER_TYPES:
 
-        # Check if the quantity needed to purchase/sell is
-        # less/more than the quantity in your available balance
-        if order_type in buy_order_types():
-            return price * quantity <= self.exchange_balance.get(
-                asset.quote).get(BalanceType.AVAILABLE)
-        elif order_type in sell_order_types():
-            return quantity >= self.exchange_balance.get(
-                asset.base).get(BalanceType.AVAILABLE)
-        else:
-            print("Order type {} not supported".format(order_type))
-            return False
+            return quantity >= self.balance.get(
+                asset.base)[BalanceType.FREE.value]
+        raise Exception("Order type {} not supported".format(order_type))
 
     @abc.abstractmethod
     def calculate_fee(self):
@@ -229,7 +211,7 @@ class CCXTExchange(Exchange):
         The bids array is sorted by price in descending order.
         The asks array is sorted by price in ascending order.
         """
-        return self.fetch_l2_order_book(asset.symbol)
+        return self.client.fetch_l2_order_book(asset.symbol)
 
     def fetch_public_trades(self, asset):
         """Returns list of most recent trades for a particular symbol"""
@@ -237,6 +219,7 @@ class CCXTExchange(Exchange):
 
     def fetch_my_trades(self, asset, since, limit, params=None):
         """Returns list of most recent trades for a particular symbol"""
+        params = self.get_default_params_if_none(params)
         return self.client.fetch_my_trades(asset.symbol, since, limit, params)
 
     def fetch_ticker(self, asset):
@@ -251,6 +234,7 @@ class CCXTExchange(Exchange):
         return self.client.fetch_balance()
 
     def create_limit_buy_order(self, asset, quantity, price, params=None):
+        params = self.get_default_params_if_none(params)
         return self.client.create_limit_buy_order(
             asset.symbol, quantity, price, params)
 
@@ -259,31 +243,37 @@ class CCXTExchange(Exchange):
             asset.symbol, quantity, price, params)
 
     def create_market_buy_order(self, asset, quantity, params=None):
+        params = self.get_default_params_if_none(params)
         return self.client.create_market_buy_order(
             asset.symbol, quantity, params)
 
     def create_market_sell_order(self, asset, quantity, params=None):
+        params = self.get_default_params_if_none(params)
         return self.client.create_market_sell_order(
             asset.symbol, quantity, params)
 
     def cancel_order(self, order_id, asset=None, params=None):
         """
         https://github.com/ccxt/ccxt/wiki/Manual#cancelling-orders"""
+        params = self.get_default_params_if_none(params)
         return self.client.cancel_order(order_id)
 
-    def fetch_order(self, order_id, asset=None, params=None):
+    def fetch_order(self, order_id, symbol=None, params=None):
         """https://github.com/ccxt/ccxt/wiki/Manual#orders"""
         params = self.get_default_params_if_none(params)
         return self.client.fetch_order(order_id, symbol, params)
 
     def fetch_orders(self, asset, since=None, limit=None, params=None):
+        params = self.get_default_params_if_none(params)
         return self.client.fetch_orders(asset.symbol, since, limit, params)
 
     def fetch_open_orders(self, asset, since=None, limit=None, params=None):
+        params = self.get_default_params_if_none(params)
         return self.client.fetch_open_orders(
             asset.symbol, since, limit, params)
 
     def fetch_closed_orders(self, asset, since=None, limit=None, params=None):
+        params = self.get_default_params_if_none(params)
         return self.client.fetch_closed_orders(
             asset.symbol, since, limit, params)
 
@@ -300,6 +290,7 @@ class CCXTExchange(Exchange):
 
     def calculate_fee(self, asset, type, side, quantity,
                       price, taker_or_maker='taker', params=None):
+        params = self.get_default_params_if_none(params)
         return self.client.calculate_fee(asset.symbol, type, side,
             quantity, price, taker_or_maker, params)
 
@@ -317,18 +308,20 @@ class PaperExchange(Exchange):
             return Balance()
         return Balance.from_dict(balance_dict)
 
+    # Exchange Data Provider
+
     def get_markets(self):
         return self.data_provider.get_markets()
 
     def fetch_ohlcv(self, asset, timeframe):
-        return self.data_provider.fetch_ohlcv(asset.symbol, timeframe)
+        return self.data_provider.fetch_ohlcv(asset, timeframe)
 
     def fetch_order_book(self, asset):
-        return self.data_provider.fetch_l2_order_book(asset.symbol)
+        return self.data_provider.fetch_order_book(asset)
 
     def fetch_public_trades(self, asset):
         """Returns list of most recent trades for a particular symbol"""
-        return self.data_provider.fetch_trades(asset.symbol)
+        return self.data_provider.fetch_public_trades(asset)
 
     def fetch_my_trades(self, asset, since, limit, params=None):
         """Returns list of most recent trades for a particular symbol"""
@@ -336,11 +329,11 @@ class PaperExchange(Exchange):
             asset.symbol, since, limit, params)
 
     def fetch_ticker(self, asset):
-        return self.data_provider.fetch_ticker(asset.symbol)
+        return self.data_provider.fetch_ticker(asset)
 
-    def fetch_tickers(self):
-        """Fetch all tickers at once"""
-        return self.data_provider.fetch_tickers()
+    @property
+    def timeframes(self):
+        return self.data_provider.timeframes
 
     # Paper trading methods
 
@@ -359,7 +352,7 @@ class PaperExchange(Exchange):
         # TODO: Decide if we should use the ticker
         #       or the orderbook for market Price
         # if we use orderbook, consider using the calculate_market_price method
-        price = self.get_ticker(asset).get("ask")
+        price = self.fetch_ticker(asset)['ask']
         return self._create_order(asset, quantity, price, OrderType.MARKET_BUY)
 
     def create_market_sell_order(self, asset, quantity):
@@ -367,14 +360,15 @@ class PaperExchange(Exchange):
         # TODO: Decide if we should use the ticker
         #       or the orderbook for market Price
         # if we use orderbook, consider using the calculate_market_price method
-        price = self.get_ticker(asset).get("bid")
+        price = self.fetch_ticker(asset)['bid']
+        print(price)
         return self._create_order(asset, quantity, price, OrderType.MARKET_SELL)
 
     def cancel_order(self, order_id):
         # TODO: Implement this when we have pending orders
         return NotImplemented
 
-    def fetch_order(self, order_id):
+    def fetch_order(self, order_id, symbol=None):
         for order in self.orders:
             if order.id == order_id:
                 return order
@@ -411,52 +405,62 @@ class PaperExchange(Exchange):
         Helper method to create orders based on type
         Checks if balance is sufficient, creates Order object
         and calls methods to update balance (_open_order, _fill_order
-        Returns Order object
+        Returns Order Dictionary (for CCXT consistency)
         """
-        if not is_balance_sufficient(asset, quantity, price, order_type):
+        assert quantity != 0 and price != 0
+        if not self.is_balance_sufficient(asset, quantity, price, order_type):
             print("Balance is not sufficient to create order!")
             return None
         # TODO: update Order class to have a update_filled_quantity method
         # TODO: update Order class to have a trades (partially filled orders)
-
-        order = Order(self.id_, asset, price, quantity,
+        print("W", self.fetch_balance())
+        order = Order(self.id, asset, price, quantity,
                 order_type, self._make_order_id())
-        order.set_status(OrderType.CREATED)
+        order.set_status(OrderStatus.CREATED)
         self.orders.append(order)
         # TODO: Implement pending/Open order phase
         order = self._fill_order(order)
-        return order
+        return order.to_dict() # for consistency with CCXT client response
 
     def _fill_order(self, order):
         # TODO: set the filled time/canceled time, opened time etc somewhere?
         # TODO: change to request_fill_order based on volume
         # TODO: write a cleaner fill order that doesnt need to check order type
+        # TODO: handle pending orders, where "used" is also updated
+        # For example, when I place a limit order that doesn't get filled
+        # my Quote currency total value doesn't change, but its "used" amount does
 
-        if order.order_type in order():
-            # subtract from the quote asset's balance
+        base = order.asset.base
+        quote = order.asset.quote
+        if order.order_type in BUY_ORDER_TYPES:
             self.balance.update(
-                order.asset.quote, -(order.price * order.quantity),
-                0.0, self.exchange_balance)
-
-            # add to the base asset's balance
+                currency=quote,
+                delta_free=-(order.price * order.quantity),
+                delta_used=0.0)
             self.balance.update(
-                order.asset.base, order.quantity,
-                0.0, self.exchange_balance)
+                currency=base,
+                delta_free=order.quantity,
+                delta_used=0.0)
 
-        elif order_type in sell_order_types():
-            # add to the quote asset's balance
+        elif order.order_type in SELL_ORDER_TYPES:
             self.balance.update(
-                order.asset.quote, (order.price * order.quantity),
-                0.0, self.exchange_balance)
+                currency=quote,
+                delta_free=(order.price * order.quantity),
+                delta_used=0.0)
+            self.balance.update(
+                currency=base,
+                delta_free=-order.quantity,
+                delta_used=0.0)
 
-            # subtract from the base asset's balance
-            self.balance.update_currency(
-                order.asset.base, -order.quantity,
-                0.0, self.exchange_balance)
-
-        order.set_status(OrderType.FILLED)
+        order.set_status(OrderStatus.FILLED)
         order.filled_quantity = order.quantity
         return order
+
+    def _ensure_asset_in_balance(self, asset):
+        if asset.base not in self.balance.currencies:
+            self.balance.add_currency(asset.base)
+        if asset.quote not in self.balance.currencies:
+            self.balance.add_currency(asset.quote)
 
     def _make_order_id(self):
         return uuid.uuid4().hex

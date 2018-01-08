@@ -19,6 +19,7 @@ class OrderStatus(Enum):
     REJECTED = "Order rejected by exchange. Will retry"
     KILLED = "Order rejected by exchange. Will not retry"
 
+
 @unique
 class OrderType(Enum):
     LIMIT_BUY = 0
@@ -27,6 +28,18 @@ class OrderType(Enum):
     MARKET_SELL = 3
     STOP_LIMIT_BUY = 4
     STOP_LIMIT_SELL = 5
+
+BUY_ORDER_TYPES = set([
+    OrderType.LIMIT_BUY,
+    OrderType.MARKET_BUY,
+    OrderType.STOP_LIMIT_BUY
+])
+
+SELL_ORDER_TYPES = set([
+    OrderType.LIMIT_SELL,
+    OrderType.MARKET_SELL,
+    OrderType.STOP_LIMIT_SELL
+])
 
 
 class Order():

@@ -48,11 +48,15 @@ class Position():
                     self.cost_price = txn_price
             else:
                 txn_value = txn_quantity * txn_price
-                total_value = self.total_value + txn_value
+                total_value = self.cost_value + txn_value
                 self.cost_price = total_value / total_quantity
 
         self.quantity = total_quantity
         self.latest_price = txn_price
+
+    @property
+    def cost_value(self):
+        return self.quantity * self.cost_price
 
     @property
     def market_value(self):
@@ -63,5 +67,5 @@ class Position():
             'asset': self.asset.to_dict(),
             'quantity': self.quantity,
             'cost_price': self.cost_price,
-            'total_value': self.total_value
+            'latest_price': self.latest_price
         }

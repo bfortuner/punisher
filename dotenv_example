@@ -7,7 +7,7 @@
 
 # App
 APP_NAME = 'PUNISHER'
-DATA_DIR = 'data/'
+DATA_DIR = '.data/'
 
 # AWS
 
