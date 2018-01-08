@@ -21,9 +21,9 @@ class Balance():
 
     def get(self, currency):
         return {
-            FREE: self.free[currency],
-            USED: self.used[currency],
-            TOTAL: self.total[currency],
+            BalanceType.FREE: self.free[currency],
+            BalanceType.USED: self.used[currency],
+            BalanceType.TOTAL: self.total[currency],
         }
 
     def update(self, currency, delta_free, delta_used):
