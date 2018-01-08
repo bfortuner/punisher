@@ -52,3 +52,6 @@ ORDERS_FNAME = 'orders.csv'
 DECISIONS_FNAME = 'decisions.csv'
 RECORD_DATA_FNAME = 'data.csv'
 CONFIG_FNAME = 'config.json'
+
+# Backtest
+BACKTEST_DATA_PROVIDER_NAME = ''
