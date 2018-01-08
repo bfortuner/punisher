@@ -35,7 +35,7 @@ import constants as c
 # Data
 from data import ohlcv
 from data.feed import CSVDataFeed, ExchangeDataFeed
-from data.store import CSVStore
+from data.store import FileStore
 
 # Utils
 import utils.dates

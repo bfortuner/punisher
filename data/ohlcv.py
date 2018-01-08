@@ -18,7 +18,6 @@ def get_price_data_fpath(asset, exchange_id, period):
         exchange_id, asset.id, str(period))
     return os.path.join(cfg.DATA_DIR, fname)
 
-
 def fetch_ohlcv_data(exchange, asset, period, start, end=None):
     print("Downloading:", asset.symbol)
     assert period in exchange.timeframes
@@ -28,13 +27,11 @@ def fetch_ohlcv_data(exchange, asset, period, start, end=None):
     print("Downloaded rows:", len(df))
     return df
 
-
 def fetch_and_save_ohlcv_data(exchange, asset, period, start, end=None):
     df = fetch_ohlcv_data(exchange, asset, period, start, end)
     fpath = get_price_data_fpath(asset, exchange.id, period)
     df.to_csv(fpath, index=True)
     return df
-
 
 def update_local_ohlcv_data(exchange, asset, period, start, end=None):
     fpath = get_price_data_fpath(asset, exchange.id, period)
@@ -45,7 +42,6 @@ def update_local_ohlcv_data(exchange, asset, period, start, end=None):
         df = fetch_and_save_ohlcv_data(exchange, asset, period, start, end)
     return df
 
-
 def load_chart_data_from_file(fpath, start=None, end=None):
     df = pd.read_csv(
         fpath, index_col='time_epoch',
@@ -55,11 +51,9 @@ def load_chart_data_from_file(fpath, start=None, end=None):
     df = get_time_range(df, start, end)
     return df
 
-
 def download_chart_data(exchange, assets, period, start, end=None):
     for asset in assets:
         update_local_ohlcv_data(exchange, asset, period, start, end)
-
 
 def load_multiple_assets(exchange_id, assets, period, start, end=None):
     df = pd.DataFrame()
@@ -71,7 +65,6 @@ def load_multiple_assets(exchange_id, assets, period, start, end=None):
     df['time_utc'] = [epoch_to_utc(t) for t in df.index]
     return df
 
-
 def make_ohlcv_df(data, start=None, end=None):
     df = pd.DataFrame(data, columns=c.OHLCV_COLUMNS)
     df['time_epoch'] = df['time_epoch'] // 1000 # ccxt includes millis
@@ -80,7 +73,6 @@ def make_ohlcv_df(data, start=None, end=None):
     df.sort_index(inplace=True)
     df = get_time_range(df, start, end)
     return df
-
 
 def merge_local_csv_feeds(new_data, fpath):
     cur_df = pd.read_csv(

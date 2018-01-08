@@ -6,7 +6,6 @@ import pandas
 import utils.dates
 
 
-
 class EnumEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Enum):
@@ -16,11 +15,6 @@ class EnumEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def save_json(fpath, dict_):
-    with open(fpath, 'w') as f:
-        json.dump(dict_, f, indent=4, cls=EnumEncoder, ensure_ascii=False)
-
-def load_json(fpath):
-    with open(fpath, 'r') as f:
-        json_ = json.load(f)
-    return json_
+class EnumDecoder(json.JSONDecoder):
+    # TODO: This
+    pass

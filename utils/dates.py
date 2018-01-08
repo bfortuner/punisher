@@ -19,17 +19,22 @@ class Timeframe(Enum):
     ONE_DAY = {'id': '1d', 'delta': datetime.timedelta(days=1)}
 
 
+def is_str_digit(string):
+    if 'numpy' in type(string).__module__:
+        return np.issubdtype(string, np.number)
+    return string.isdigit()
+
 def str_to_date(date_str):
     if date_str is None:
         return date_str
 
     if type(date_str) in PANDAS_ITERABLE_TYPES:
-        if len(date_str) > 0 and date_str[0].isdigit():
+        if len(date_str) > 0 and is_str_digit(date_str[0]):
             return date_str
         return dateutil.parser.parse(date_str)
 
     # Leave Epoch Time Alone
-    if date_str.isdigit():
+    if is_str_digit(date_str):
         return date_str
     return dateutil.parser.parse(date_str)
 
