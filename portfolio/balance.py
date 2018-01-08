@@ -38,18 +38,23 @@ class Balance():
         self.total[currency] = 0.0
 
     def to_dict(self):
-        dct = { c: self.get(c) for c in self.currencies }
-        dct[FREE] = self.free
-        dct[USED] = self.used
-        dct[TOTAL] = self.total
+        dct = {}
+        for c in self.currencies:
+            dct[c] = {
+                BalanceType.FREE.value : self.free[c],
+                BalanceType.USED.value : self.used[c],
+                BalanceType.TOTAL.value : self.total[c],
+            }
+        dct[BalanceType.FREE.value] = self.free
+        dct[BalanceType.USED.value] = self.used
+        dct[BalanceType.TOTAL.value] = self.total
         return dct
 
-
     @classmethod
-    def from_dict(self, dict):
-        self.free = balance[FREE]
-        self.used = balance[USED]
-        self.total = balance[TOTAL]
+    def from_dict(self, dct):
+        self.free = dct[FREE]
+        self.used = dct[USED]
+        self.total = dct[TOTAL]
 
 
 @unique
