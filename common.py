@@ -35,6 +35,7 @@ import constants as c
 # Data
 from data import ohlcv
 from data.feed import CSVDataFeed, ExchangeDataFeed
+from data.store import CSVStore
 
 # Utils
 import utils.dates
@@ -57,6 +58,8 @@ from exchanges.exchange import PaperExchange
 from portfolio.asset import Asset
 from portfolio.position import Position
 from portfolio.balance import Balance
+from portfolio.portfolio import Portfolio
+from portfolio.performance import PerformanceTracker
 
 # Clients
 import ccxt

@@ -361,7 +361,6 @@ class PaperExchange(Exchange):
         #       or the orderbook for market Price
         # if we use orderbook, consider using the calculate_market_price method
         price = self.fetch_ticker(asset)['bid']
-        print(price)
         return self._create_order(asset, quantity, price, OrderType.MARKET_SELL)
 
     def cancel_order(self, order_id):
@@ -413,7 +412,6 @@ class PaperExchange(Exchange):
             return None
         # TODO: update Order class to have a update_filled_quantity method
         # TODO: update Order class to have a trades (partially filled orders)
-        print("W", self.fetch_balance())
         order = Order(self.id, asset, price, quantity,
                 order_type, self._make_order_id())
         order.set_status(OrderStatus.CREATED)

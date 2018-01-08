@@ -4,79 +4,8 @@ import datetime
 
 from .balance import Balance
 from .balance import get_total_value
+from .performance import PerformanceTracker
 from utils.dates import Timeframe
-
-
-class PerformanceTracker():
-    def __init__(self, starting_cash, timeframe, store=None):
-        self.starting_cash = starting_cash
-        self.timeframe = timeframe
-        self.store = store
-        self.periods = []
-        self.pnl = 0.0
-        self.returns = 0.0
-
-    def add_period(self, start, cash, positions):
-        if len(self.periods) == 0:
-            start_cash = self.starting_cash
-            start_pos_val = 0.0
-        else:
-            end_cash = self.periods[-1]['ending_cash']
-            start_pos_val = self.periods[-1]['ending_value']
-        positions_value = self.get_positions_value(positions)
-        end_val = positions_value + end_cash
-        start_val = start_pos_val + start_cash
-        pnl = self.calc_pnl(start_val, end_val)
-        returns = self.calc_returns(start_val, end_val)
-        self.periods.append({
-            'start_time': start,
-            'end_time': start + timeframe.value['delta'],
-            'starting_cash': start_cash,
-            'ending_cash': end_cash,
-            'starting_value': start_val
-            'ending_value': end_val
-            'positions': positions,
-            'pnl': pnl,
-            'returns': returns
-        })
-        self.update_performance()
-
-    def update_performance(self):
-        if len(self.periods) == 1:
-            self.pnl = self.periods[0]['pnl']
-            self.returns = self.periods[0]['returns']
-        else:
-            end_period = self.periods[-1]
-            self.pnl = self.calc_pnl(
-                self.starting_cash, end_period['ending_value'])
-            self.returns = self.calc_returns(
-                self.starting_cash, end_period['ending_value'])
-        self.save()
-
-    def calc_pnl(self, start_val, end_val):
-        return end_val - start_val
-
-    def calc_returns(self, start_val, end_val):
-        if start_val == 0:
-            return 0.0
-        pnl = self.calc_pnl(start_val, end_val)
-        return pnl / start_val
-
-    def get_positions_value(self, positions):
-        """
-        TODO: Update to handle assets where the quote cash_currency
-        is not the cash currency. E.g. Cash is USD but asset is ETH/BTC.
-
-        Right now it assumes all positions are quoted in cash.
-        """
-        total = 0.0
-        for pos in self.positions:
-            total += pos.market_value
-        return total
-
-    def save(self):
-        if store:
-            store.save(self.periods)
 
 
 class Portfolio():
