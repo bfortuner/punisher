@@ -52,9 +52,9 @@ class Balance():
 
     @classmethod
     def from_dict(self, dct):
-        self.free = dct[FREE]
-        self.used = dct[USED]
-        self.total = dct[TOTAL]
+        self.free = dct[BalanceType.FREE.value]
+        self.used = dct[BalanceType.USED.value]
+        self.total = dct[BalanceType.TOTAL.value]
 
 
 @unique
@@ -71,7 +71,7 @@ def get_total_value(balance, cash_currency, exchange_rates):
     cash_value = 0.0
     for currency in balance.currencies:
         symbol = get_symbol(currency, cash_currency)
-        quantity = balance.get(currency)[TOTAL]
+        quantity = balance.get(currency)[BalanceType.TOTAL]
         rate = exchange_rates[symbol]
         cash_value += quantity * exchange_rate
     return cash_value
