@@ -77,7 +77,6 @@ class Exchange(metaclass=abc.ABCMeta):
     def __init__(self, id_, config):
         self.id = id_
         self.config = config
-        self.exchange_balance = DEFAULT_BALANCE
 
     @abc.abstractmethod
     def get_markets(self):
@@ -248,7 +247,7 @@ class CCXTExchange(Exchange):
         return self.client.fetch_tickers()
 
     def fetch_balance(self):
-        """Returns json in the format of sample-data/account_balance"""
+        """Returns dict in format of sample-data/account_balance"""
         return self.client.fetch_balance()
 
     def create_limit_buy_order(self, asset, quantity, price, params=None):
@@ -306,11 +305,17 @@ class CCXTExchange(Exchange):
 
 
 class PaperExchange(Exchange):
-    def __init__(self, id_, config, data_provider):
+    def __init__(self, id_, config, data_provider, balance_dict=None):
         super().__init__(id_, config)
         self.data_provider = data_provider
         self.orders = []
         self.commissions = []
+        self.balance = self._init_balance(balance_dict)
+
+    def _init_balance(self, balance_dict):
+        if balance_dict is None:
+            return Balance()
+        return Balance.from_dict(balance_dict)
 
     def get_markets(self):
         return self.data_provider.get_markets()
@@ -340,8 +345,8 @@ class PaperExchange(Exchange):
     # Paper trading methods
 
     def fetch_balance(self):
-        """Returns json in the format of sample-data/account_balance"""
-        return self.exchange_balance
+        """Returns dict in the format of sample-data/account_balance"""
+        return self.balance.to_dict()
 
     def create_limit_buy_order(self, asset, quantity, price):
         return self._create_order(asset, quantity, price, OrderType.LIMIT_BUY)
