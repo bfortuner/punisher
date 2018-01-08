@@ -27,7 +27,7 @@ def add_asset_to_balance(symbol, available_quantity, used_quantity, balance):
     return balance
 
 def update_balance(symbol, available_quantity, used_quantity, balance):
-    balance[symbol].get(BALANCE_TYPE.AVAILABLE) += available_quantity
-    balance[symbol].get(BALANCE_TYPE.USED) += used_quantity
-    balance[symbol].get(BALANCE_TYPE.TOTAL) += available_quantity + used_quantity
+    balance[symbol][BALANCE_TYPE.AVAILABLE] += available_quantity
+    balance[symbol][BALANCE_TYPE.USED] += used_quantity
+    balance[symbol][BALANCE_TYPE.TOTAL] += available_quantity + used_quantity
     return balance

@@ -31,7 +31,10 @@ EXCHANGE_CONFIGS = {
         'apiKey': cfg.BINANCE_API_KEY,
         'secret': cfg.BINANCE_API_SECRET_KEY,
     },
-    c.PAPER: {}
+    c.PAPER: {
+        'data_provider_name': c.BACKTEST_DATA_PROVIDER_NAME,
+        'data_provider_config': None
+    }
 }
 
 
@@ -44,15 +47,28 @@ def load_exchange(id_, config=None):
         raise NotImplemented
 
     if config is None:
-        config = EXCHANGE_CONFIGS[id_]
+        config = EXCHANGE_CONFIGS.get(id_)
 
     # TODO: add historical paper trading data provider
-    if name == c.PAPER:
-        data_provider = CCXTExchange(
-            config.DATA_PROVIDER_NAME, config.DATA_PROVIDER_CONFIG)
-        return PaperExchange("paper", config, data_provider)
+    if id_ == c.PAPER:
+        data_provider_name = config.get("data_provider_name")
 
-    return CCXTExchange(name, config)
+        # If data provider is a CCXT Exchange
+        if data_provider_name in EXCHANGE_CONFIGS.keys() and (
+            data_provider_name != c.PAPER):
+
+            data_provider_config = EXCHANGE_CONFIGS.get(data_provider_name)
+            data_provider = CCXTExchange(
+                data_provider_name, data_provider_config)
+
+        else: # Data Provider is BACKTEST_DATA_PROVIDER
+            # TODO: implement backtest data provider
+            data_provider_config = config.get("data_provider_config")
+            data_provider = None
+
+        return PaperExchange(id_, config, data_provider)
+
+    return CCXTExchange(id_, config)
 
 
 class Exchange(metaclass=abc.ABCMeta):
@@ -164,10 +180,10 @@ class Exchange(metaclass=abc.ABCMeta):
         # less/more than the quantity in your available balance
         if order_type in buy_order_types():
             return price * quantity <= self.exchange_balance.get(
-                asset.quote).get(BalanceType.AVAILABLE):
+                asset.quote).get(BalanceType.AVAILABLE)
         elif order_type in sell_order_types():
             return quantity >= self.exchange_balance.get(
-                asset.base).get(BalanceType.AVAILABLE):
+                asset.base).get(BalanceType.AVAILABLE)
         else:
             print("Order type {} not supported".format(order_type))
             return False
@@ -453,37 +469,3 @@ class PaperExchange(Exchange):
 
     def _create_exchange_order_id(self):
         return uuid.uuid4().hex
-
-
-
-
-
-
-# hitbtc = ccxt.hitbtc({'verbose': True})
-# bitmex = ccxt.bitmex()
-# huobi  = ccxt.huobi()
-# exmo   = ccxt.exmo({
-#     'apiKey': 'YOUR_PUBLIC_API_KEY',
-#     'secret': 'YOUR_SECRET_PRIVATE_KEY',
-# })
-
-# hitbtc_markets = hitbtc.load_markets()
-
-# print(hitbtc.id, hitbtc_markets)
-# print(bitmex.id, bitmex.load_markets())
-# print(huobi.id, huobi.load_markets())
-
-# print(hitbtc.fetch_order_book(hitbtc.symbols[0]))
-# print(bitmex.fetch_ticker('BTC/USD'))
-# print(huobi.fetch_trades('LTC/CNY'))
-
-# print(exmo.fetch_balance())
-
-# # sell one ฿ for market price and receive $ right now
-# print(exmo.id, exmo.create_market_sell_order('BTC/USD', 1))
-
-# # limit buy BTC/EUR, you pay €2500 and receive ฿1  when the order is closed
-# print(exmo.id, exmo.create_limit_buy_order('BTC/EUR', 1, 2500.00))
-
-# # pass/redefine custom exchange-specific order params: type, quantity, price, flags, etc...
-# kraken.create_market_buy_order('BTC/USD', 1, {'trading_agreement': 'agree'})
