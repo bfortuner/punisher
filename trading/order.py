@@ -83,7 +83,7 @@ class Order():
             name: getattr(self, name)
             for name in self.__slots__
         }
-        d['asset'] = self.asset.to_dict()
+        d['asset'] = self.asset.symbol
         d['status'] = self.status.name
         d['order_type'] = self.order_type.name
         d['created_time'] = date_to_str(self.created_time)

@@ -16,44 +16,6 @@ EXCHANGE_CLIENTS = {
     c.GDAX: ccxt.gdax,
 }
 
-EXCHANGE_CONFIGS = {
-    c.POLONIEX: {
-        'apiKey': cfg.POLONIEX_API_KEY,
-        'secret': cfg.POLONIEX_API_SECRET_KEY,
-    },
-    c.GDAX: {
-        'apiKey': cfg.GDAX_API_KEY,
-        'secret': cfg.GDAX_API_SECRET_KEY,
-        'password': cfg.GDAX_PASSPHRASE,
-        'verbose':False,
-    },
-    c.BINANCE: {
-        'apiKey': cfg.BINANCE_API_KEY,
-        'secret': cfg.BINANCE_API_SECRET_KEY,
-    },
-    c.PAPER: {
-        'data_provider': EXCHANGE_CLIENTS[c.BINANCE],
-        'balance': Balance()
-    }
-}
-
-
-def load_exchange(id_, config=None):
-    """
-    exchange_id: ['poloniex', 'simulate', 'gdax']
-    c.EX
-    """
-    if id_ not in EXCHANGE_CONFIGS.keys():
-        raise NotImplemented
-
-    if config is None:
-        config = EXCHANGE_CONFIGS.get(id_)
-
-    if id_ == c.PAPER:
-        return PaperExchange(id_, config)
-
-    return CCXTExchange(id_, config)
-
 
 class Exchange(metaclass=abc.ABCMeta):
 
@@ -301,7 +263,7 @@ class PaperExchange(Exchange):
     def fetch_my_trades(self, asset, since, limit, params=None):
         """Returns list of most recent trades for a particular symbol"""
         return self.data_provider.fetch_my_trades(
-            asset.symbol, since, limit, params)
+            asset, since, limit, params)
 
     def fetch_ticker(self, asset):
         return self.data_provider.fetch_ticker(asset)
@@ -437,3 +399,41 @@ class PaperExchange(Exchange):
 
     def _make_order_id(self):
         return uuid.uuid4().hex
+
+
+EXCHANGE_CONFIGS = {
+    c.POLONIEX: {
+        'apiKey': cfg.POLONIEX_API_KEY,
+        'secret': cfg.POLONIEX_API_SECRET_KEY,
+    },
+    c.GDAX: {
+        'apiKey': cfg.GDAX_API_KEY,
+        'secret': cfg.GDAX_API_SECRET_KEY,
+        'password': cfg.GDAX_PASSPHRASE,
+        'verbose':False,
+    },
+    c.BINANCE: {
+        'apiKey': cfg.BINANCE_API_KEY,
+        'secret': cfg.BINANCE_API_SECRET_KEY,
+    },
+    c.PAPER: {
+        'data_provider': CCXTExchange(c.BINANCE, {}),
+        'balance': Balance()
+    }
+}
+
+def load_exchange(id_, config=None):
+    """
+    exchange_id: ['poloniex', 'simulate', 'gdax']
+    c.EX
+    """
+    if id_ not in EXCHANGE_CONFIGS.keys():
+        raise NotImplemented
+
+    if config is None:
+        config = EXCHANGE_CONFIGS.get(id_)
+
+    if id_ == c.PAPER:
+        return PaperExchange(id_, config)
+
+    return CCXTExchange(id_, config)
