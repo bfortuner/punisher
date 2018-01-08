@@ -5,9 +5,6 @@ import config as cfg
 
 from .asset import get_symbol
 
-FREE = "free"
-USED = "used"
-TOTAL = "total"
 
 class Balance():
     def __init__(self, cash_currency=c.BTC, starting_cash=1.0):
@@ -39,11 +36,11 @@ class Balance():
 
     def to_dict(self):
         dct = {}
-        for c in self.currencies:
-            dct[c] = {
-                BalanceType.FREE.value : self.free[c],
-                BalanceType.USED.value : self.used[c],
-                BalanceType.TOTAL.value : self.total[c],
+        for curr in self.currencies:
+            dct[curr] = {
+                BalanceType.FREE.value : self.free[curr],
+                BalanceType.USED.value : self.used[curr],
+                BalanceType.TOTAL.value : self.total[curr],
             }
         dct[BalanceType.FREE.value] = self.free
         dct[BalanceType.USED.value] = self.used
