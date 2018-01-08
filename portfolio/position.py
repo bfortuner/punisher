@@ -64,7 +64,7 @@ class Position():
 
     def to_dict(self):
         return {
-            'asset': self.asset.to_dict(),
+            'asset': self.asset.symbol,
             'quantity': self.quantity,
             'cost_price': self.cost_price,
             'latest_price': self.latest_price
