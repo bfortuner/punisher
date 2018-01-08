@@ -110,3 +110,9 @@ class Order():
 
     def __repr__(self):
         return self.to_json()
+
+def buy_order_types():
+    return [OrderType.LIMIT_BUY, OrderType.MARKET_BUY, OrderType.STOP_LIMIT_BUY]
+
+def sell_order_types():
+    return [OrderType.LIMIT_SELL, OrderType.MARKET_SELL, OrderType.STOP_LIMIT_SELL]
