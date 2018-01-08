@@ -2,10 +2,12 @@
 
 import datetime
 import copy
+import pandas as pd
 
 from .balance import Balance
 from .balance import get_total_value
 from utils.dates import Timeframe
+from utils.dates import date_to_str
 
 
 class PerformanceTracker():
@@ -36,7 +38,7 @@ class PerformanceTracker():
             'start_value': start_val,
             'end_value': end_val,
             'pnl': pnl,
-            'positions': self.make_positions_dict(positions),
+            #'positions': self.make_positions_dict(positions),
             'returns': returns,
         })
         self.update_performance()
@@ -70,20 +72,27 @@ class PerformanceTracker():
 
     def save(self):
         if self.store is not None:
-            store.save(self.periods)
+            dct = self.to_dict()
+            store.save(periods)
 
     def make_positions_dict(self, positions):
-        print(positions)
         return [pos.to_dict() for pos in positions]
 
     def to_dict(self):
         dct = copy.deepcopy(vars(self))
+        dct['timeframe'] = self.timeframe.value['id']
         dct.pop('store')
+        for p in dct['periods']:
+            p['start_time'] = date_to_str(p['start_time'])
+            p['end_time'] = date_to_str(p['end_time'])
+            #p.pop('positions')
         return dct
 
-    @classmethod
-    def from_dict(self, d):
-        pass
+    def to_dataframe(self):
+        dct = self.to_dict()
+        df = pd.DataFrame(dct['periods'])
+        df.set_index('start_time', inplace=True)
+        return df
 
     def to_json(self):
         return json.dumps(
