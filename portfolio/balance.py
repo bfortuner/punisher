@@ -44,7 +44,6 @@ class Balance():
         dct[TOTAL] = self.total
         return dct
 
-
     @classmethod
     def from_dict(self, dict):
         self.free = balance[FREE]

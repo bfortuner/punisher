@@ -1,0 +1,100 @@
+
+
+import datetime
+import copy
+
+from .balance import Balance
+from .balance import get_total_value
+from utils.dates import Timeframe
+
+
+class PerformanceTracker():
+    def __init__(self, starting_cash, timeframe, store=None):
+        self.starting_cash = starting_cash
+        self.timeframe = timeframe
+        self.store = store
+        self.periods = []
+        self.pnl = 0.0
+        self.returns = 0.0
+
+    def add_period(self, start, cash, positions):
+        positions_value = self.get_positions_value(positions)
+        if len(self.periods) == 0:
+            start_cash = self.starting_cash
+            start_val = self.starting_cash
+        else:
+            start_cash = self.periods[-1]['end_cash']
+            start_val = self.periods[-1]['end_value']
+        end_val = positions_value + cash
+        pnl = self.calc_pnl(self.starting_cash, end_val)
+        returns = self.calc_returns(self.starting_cash, end_val)
+        self.periods.append({
+            'start_time': start,
+            'end_time': start + self.timeframe.value['delta'],
+            'start_cash': start_cash,
+            'end_cash': cash,
+            'start_value': start_val,
+            'end_value': end_val,
+            'pnl': pnl,
+            'positions': self.make_positions_dict(positions),
+            'returns': returns,
+        })
+        self.update_performance()
+
+    def update_performance(self):
+        if len(self.periods) > 0:
+            self.pnl = self.periods[-1]['pnl']
+            self.returns = self.periods[-1]['returns']
+        self.save()
+
+    def calc_pnl(self, start_val, end_val):
+        return end_val - start_val
+
+    def calc_returns(self, start_val, end_val):
+        if start_val == 0.0:
+            return 0.0
+        pnl = self.calc_pnl(start_val, end_val)
+        return pnl / start_val
+
+    def get_positions_value(self, positions):
+        """
+        TODO: Update to handle assets where the quote cash_currency
+        is not the cash currency. E.g. Cash is USD but asset is ETH/BTC.
+
+        Right now it assumes all positions are quoted in cash.
+        """
+        total = 0.0
+        for pos in positions:
+            total += pos.market_value
+        return total
+
+    def save(self):
+        if self.store is not None:
+            store.save(self.periods)
+
+    def make_positions_dict(self, positions):
+        print(positions)
+        return [pos.to_dict() for pos in positions]
+
+    def to_dict(self):
+        dct = copy.deepcopy(vars(self))
+        dct.pop('store')
+        return dct
+
+    @classmethod
+    def from_dict(self, d):
+        pass
+
+    def to_json(self):
+        return json.dumps(
+            self.to_dict(),
+            cls=EnumEncoder,
+            indent=4)
+
+    @classmethod
+    def from_json(self, json_str):
+        dct = json.loads(json_str)
+        return self.from_dict(dct)
+
+    def __repr__(self):
+        return self.to_json()
