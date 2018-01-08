@@ -32,11 +32,8 @@ EXCHANGE_CONFIGS = {
         'secret': cfg.BINANCE_API_SECRET_KEY,
     },
     c.PAPER: {
-        'data_provider_name': c.BINANCE, #c.BACKTEST_DATA_PROVIDER_NAME,
-        'data_provider_config': {
-            'apiKey': cfg.BINANCE_API_KEY,
-            'secret': cfg.BINANCE_API_SECRET_KEY,
-        }
+        'data_provider': EXCHANGE_CLIENTS['c.BINANCE'],
+        'balance': Balance()
     }
 }
 
@@ -162,11 +159,10 @@ class Exchange(metaclass=abc.ABCMeta):
     def is_balance_sufficient(self, asset, quantity, price, order_type):
         self._ensure_asset_in_balance(asset)
         if order_type in BUY_ORDER_TYPES:
-            return price * quantity <= self.balance.get(
+            return price * quantity <= self.fetch_balance().get(
                 asset.quote)[BalanceType.FREE.value]
         elif order_type in SELL_ORDER_TYPES:
-
-            return quantity >= self.balance.get(
+            return quantity >= self.fetch_balance().get(
                 asset.base)[BalanceType.FREE.value]
         raise Exception("Order type {} not supported".format(order_type))
 
@@ -231,7 +227,7 @@ class CCXTExchange(Exchange):
 
     def fetch_balance(self):
         """Returns dict in format of sample-data/account_balance"""
-        return self.client.fetch_balance()
+        return Balance.from_dict(self.client.fetch_balance())
 
     def create_limit_buy_order(self, asset, quantity, price, params=None):
         params = self.get_default_params_if_none(params)
@@ -296,17 +292,12 @@ class CCXTExchange(Exchange):
 
 
 class PaperExchange(Exchange):
-    def __init__(self, id_, config, data_provider, balance_dict=None):
+    def __init__(self, id_, config):
         super().__init__(id_, config)
-        self.data_provider = data_provider
+        self.balance = config['balance']
+        self.data_provider = config['data_provider']
         self.orders = []
         self.commissions = []
-        self.balance = self._init_balance(balance_dict)
-
-    def _init_balance(self, balance_dict):
-        if balance_dict is None:
-            return Balance()
-        return Balance.from_dict(balance_dict)
 
     # Exchange Data Provider
 
@@ -339,7 +330,7 @@ class PaperExchange(Exchange):
 
     def fetch_balance(self):
         """Returns dict in the format of sample-data/account_balance"""
-        return self.balance.to_dict()
+        return self.balance
 
     def create_limit_buy_order(self, asset, quantity, price):
         return self._create_order(asset, quantity, price, OrderType.LIMIT_BUY)
