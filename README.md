@@ -2,6 +2,8 @@
 
 If the Punisher traded crypto..
 
+![alt text](docs/punisher.png "Logo Title Text 1")
+
 ## Requirements
 
 * Unix
@@ -17,7 +19,7 @@ conda install ipywidgets
 jupyter nbextension enable --py --sys-prefix widgetsnbextension
 conda install -c tim_shawver/label/dev qgrid==1.0.0b10
 conda install graphviz
-conda install -c conda-forge python.app 
+conda install -c conda-forge python.app
 
 pip install -r requirements.txt
 ```
@@ -46,7 +48,7 @@ gdax_client = gdax.PublicClient()
 ```
 
 
-## Data 
+## Data
 
 * https://www.dropbox.com/home/punisher
 * https://www.quandl.com/collections/markets/bitcoin-data
@@ -76,7 +78,7 @@ gdax_client = gdax.PublicClient()
 
 ### Blogs/News
 
-* TODO 
+* TODO
 
 ### Tools / Charts
 
