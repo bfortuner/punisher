@@ -23,7 +23,7 @@ class Asset():
 
     @property
     def symbol(self):
-        return self.base + '/' + self.quote
+        return get_symbol(self.base, self.quote)
 
     def reverse_symbol(self):
         return self.quote + '/' + self.base
@@ -35,3 +35,7 @@ class Asset():
             'base': self.base,
             'quote': self.quote,
         }
+
+
+def get_symbol(base, quote):
+    return base + '/' + quote

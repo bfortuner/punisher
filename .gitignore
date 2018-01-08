@@ -1,6 +1,6 @@
 # Custom
 *~
-data/
+.data
 .env
 .DS*
 ._*

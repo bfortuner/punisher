@@ -10,7 +10,7 @@ load_dotenv(dotenv_path, verbose=True)
 # App
 APP_NAME = os.environ.get('APP_NAME', 'PUNISHER')
 APP_SECRET_KEY = os.environ.get('APP_SECRET_KEY', 'secret_key')
-DATA_DIR = os.environ.get('DATA_DIR', 'data/')
+DATA_DIR = os.environ.get('DATA_DIR', '.data/')
 TESTING = os.environ.get('TESTING', False)
 DEBUG = os.environ.get('DEBUG', True)
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
