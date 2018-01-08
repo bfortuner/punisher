@@ -32,7 +32,7 @@ EXCHANGE_CONFIGS = {
         'secret': cfg.BINANCE_API_SECRET_KEY,
     },
     c.PAPER: {
-        'data_provider': EXCHANGE_CLIENTS['c.BINANCE'],
+        'data_provider': EXCHANGE_CLIENTS[c.BINANCE],
         'balance': Balance()
     }
 }
@@ -49,24 +49,8 @@ def load_exchange(id_, config=None):
     if config is None:
         config = EXCHANGE_CONFIGS.get(id_)
 
-    # TODO: add historical paper trading data provider
     if id_ == c.PAPER:
-        data_provider_name = config.get("data_provider_name")
-
-        # If data provider is a CCXT Exchange
-        if data_provider_name in EXCHANGE_CONFIGS.keys() and (
-            data_provider_name != c.PAPER):
-
-            data_provider_config = EXCHANGE_CONFIGS.get(data_provider_name)
-            data_provider = CCXTExchange(
-                data_provider_name, data_provider_config)
-
-        else: # Data Provider is BACKTEST_DATA_PROVIDER
-            # TODO: implement backtest data provider
-            data_provider_config = config.get("data_provider_config")
-            data_provider = None
-
-        return PaperExchange(id_, config, data_provider)
+        return PaperExchange(id_, config)
 
     return CCXTExchange(id_, config)
 

@@ -38,7 +38,7 @@ class PerformanceTracker():
             'start_value': start_val,
             'end_value': end_val,
             'pnl': pnl,
-            'positions': self.make_positions_dict(positions),
+            #'positions': self.make_positions_dict(positions),
             'returns': returns,
         })
         self.update_performance()
@@ -73,7 +73,6 @@ class PerformanceTracker():
     def save(self):
         if self.store is not None:
             dct = self.to_dict()
-
             store.save(periods)
 
     def make_positions_dict(self, positions):
@@ -81,15 +80,16 @@ class PerformanceTracker():
 
     def to_dict(self):
         dct = copy.deepcopy(vars(self))
+        dct['timeframe'] = self.timeframe.value['id']
         dct.pop('store')
+        for p in dct['periods']:
+            p['start_time'] = date_to_str(p['start_time'])
+            p['end_time'] = date_to_str(p['end_time'])
+            #p.pop('positions')
         return dct
 
     def to_dataframe(self):
         dct = self.to_dict()
-        for p in dct['periods']:
-            p['start_time'] = date_to_str(p['start_time'])
-            p['end_time'] = date_to_str(p['end_time'])
-            p.pop('positions')
         df = pd.DataFrame(dct['periods'])
         df.set_index('start_time', inplace=True)
         return df
