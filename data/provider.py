@@ -78,7 +78,7 @@ class PaperExchangeDataProvider(DataProvider):
         order_book = {
             'bids': [],
             'asks': [],
-            'timestamp': self.data_feed.next()['time_utc'],
+            'timestamp': None,
             'datetime': None
         }
         return order_book
