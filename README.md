@@ -10,7 +10,7 @@ If the Punisher traded crypto..
 * Anaconda3
 * PyTorch
 * GPU (for training)
-* GDAX / Twitter credentials (request .env file)
+* CCXT / Twitter credentials (place in .env file)
 * Other libraries
 * QGrid - https://github.com/quantopian/qgrid
 
@@ -18,9 +18,7 @@ If the Punisher traded crypto..
 conda install ipywidgets
 jupyter nbextension enable --py --sys-prefix widgetsnbextension
 conda install -c tim_shawver/label/dev qgrid==1.0.0b10
-conda install graphviz
 conda install -c conda-forge python.app
-
 pip install -r requirements.txt
 ```
 
