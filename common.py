@@ -37,6 +37,7 @@ import constants as c
 from data import ohlcv
 from data.feed import CSVDataFeed, ExchangeDataFeed
 from data.store import FileStore
+from data.provider import PaperExchangeDataProvider
 
 # Utils
 import utils.dates

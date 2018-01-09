@@ -8,6 +8,7 @@ from portfolio.asset import Asset
 from portfolio.balance import Balance, BalanceType
 from trading.order import Order, OrderType, OrderStatus
 from trading.order import BUY_ORDER_TYPES, SELL_ORDER_TYPES
+from data.provider import DataProvider, PaperExchangeDataProvider
 
 
 EXCHANGE_CLIENTS = {
@@ -22,30 +23,6 @@ class Exchange(metaclass=abc.ABCMeta):
     def __init__(self, id_, config):
         self.id = id_
         self.config = config
-
-    @abc.abstractmethod
-    def get_markets(self):
-        pass
-
-    @abc.abstractmethod
-    def fetch_order_book(self, asset):
-        pass
-
-    @abc.abstractmethod
-    def fetch_public_trades(self, asset):
-        pass
-
-    @abc.abstractmethod
-    def fetch_my_trades(self, asset):
-        pass
-
-    @abc.abstractmethod
-    def fetch_ticker(self, asset):
-        pass
-
-    @abc.abstractmethod
-    def fetch_balance(self):
-        pass
 
     @abc.abstractmethod
     def create_limit_buy_order(self, asset, quantity, price):
@@ -68,26 +45,6 @@ class Exchange(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def fetch_ohlcv(self, asset):
-        pass
-
-    @abc.abstractmethod
-    def fetch_order(self, order_id, asset=None, params=None):
-        pass
-
-    @abc.abstractmethod
-    def fetch_orders(self, asset, since=None, limit=None, params=None):
-        pass
-
-    @abc.abstractmethod
-    def fetch_open_orders(self, asset, since=None, limit=None, params=None):
-        pass
-
-    @abc.abstractmethod
-    def fetch_closed_orders(self, asset, since=None, limit=None, params=None):
-        pass
-
-    @abc.abstractmethod
     def deposit(self, asset):
         pass
 
@@ -102,19 +59,17 @@ class Exchange(metaclass=abc.ABCMeta):
         spread = (ask - bid) if (bid and ask) else None
         return { 'bid': bid, 'ask': ask, 'spread': spread }
 
-    def is_balance_sufficient(self, asset, quantity, price, order_type):
-        self._ensure_asset_in_balance(asset)
-        if order_type in BUY_ORDER_TYPES:
-            return price * quantity <= self.fetch_balance().get(
-                asset.quote)[BalanceType.FREE]
-        elif order_type in SELL_ORDER_TYPES:
-            return quantity >= self.fetch_balance().get(
-                asset.base)[BalanceType.FREE]
-        raise Exception("Order type {} not supported".format(order_type))
-
     @abc.abstractmethod
     def calculate_fee(self):
         pass
+
+    # Wrapper around balance method to give people the ability to
+    # just ask if_balance_sufficient from the exchange without separately
+    # requesting the balance
+    def is_balance_sufficient(self, asset, quantity, price, order_type):
+        return self.fetch_balance().is_balance_sufficient(
+            asset, quantity, price, order_type)
+
 
     def get_default_params_if_none(self, params):
         return {} if params is None else params
@@ -123,10 +78,13 @@ class Exchange(metaclass=abc.ABCMeta):
         return 'CCXTExchange({:s})'.format(self.id)
 
 
-class CCXTExchange(Exchange):
+class CCXTExchange(Exchange, DataProvider):
 
     def __init__(self, id_, config):
-        super().__init__(id_, config)
+        # Removing super here in favor of init because
+        # http://bit.ly/2qJ9RAP
+        Exchange.__init__(self, id_, config)
+        DataProvider.__init__(self, id_, config)
         self.client = EXCHANGE_CLIENTS[id_](config)
         self.client.fetch_markets()
 
@@ -258,15 +216,6 @@ class PaperExchange(Exchange):
     def fetch_order_book(self, asset):
         return self.data_provider.fetch_order_book(asset)
 
-    def fetch_public_trades(self, asset):
-        """Returns list of most recent trades for a particular symbol"""
-        return self.data_provider.fetch_public_trades(asset)
-
-    def fetch_my_trades(self, asset, since, limit, params=None):
-        """Returns list of most recent trades for a particular symbol"""
-        return self.data_provider.fetch_my_trades(
-            asset, since, limit, params)
-
     def fetch_ticker(self, asset):
         return self.data_provider.fetch_ticker(asset)
 
@@ -274,7 +223,15 @@ class PaperExchange(Exchange):
     def timeframes(self):
         return self.data_provider.timeframes
 
+    def fetch_public_trades(self, asset):
+        """Returns list of most recent trades for a particular symbol"""
+        return self.data_provider.fetch_public_trades(asset)
+
     # Paper trading methods
+
+    def fetch_my_trades(self, asset, since, limit, params=None):
+        """Returns list of most recent trades for a particular symbol"""
+        return NotImplemented
 
     def fetch_balance(self):
         """Returns dict in the format of sample-data/account_balance"""
@@ -346,7 +303,7 @@ class PaperExchange(Exchange):
         Returns Order Dictionary (for CCXT consistency)
         """
         assert quantity != 0 and price != 0
-        if not self.is_balance_sufficient(asset, quantity, price, order_type):
+        if not self.balance.is_balance_sufficient(asset, quantity, price, order_type):
             print("Balance is not sufficient to create order!")
             return None
         # TODO: update Order class to have a update_filled_quantity method
@@ -393,11 +350,6 @@ class PaperExchange(Exchange):
         order.filled_quantity = order.quantity
         return order
 
-    def _ensure_asset_in_balance(self, asset):
-        if asset.base not in self.balance.currencies:
-            self.balance.add_currency(asset.base)
-        if asset.quote not in self.balance.currencies:
-            self.balance.add_currency(asset.quote)
 
     def _make_order_id(self):
         return uuid.uuid4().hex
