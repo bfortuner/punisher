@@ -1,3 +1,4 @@
+import json
 from enum import Enum, unique
 
 import constants as c
@@ -58,6 +59,9 @@ class Balance():
         bal.total = dct[BalanceType.TOTAL.value]
         return bal
 
+    def __repr__(self):
+        dct = self.to_dict()
+        return json.dumps(dct, indent=4)
 
 @unique
 class BalanceType(Enum):

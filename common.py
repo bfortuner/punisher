@@ -58,7 +58,7 @@ from exchanges.exchange import PaperExchange
 # Portfolio
 from portfolio.asset import Asset
 from portfolio.position import Position
-from portfolio.balance import Balance
+from portfolio.balance import Balance, BalanceType
 from portfolio.portfolio import Portfolio
 from portfolio.performance import PerformanceTracker
 

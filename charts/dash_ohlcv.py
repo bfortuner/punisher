@@ -22,6 +22,10 @@ from exchanges.exchange import load_exchange
 from charts.dash_viz import generate_table
 from utils.dates import Timeframe
 
+# https://plot.ly/dash/live-updates
+# https://medium.com/@LeonFedden/deep-cryptocurrency-trading-1e64af6d280a
+# https://plot.ly/dash/urls
+
 REFRESH_SEC = 5
 
 class OHLCVProvider(object):
