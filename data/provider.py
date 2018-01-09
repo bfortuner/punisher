@@ -1,7 +1,11 @@
 import abc
+import numpy as np
 from enum import Enum
 
+from utils.dates import utc_to_epoch
+
 supported_timeframes = { '1m': 1, '5m': 5, '30m': 30 }
+
 
 class DataProvider(metaclass=abc.ABCMeta):
     def __init__(self, id_, config):
@@ -63,10 +67,10 @@ class PaperExchangeDataProvider(DataProvider):
         markets.append(market)
         return markets
 
-    def fetch_ohlcv(self, asset, timeframe):
+    def fetch_ohlcv(self, asset, timeframe=None):
         # TODO: only doing minute data for now until we figure out how to
         #       update the data_feed
-        all_rows = self.data_feed.history().head()
+        all_rows = self.data_feed.history().tail()
         return all_rows
 
     def fetch_order_book(self, asset):
@@ -85,8 +89,26 @@ class PaperExchangeDataProvider(DataProvider):
         return trades
 
     def fetch_ticker(self, asset):
-        ticker = {}
-        return ticker
+        latest = self.fetch_ohlcv(asset).iloc[-1]
+        return {
+            'symbol': asset.symbol,
+            'info': {},
+            'timestamp': utc_to_epoch(latest['time_utc']),
+            'datetime': latest['time_utc'],
+            'high': latest['open'],
+            'low': latest['low'],
+            'bid': latest['close'], # faking with close
+            'ask': latest['close'], # faking with close
+            'vwap': None, #volumn weighted price
+            'open': latest['open'],
+            'first': latest['open'],
+            'last': latest['close'],
+            'change': None, #(percentage change),
+            'average': np.mean([latest['open'], latest['close']]), #TODO: No idea what this means
+            'baseVolume': latest['volume'], #(volume of base currency),
+            #TODO: should be based on weighted average price
+            'quoteVolume': latest['volume'] * np.mean([latest['open'], latest['close']]),
+        }
 
     @property
     def timeframes(self):
