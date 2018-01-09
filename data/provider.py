@@ -66,27 +66,8 @@ class PaperExchangeDataProvider(DataProvider):
     def fetch_ohlcv(self, asset, timeframe):
         # TODO: only doing minute data for now until we figure out how to
         #       update the data_feed
-        assert timeframe in supported_timeframes.keys()
-        t_minus = supported_timeframes.get(timeframe)
-        if t_minus == 1:
-            rows = [self.data_feed.next()]
-        else:
-            # TODO: fix this
-            rows = self.data_feed.history(t_minus)
-            rows.append(self.data_feed.next())
-
-        res = []
-        ohlcv = []
-        # Building response starting with most recent ohlcv data
-        for row in rows[::-1]:
-            ohlcv.append(row['time_utc'])
-            ohlcv.append(row['open'])
-            ohlcv.append(row['high'])
-            ohlcv.append(row['low'])
-            ohlcv.append(row['close'])
-            ohlcv.append(row['volume'])
-            res.append(ohlcv)
-        return res
+        all_rows = self.data_feed.history().head()
+        return all_rows
 
     def fetch_order_book(self, asset):
         # TODO: actually get historical order book data
