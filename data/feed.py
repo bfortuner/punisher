@@ -94,7 +94,6 @@ DATA_FEEDS = {
     CSV_FEED: CSVDataFeed
 }
 
-
 def load_feed(name, fpath, exchange=None, assets=None,
               timeframe=None, start=None, end=None):
     assert name in DATA_FEEDS.keys()

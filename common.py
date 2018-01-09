@@ -66,5 +66,8 @@ from portfolio.balance import Balance, BalanceType
 from portfolio.portfolio import Portfolio
 from portfolio.performance import PerformanceTracker
 
+# Strategies
+from strategies.strategy import SimpleStrategy
+
 # Clients
 import ccxt

@@ -119,9 +119,6 @@ class Exchange(metaclass=abc.ABCMeta):
     def get_default_params_if_none(self, params):
         return {} if params is None else params
 
-    def __repr__(self):
-        return 'CCXTExchange({:s})'.format(self.id)
-
 
 class CCXTExchange(Exchange):
 
@@ -237,6 +234,9 @@ class CCXTExchange(Exchange):
         params = self.get_default_params_if_none(params)
         return self.client.calculate_fee(asset.symbol, type, side,
             quantity, price, taker_or_maker, params)
+
+    def __repr__(self):
+        return 'CCXTExchange({:s})'.format(self.id)
 
 
 class PaperExchange(Exchange):
@@ -401,6 +401,9 @@ class PaperExchange(Exchange):
 
     def _make_order_id(self):
         return uuid.uuid4().hex
+
+    def __repr__(self):
+        return 'PaperExchange({:s})'.format(self.id)
 
 
 EXCHANGE_CONFIGS = {
