@@ -27,8 +27,9 @@ class DataProvider(metaclass=abc.ABCMeta):
 
 
 class PaperExchangeDataProvider(DataProvider):
-    def __init__(self, id_, config):
+    def __init__(self, data_feed, id_="backtest_data_provider", config=None):
         super().__init__(id_, config)
+        self.data_feed = data_feed.initialize()
 
     # Exchange Data Provider
 

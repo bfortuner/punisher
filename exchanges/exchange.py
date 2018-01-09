@@ -229,7 +229,8 @@ class PaperExchange(Exchange):
     def fetch_my_trades(self, asset, since, limit, params=None):
         """Returns list of most recent trades for a particular symbol"""
         # TODO: Implement
-        return NotImplemented
+        print("FETCH MY TRADES IS NOT IMPLEMENTED FOR BACKTESTING!")
+        return []
 
     def fetch_balance(self):
         """Returns dict in the format of sample-data/account_balance"""
