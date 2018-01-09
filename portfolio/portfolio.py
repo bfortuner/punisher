@@ -85,15 +85,3 @@ class Portfolio():
 
     def __repr__(self):
         return str(vars(self))
-
-
-
-# Later (when we need to handle non-cash quoted positions)
-def get_total_value(balance, cash_currency, exchange_rates):
-    cash_value = 0.0
-    for currency in balance.currencies:
-        symbol = get_symbol(currency, cash_currency)
-        quantity = balance.get(currency[TOTAL])
-        rate = exchange_rates[symbol]
-        cash_value += quantity * exchange_rate
-    return cash_value
