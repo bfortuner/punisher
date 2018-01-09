@@ -19,7 +19,7 @@ class Asset():
 
     @property
     def id(self):
-        return self.base + '_' + self.quote
+        return get_id(self.base, self.quote)
 
     @property
     def symbol(self):
@@ -36,6 +36,17 @@ class Asset():
             'quote': self.quote,
         }
 
+    @classmethod
+    def from_symbol(self, symbol):
+        base,quote = symbol.split('/')
+        return Asset(base, quote)
+
+
+
+# Helpers
+
+def get_id(base, quote):
+    return base + '_' + quote
 
 def get_symbol(base, quote):
     return base + '/' + quote

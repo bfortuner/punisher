@@ -1,6 +1,19 @@
 from datetime import datetime
-from trading.orders import Order
-from trading.orders import OrderType, OrderStatus
+
+import config as cfg
+import constants as c
+
+from data.store import FileStore
+from data.feed import CSVDataFeed
+from utils.dates import Timeframe
+
+from portfolio.portfolio import Portfolio
+from portfolio.asset import Asset
+from portfolio.balance import Balance, BalanceType
+from portfolio.performance import PerformanceTracker
+
+from trading.order import Order
+from trading.order import OrderType, OrderStatus
 
 import utils.files
 
@@ -15,107 +28,71 @@ import utils.files
 # https://www.backtrader.com/docu/strategy.html
 # https://www.backtrader.com/docu/cerebro.html
 
-
-class RecordConfig():
-    """
-    Not required (could replace w Dictionary), but a
-    good place to show what values we need in the dict
-    """
-    def __init__(self, dict_):
-        self.values = {
-            'root': dict_['root'], # path to csv files
-            'strategy': dict_['strategy'], # name of strategy
-            'assets': dict_['assets'], # optional
-            'exchanges': dict_['exchanges'],
-            'cash_asset': dict_['cash_asset'],
-            'cash_balance': dict_['cash_balance'],
-        }
-
+CONFIG_FNAME = 'config'
+ORDERS_FNAME = 'orders'
+OHLCV_FNAME = 'ohlcv'
+PORTFOLIO_FNAME = 'portfolio'
+PERFORMANCE_FNAME = 'performance'
+METRICS_FNAME = 'metrics'
+BALANCE_FNAME = 'balance'
 
 class Record():
-    def __init__(self, config):
-        # Keys - Directory, Strategy, Time, Symbol, FPath
-        self.cfg = config.values
-        self.orders = {} # dataframe?
-        self.balance = {}
-        self.data = [] # price, ohlcv, twitter, events (pulled from at each timestep)
-        self.metrics = [
-            # {'name': Metric.SMA50, 'values': [2.3, 1.23, 12.4 ...] },
-            # {'name': Metric.RSI, 'values': [2.3, 1.23, 12.4 ...] }
-        ]
-
-
-    ## BALANCE
-
-    def get_balance(self):
-        return self.balance
-
-    def set_balance(self, balance):
-        """
-        Is Balance an Object or Dictionary?
-        Do we include methods here to update
-        the items in the balance or do we let
-        external functions do that?
-        """
+    def __init__(self, config, portfolio, balance, store):
+        self.config = config
+        self.portfolio = portfolio
         self.balance = balance
+        self.store = store
+        self.orders = {}
+        self.metrics = {}
+        self.ohlcv_data = None
+        self.other_data = None
 
-
-    ## POSITIONS
-
-    def get_positions(self):
-        """
-        Recreate from Order History?
-        External function for sure
-        """
-        pass
-
-
-    ## ORDERS
-
-    def get_orders(self):
-        return self.orders
-
-    def set_orders(self, orders):
-        self.orders = orders
-
-    def get_pending_orders(self):
-        pending_orders = []
-        for _, order in self.orders.items():
-            if order.get_status() in [OrderStatus.NEW, OrderStatus.ATTEMPED]:
-                pending_orders.append(order)
-        return pending_orders
-
-    def get_order_by_id(self, order_id):
-        return self.orders['order_id']
-
-    def get_order_by_exchange_id(self, ex_order_id):
-        for _, order in self.orders.items():
-            if order.exchange_order_id == ex_order_id:
-                return order
-        return None
-
-
-    ## STATE
-    def save_record(self):
+    def save(self):
+        self.store.save_json(CONFIG_FNAME, self.config)
+        self.store.save_json(METRICS_FNAME, self.metrics)
+        self.store.save_json(BALANCE_FNAME, self.balance.to_dict())
+        self.save_portfolio()
         self.save_orders()
-        self.save_decisions()
-        self.save_data()
+        self.save_ohlcv()
+
+    def save_portfolio(self):
+        dct = self.portfolio.to_dict()
+        self.store.save_json(PORTFOLIO_FNAME, dct)
 
     def save_orders(self):
-        fpath = os.path.join(self.cfg['root'], c.ORDER_FNAME)
-        utils.files.save_dict_to_csv(fpath, self.orders)
+        dct = {}
+        for id_,order in self.orders.items():
+            dct[id_] = order.to_dict()
+        self.store.save_json(ORDERS_FNAME, dct)
 
-    def save_decisions(self):
-        fpath = os.path.join(self.cfg['root'], c.DECISIONS_FNAME)
-        utils.files.save_dict_to_csv(fpath, self.orders)
+    def save_ohlcv(self):
+        self.store.df_to_csv(self.ohlcv_data, OHLCV_FNAME)
 
-    def save_data(self):
-        fpath = os.path.join(self.cfg['root'], c.RECORD_DATA_FNAME)
-        utils.files.save_dict_to_csv(fpath, self.orders)
+    @classmethod
+    def load(self, root_dir):
+        store = FileStore(root_dir)
+        config = store.load_json(CONFIG_FNAME)
 
-    def save_config(self):
-        fpath = os.path.join(self.cfg['root'], c.CONFIG_FNAME)
-        utils.files.save_json(fpath, self.cfg)
+        balance = store.load_json(BALANCE_FNAME)
+        balance = Balance.from_dict(balance)
 
-    def load_record(self):
-        return None
+        portfolio = store.load_json(PORTFOLIO_FNAME)
+        portfolio = Portfolio.from_dict(portfolio)
+
+        orders = store.load_json(ORDERS_FNAME)
+        orders = {o['id']: Order.from_dict(o) for o in orders.values()}
+
+        ohlcv_data = store.csv_to_df(OHLCV_FNAME, index='time_epoch')
+        metrics = store.load_json(METRICS_FNAME)
+
+        record = Record(
+            config=config,
+            portfolio=portfolio,
+            balance=balance,
+            store=store
+        )
+        record.orders = orders
+        record.ohlcv_data = ohlcv_data
+        record.metrics = metrics
+
+        return record

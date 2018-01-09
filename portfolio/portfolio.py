@@ -1,13 +1,11 @@
-
-
+import json
 import datetime
+import copy
 
+from utils.encoders import EnumEncoder
 from utils.dates import Timeframe
-
 from trading.order import SELL_ORDER_TYPES
 
-from .balance import Balance
-from .balance import get_total_value
 from .performance import PerformanceTracker
 from .position import Position
 
@@ -80,8 +78,31 @@ class Portfolio():
             'pnl': self.perf.pnl,
             'returns': self.perf.returns,
             'total_value': self.total_value,
+            'performance': self.perf.to_dict(),
             'positions': [pos.to_dict() for pos in self.positions]
         }
 
+    @classmethod
+    def from_dict(self, dct):
+        dct = copy.deepcopy(dct)
+        port = Portfolio(
+            starting_cash=dct['starting_cash'],
+            perf_tracker=PerformanceTracker.from_dict(dct['performance'])
+        )
+        positions = []
+        for idx,pos in enumerate(dct['positions']):
+            positions.append(Position.from_dict(pos))
+        port.positions = positions
+        port.cash = dct['cash']
+        port.pnl = dct['pnl']
+        port.returns = dct['returns']
+        return port
+
+    def to_json(self):
+        return json.dumps(
+            self.to_dict(),
+            cls=EnumEncoder,
+            indent=4)
+
     def __repr__(self):
-        return str(vars(self))
+        return self.to_json()
