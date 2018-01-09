@@ -7,7 +7,6 @@ import uuid
 from portfolio.asset import Asset
 from portfolio.balance import Balance, BalanceType
 from trading.order import Order, OrderType, OrderStatus
-from trading.order import BUY_ORDER_TYPES, SELL_ORDER_TYPES
 from data.provider import DataProvider, PaperExchangeDataProvider
 
 
@@ -265,8 +264,16 @@ class PaperExchange(Exchange):
 
     def fetch_order(self, order_id, symbol=None):
         for order in self.orders:
-            if order.id == order_id:
-                return order
+            if order.exchange_order_id == order_id:
+                # Overriding some things to be consistent with CCXT
+                dct = order.to_dict()
+                dct['symbol'] = symbol
+                dct['filled'] = order.filled_quantity
+                dct['type'] = order.order_type.value['type']
+                dct['side'] = order.order_type.value['side']
+                del dct['exchange_order_id']
+                del dct['filled_quantity']
+                return dct
         return None
 
     def fetch_orders(self, asset):
@@ -326,7 +333,7 @@ class PaperExchange(Exchange):
 
         base = order.asset.base
         quote = order.asset.quote
-        if order.order_type in BUY_ORDER_TYPES:
+        if order.order_type.is_buy():
             self.balance.update(
                 currency=quote,
                 delta_free=-(order.price * order.quantity),
@@ -336,7 +343,7 @@ class PaperExchange(Exchange):
                 delta_free=order.quantity,
                 delta_used=0.0)
 
-        elif order.order_type in SELL_ORDER_TYPES:
+        elif order.order_type.is_sell():
             self.balance.update(
                 currency=quote,
                 delta_free=(order.price * order.quantity),

@@ -15,38 +15,67 @@ class OrderStatus(Enum):
     CREATED = "Order not yet submitted to exchange"
     OPEN = "Order successfully created on exchange"
     FILLED = "Order completely filled on exchange"
+    CLOSED = "Order closed/filled by exchange" # ccxt returns this ???
     CANCELED = "Order canceled by user"
-    REJECTED = "Order rejected by exchange. Will retry"
+    FAILED = "Order failed/rejected by exchange. Will retry"
     KILLED = "Order rejected by exchange. Will not retry"
+
+    def __repr__(self):
+        return str(self.name)
 
 
 @unique
 class OrderType(Enum):
-    LIMIT_BUY = 0
-    LIMIT_SELL = 1
-    MARKET_BUY = 2
-    MARKET_SELL = 3
+    LIMIT_BUY = {'type':'limit', 'side':'buy', 'desc':''}
+    LIMIT_SELL = {'type':'limit', 'side':'sell', 'desc':''}
+    MARKET_BUY = {'type':'market', 'side':'buy', 'desc':''}
+    MARKET_SELL = {'type':'market', 'side':'sell', 'desc':''}
     STOP_LIMIT_BUY = 4
     STOP_LIMIT_SELL = 5
 
-BUY_ORDER_TYPES = set([
-    OrderType.LIMIT_BUY,
-    OrderType.MARKET_BUY,
-    OrderType.STOP_LIMIT_BUY
-])
+    @classmethod
+    def from_type_side(self, type_, side):
+        # TODO: Add more order types
+        order_type_map = {
+            'limit_buy': OrderType.LIMIT_BUY,
+            'limit_sell': OrderType.LIMIT_SELL,
+            'market_buy': OrderType.MARKET_BUY,
+            'market_sell': OrderType.MARKET_SELL,
+        }
+        key = type_ + '_' + side
+        return order_type_map[key]
 
-SELL_ORDER_TYPES = set([
-    OrderType.LIMIT_SELL,
-    OrderType.MARKET_SELL,
-    OrderType.STOP_LIMIT_SELL
-])
+    @classmethod
+    def buy_types(self):
+        return set([
+            OrderType.LIMIT_BUY,
+            OrderType.MARKET_BUY,
+            OrderType.STOP_LIMIT_BUY
+        ])
+
+    @classmethod
+    def sell_types(self):
+        return set([
+            OrderType.LIMIT_SELL,
+            OrderType.MARKET_SELL,
+            OrderType.STOP_LIMIT_SELL
+        ])
+
+    def is_buy(self):
+        return self in self.buy_types()
+
+    def is_sell(self):
+        return self in self.sell_types()
+
+    def __repr__(self):
+        return str(self.name)
 
 
 class Order():
     __slots__ = [
         "id", "exchange_id", "exchange_order_id", "asset", "price",
         "quantity", "filled_quantity", "order_type", "status", "created_time",
-        "opened_time", "filled_time", "canceled_time", "retries"
+        "opened_time", "filled_time", "canceled_time", "fee", "retries"
     ]
 
     def __init__(self, exchange_id, asset, price, quantity,
@@ -64,8 +93,10 @@ class Order():
         self.opened_time = None
         self.filled_time = None
         self.canceled_time = None
+        self.fee = {}
         self.retries = 0
 
+    @classmethod
     def make_id(self):
         return uuid.uuid4().hex
 
@@ -101,15 +132,16 @@ class Order():
             quantity=d['quantity'],
             order_type=OrderType[d['order_type']],
         )
-        order.id = d['id']
-        order.exchange_order_id = d['exchange_order_id']
-        order.filled_quantity = d['filled_quantity']
-        order.status = OrderStatus[d['status']]
-        order.created_time = str_to_date(d['created_time'])
-        order.opened_time = str_to_date(d['opened_time'])
-        order.filled_time = str_to_date(d['filled_time'])
-        order.canceled_time = str_to_date(d['canceled_time'])
-        order.retries = d['retries']
+        order.id = d.get('id', order.id)
+        order.exchange_order_id = d.get('exchange_order_id')
+        order.filled_quantity = d.get('filled_quantity', 0)
+        order.status = OrderStatus[d.get('status', OrderStatus.CREATED.name)]
+        order.created_time = str_to_date(d.get('created_time'))
+        order.opened_time = str_to_date(d.get('opened_time'))
+        order.filled_time = str_to_date(d.get('filled_time'))
+        order.canceled_time = str_to_date(d.get('canceled_time'))
+        order.retries = d.get('retries', 0)
+        order.fee = d.get('fee', {})
         return order
 
     def to_json(self):

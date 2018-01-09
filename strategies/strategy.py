@@ -32,7 +32,7 @@ class SimpleStrategy(Strategy):
         super().__init__(context)
 
     def handle_data(self, data):
-        print ("PUNISHED!")
+        self.log(data)
 
         # Update metrics
         self.update_metric('SMA', 5.0)

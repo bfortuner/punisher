@@ -85,20 +85,7 @@ class Context():
         )
 
 
-def run_from_config(config_fpath):
-    cfg = load_config()
-    exchange = make_exchange(cfg.exchange)
-    strategy = load_strategy(cfg.strategy)
-    feed = load_feed(cfg.feed)
-    record = make_record(cfg.record)
-    context = Context(
-        exchange=exchange,
-        strategy=strategy,
-        feed=feed,
-        record=record,
-        trade_mode=cfg.trade_mode
-    )
-    punisher.run(context)
+
 
 def run(context):
     if context.trade_mode == 'backtest':

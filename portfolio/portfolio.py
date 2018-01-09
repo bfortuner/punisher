@@ -4,7 +4,6 @@ import copy
 
 from utils.encoders import EnumEncoder
 from utils.dates import Timeframe
-from trading.order import SELL_ORDER_TYPES
 
 from .performance import PerformanceTracker
 from .position import Position
@@ -41,7 +40,7 @@ class Portfolio():
                 self.positions.append(pos)
                 quantity = order.quantity
             else:
-                if order.order_type in SELL_ORDER_TYPES:
+                if order.order_type.is_sell():
                     quantity = -order.quantity
                 else:
                     quantity = order.quantity
