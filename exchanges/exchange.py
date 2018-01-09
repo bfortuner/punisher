@@ -8,7 +8,7 @@ from portfolio.asset import Asset
 from portfolio.balance import Balance, BalanceType
 from trading.order import Order, OrderType, OrderStatus
 from trading.order import BUY_ORDER_TYPES, SELL_ORDER_TYPES
-from data.data_provider import DataProvider, PaperExchangeDataProvider
+from data.provider import DataProvider, PaperExchangeDataProvider
 
 
 EXCHANGE_CLIENTS = {
