@@ -1,6 +1,9 @@
 
 import math
 
+from .asset import Asset
+
+
 class Position():
     """
     Keeps and updates the quantity and price of a position for an Asset.
@@ -69,3 +72,13 @@ class Position():
             'cost_price': self.cost_price,
             'latest_price': self.latest_price
         }
+
+    @classmethod
+    def from_dict(self, dct):
+        pos = Position(
+            asset=Asset.from_symbol(dct['asset']),
+            quantity=dct['quantity'],
+            cost_price=dct['cost_price'],
+        )
+        pos.latest_price = dct['latest_price']
+        return pos

@@ -1,13 +1,15 @@
-
-
+import json
 import datetime
 import copy
+
 import pandas as pd
+
+from utils.encoders import EnumEncoder
+from utils.dates import Timeframe
+from utils.dates import date_to_str, str_to_date
 
 from .balance import Balance
 from .balance import get_total_value
-from utils.dates import Timeframe
-from utils.dates import date_to_str
 
 
 class PerformanceTracker():
@@ -80,13 +82,27 @@ class PerformanceTracker():
 
     def to_dict(self):
         dct = copy.deepcopy(vars(self))
-        dct['timeframe'] = self.timeframe.value['id']
+        dct['timeframe'] = self.timeframe.name
         dct.pop('store')
         for p in dct['periods']:
             p['start_time'] = date_to_str(p['start_time'])
             p['end_time'] = date_to_str(p['end_time'])
-            #p.pop('positions')
         return dct
+
+    @classmethod
+    def from_dict(self, dct):
+        dct = copy.deepcopy(dct)
+        perf = PerformanceTracker(
+            starting_cash=dct['starting_cash'],
+            timeframe=Timeframe[dct['timeframe']],
+        )
+        for p in dct['periods']:
+            p['start_time'] = str_to_date(p['start_time'])
+            p['end_time'] = str_to_date(p['end_time'])
+        perf.periods = dct['periods']
+        perf.pnl = dct['pnl']
+        perf.returns = dct['returns']
+        return perf
 
     def to_dataframe(self):
         dct = self.to_dict()
@@ -99,11 +115,6 @@ class PerformanceTracker():
             self.to_dict(),
             cls=EnumEncoder,
             indent=4)
-
-    @classmethod
-    def from_json(self, json_str):
-        dct = json.loads(json_str)
-        return self.from_dict(dct)
 
     def __repr__(self):
         return self.to_json()

@@ -8,7 +8,6 @@ from utils.dates import str_to_date, date_to_str
 from utils.encoders import EnumEncoder
 
 
-
 class DataStore():
     def __init__(self):
         pass
@@ -45,17 +44,17 @@ class FileStore(DataStore):
         df.set_index(index, inplace=True)
         return df
 
-    def df_to_json(self, df, name):
+    def df_to_json(self, df, name, orient='index'):
         fpath = self.get_fpath(name, c.JSON)
-        df_dct = df.to_dict(orient='index')
+        df_dct = df.to_dict(orient=orient)
         dct = {}
         for key,val in df_dct.items():
             dct[str(key)] = val
         utils.files.save_dct(fpath, dct)
 
-    def json_to_df(self, name, index):
+    def json_to_df(self, name, index, orient='index'):
         fpath = self.get_fpath(name, c.JSON)
-        df = pd.read_json(fpath, orient='index')
+        df = pd.read_json(fpath, orient=orient)
         date_cols = self.get_date_cols(df.columns)
         for col in date_cols:
             df[col] = [str_to_date(s) for s in df[col]]
@@ -91,3 +90,10 @@ class SQLStore(DataStore):
 
     def get_conn(self):
         return None
+
+
+FILE_STORE = 'CSV_STORE'
+
+DATA_STORES = {
+    FILE_STORE: FileStore
+}

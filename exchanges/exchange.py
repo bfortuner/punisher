@@ -119,6 +119,9 @@ class Exchange(metaclass=abc.ABCMeta):
     def get_default_params_if_none(self, params):
         return {} if params is None else params
 
+    def __repr__(self):
+        return 'CCXTExchange({:s})'.format(self.id)
+
 
 class CCXTExchange(Exchange):
 
