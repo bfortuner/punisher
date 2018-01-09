@@ -5,6 +5,7 @@ import constants as c
 import config as cfg
 
 from .asset import get_symbol
+from trading.order import BUY_ORDER_TYPES, SELL_ORDER_TYPES
 
 
 class Balance():
@@ -34,6 +35,22 @@ class Balance():
         self.free[currency] = 0.0
         self.used[currency] = 0.0
         self.total[currency] = 0.0
+
+    def is_balance_sufficient(self, asset, quantity, price, order_type):
+        self._ensure_asset_in_balance(asset)
+        if order_type in BUY_ORDER_TYPES:
+            return price * quantity <= self.get(
+                asset.quote)[BalanceType.FREE]
+        elif order_type in SELL_ORDER_TYPES:
+            return quantity >= self.get(
+                asset.base)[BalanceType.FREE]
+        raise Exception("Order type {} not supported".format(order_type))
+
+    def _ensure_asset_in_balance(self, asset):
+        if asset.base not in self.currencies:
+            self.add_currency(asset.base)
+        if asset.quote not in self.currencies:
+            self.add_currency(asset.quote)
 
     def to_dict(self):
         dct = {}
