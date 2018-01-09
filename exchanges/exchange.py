@@ -106,10 +106,10 @@ class Exchange(metaclass=abc.ABCMeta):
         self._ensure_asset_in_balance(asset)
         if order_type in BUY_ORDER_TYPES:
             return price * quantity <= self.fetch_balance().get(
-                asset.quote)[BalanceType.FREE.value]
+                asset.quote)[BalanceType.FREE]
         elif order_type in SELL_ORDER_TYPES:
             return quantity >= self.fetch_balance().get(
-                asset.base)[BalanceType.FREE.value]
+                asset.base)[BalanceType.FREE]
         raise Exception("Order type {} not supported".format(order_type))
 
     @abc.abstractmethod
@@ -148,7 +148,6 @@ class CCXTExchange(Exchange):
         Most common level of aggregation where order volumes are grouped
         by price. If two orders have the same price, they appear as one
         single order for a volume equal to their total sum.
-
         Returns sample-data/order-book.json
         The bids array is sorted by price in descending order.
         The asks array is sorted by price in ascending order.
@@ -415,6 +414,7 @@ EXCHANGE_CONFIGS = {
     c.BINANCE: {
         'apiKey': cfg.BINANCE_API_KEY,
         'secret': cfg.BINANCE_API_SECRET_KEY,
+        'verbose':False,
     },
     c.PAPER: {
         'data_provider': CCXTExchange(c.BINANCE, {}),

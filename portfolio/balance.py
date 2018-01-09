@@ -5,9 +5,6 @@ import config as cfg
 
 from .asset import get_symbol
 
-FREE = "free"
-USED = "used"
-TOTAL = "total"
 
 class Balance():
     def __init__(self, cash_currency=c.BTC, starting_cash=1.0):
@@ -21,9 +18,9 @@ class Balance():
 
     def get(self, currency):
         return {
-            FREE: self.free[currency],
-            USED: self.used[currency],
-            TOTAL: self.total[currency],
+            BalanceType.FREE: self.free[currency],
+            BalanceType.USED: self.used[currency],
+            BalanceType.TOTAL: self.total[currency],
         }
 
     def update(self, currency, delta_free, delta_used):
@@ -38,17 +35,28 @@ class Balance():
         self.total[currency] = 0.0
 
     def to_dict(self):
-        dct = { c: self.get(c) for c in self.currencies }
-        dct[FREE] = self.free
-        dct[USED] = self.used
-        dct[TOTAL] = self.total
+        dct = {}
+        for curr in self.currencies:
+            dct[curr] = {
+                BalanceType.FREE.value : self.free[curr],
+                BalanceType.USED.value : self.used[curr],
+                BalanceType.TOTAL.value : self.total[curr],
+            }
+        dct[BalanceType.FREE.value] = self.free
+        dct[BalanceType.USED.value] = self.used
+        dct[BalanceType.TOTAL.value] = self.total
         return dct
 
     @classmethod
-    def from_dict(self, dict):
-        self.free = balance[FREE]
-        self.used = balance[USED]
-        self.total = balance[TOTAL]
+    def from_dict(self, dct):
+        bal = Balance(
+            cash_currency=c.BTC,
+            starting_cash=0.0
+            )
+        bal.free = dct[BalanceType.FREE.value]
+        bal.used = dct[BalanceType.USED.value]
+        bal.total = dct[BalanceType.TOTAL.value]
+        return bal
 
 
 @unique
@@ -65,7 +73,7 @@ def get_total_value(balance, cash_currency, exchange_rates):
     cash_value = 0.0
     for currency in balance.currencies:
         symbol = get_symbol(currency, cash_currency)
-        quantity = balance.get(currency)[TOTAL]
+        quantity = balance.get(currency)[BalanceType.TOTAL]
         rate = exchange_rates[symbol]
         cash_value += quantity * exchange_rate
     return cash_value
