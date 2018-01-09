@@ -49,6 +49,10 @@ import utils.encoders
 # Trading
 from trading.order import Order
 from trading.order import OrderStatus, OrderType
+from trading import order_manager
+from trading.record import Record
+from trading.runner import Context
+from trading.runner import DEFAULT_CONFIG
 import trading.coins
 
 # Exchanges

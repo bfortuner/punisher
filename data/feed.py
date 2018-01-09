@@ -58,12 +58,12 @@ class CSVDataFeed(DataFeed):
 
 
 class ExchangeDataFeed(DataFeed):
-    def __init__(self, exchange, assets, period,
+    def __init__(self, exchange, assets, timeframe,
                  fpath, start, end=None):
         super().__init__(fpath, start, end)
         self.exchange = exchange
         self.assets = assets
-        self.period = period
+        self.period = timeframe.value['id']
 
     def initialize(self):
         super().initialize()
@@ -85,3 +85,24 @@ class ExchangeDataFeed(DataFeed):
     def _download(self, start, end):
         ohlcv.download_chart_data(
             self.exchange, self.assets, self.period, start, end)
+
+
+EXCHANGE_FEED = 'EXCHANGE_FEED'
+CSV_FEED = 'CSV_FEED'
+DATA_FEEDS = {
+    EXCHANGE_FEED: ExchangeDataFeed,
+    CSV_FEED: CSVDataFeed
+}
+
+
+def load_feed(name, fpath, exchange=None, assets=None,
+              timeframe=None, start=None, end=None):
+    assert name in DATA_FEEDS.keys()
+    if name == EXCHANGE_FEED:
+        feed = ExchangeDataFeed(
+            exchange, assets, timeframe,
+            fpath, start, end)
+    else:
+        feed = CSVDataFeed(fpath, start, end)
+    feed.initialize()
+    return feed

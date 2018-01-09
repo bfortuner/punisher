@@ -96,14 +96,14 @@ class Order():
     def from_dict(self, d):
         order = Order(
             exchange_id=d['exchange_id'],
-            asset=Asset(d['asset']['base'], d['asset']['quote']),
+            asset=Asset.from_symbol(d['asset']),
             price=d['price'],
             quantity=d['quantity'],
             order_type=OrderType[d['order_type']],
         )
         order.id = d['id']
         order.exchange_order_id = d['exchange_order_id']
-        order.filled = d['filled_quantity']
+        order.filled_quantity = d['filled_quantity']
         order.status = OrderStatus[d['status']]
         order.created_time = str_to_date(d['created_time'])
         order.opened_time = str_to_date(d['opened_time'])
@@ -125,7 +125,11 @@ class Order():
         return self.to_json()
 
 def buy_order_types():
-    return [OrderType.LIMIT_BUY, OrderType.MARKET_BUY, OrderType.STOP_LIMIT_BUY]
+    return [OrderType.LIMIT_BUY,
+            OrderType.MARKET_BUY,
+            OrderType.STOP_LIMIT_BUY]
 
 def sell_order_types():
-    return [OrderType.LIMIT_SELL, OrderType.MARKET_SELL, OrderType.STOP_LIMIT_SELL]
+    return [OrderType.LIMIT_SELL,
+            OrderType.MARKET_SELL,
+            OrderType.STOP_LIMIT_SELL]
