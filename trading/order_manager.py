@@ -39,18 +39,22 @@ def build_market_sell_order(exchange, asset, quantity):
     )
 
 def get_order(exchange, ex_order_id, symbol=None):
-    order = exchange.fetch_order(ex_order_id, symbol)
+    order_dct = exchange.fetch_order(ex_order_id, symbol)
+    order = make_order_from_dct(order_dct, exchange.id)
+    return order
+
+def make_order_from_dct(dct, ex_id, order_id=None):
     return Order.from_dict({
-        'id': None,
-        'exchange_id': exchange.id,
-        'exchange_order_id': order['id'],
-        'asset': order['asset'],
-        'price': order['price'],
-        'quantity': order['quantity'],
-        'order_type': OrderType.from_type_side(order['type'], order['side']).name,
-        'filled_quantity': order['filled'],
-        'status': order['status'], # CAREFUL, may be inconsistent
-        'fee': order['fee'],
+        'id': order_id,
+        'exchange_id': ex_id,
+        'exchange_order_id': dct['id'],
+        'asset': dct['asset'],
+        'price': dct['price'],
+        'quantity': dct['quantity'],
+        'order_type': OrderType.from_type_side(dct['type'], dct['side']).name,
+        'filled_quantity': dct['filled'],
+        'status': dct['status'], # CAREFUL, may be inconsistent
+        'fee': dct['fee'],
         'created_time': None,
         'filled_time': None,
         'opened_time': None,
@@ -83,13 +87,17 @@ def place_order(exchange, order):
     else:
         raise Exception("Order type {:s} not supported".format(
             order.order_type.name))
-    return res
+    if res is None:
+        return None
+    print(res)
+    return make_order_from_dct(res, order.exchange_id, order.id)
 
 def place_orders(exchange, orders):
     results = []
     for order in orders:
         res = place_order(exchange, order)
-        results.append(res)
+        if res is not None:
+            results.append(res)
     return results
 
 def cancel_order(exchange, ex_order_id):

@@ -54,6 +54,7 @@ print("Refresh Sec: ", refresh_sec)
 
 
 data = RecordChartDataProvider(root_dir, refresh_sec, tminus)
+data.initialize()
 # print(data.get_config())
 # print(data.get_symbols())
 # print(data.get_metrics())
@@ -245,7 +246,9 @@ def update_positions_datatable(n):
               [Input('interval-component', 'n_intervals')])
 def update_orders_datatable(n):
     global data
-    return data.get_orders_dct()
+    dct = data.get_orders_dct()
+    print(dct)
+    return dct
 
 def plot_weights(n):
     global data

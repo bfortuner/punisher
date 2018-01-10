@@ -22,17 +22,30 @@ from exchanges.exchange import load_exchange
 from utils.dates import str_to_date
 
 
-def punish(context, strategy):
+def punish(ctx, strategy):
     print("Punishing ...")
-    record = context.record
-    feed = context.feed
+    record = ctx.record
+    feed = ctx.feed
     row = feed.next()
+
     while True:
         row = feed.next()
         if row is not None:
-            print("Timestep", row['time_utc'], "Price", row['close'])
-            orders = strategy.process(row, context)
-        order_manager.place_orders(context.exchange, orders)
-        time.sleep(.1)
+            orders = strategy.process(row, ctx)
+
+        # We assume everything is filled for now
+        filled_orders = order_manager.place_orders(ctx.exchange, orders)
+
+        # Portolio needs to know about new filled orders
+        ctx.record.portfolio.update_positions(filled_orders)
+
+        # Update Balance
+        # We're not updating the virtual balance, only the exchange
+        # which is OK until we have a multi-exchange algo
+        record.balance = ctx.exchange.balance
+
+        # Save to file
         record.save()
+        time.sleep(2)
+
     return record

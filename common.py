@@ -52,7 +52,6 @@ from trading.order import OrderStatus, OrderType
 from trading import order_manager
 from trading.record import Record
 from trading.context import Context
-from trading.context import DEFAULT_CONFIG
 from trading import punisher
 import trading.coins
 

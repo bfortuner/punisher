@@ -44,7 +44,7 @@ class Strategy():
     def log_positions(self, ctx):
         self.log("POSITIONS")
         for p in ctx.record.portfolio.positions:
-            self.log("    " + p)
+            self.log("     {:s}".format(str(p.to_dict())))
 
     def log_orders(self, orders):
         self.log("ORDERS")

@@ -264,16 +264,8 @@ class PaperExchange(Exchange):
 
     def fetch_order(self, order_id, symbol=None):
         for order in self.orders:
-            if order.exchange_order_id == order_id:
-                # Overriding some things to be consistent with CCXT
-                dct = order.to_dict()
-                dct['symbol'] = symbol
-                dct['filled'] = order.filled_quantity
-                dct['type'] = order.order_type.value['type']
-                dct['side'] = order.order_type.value['side']
-                del dct['exchange_order_id']
-                del dct['filled_quantity']
-                return dct
+            if order['id'] == order_id:
+                return order
         return None
 
     def fetch_orders(self, asset):
@@ -310,18 +302,18 @@ class PaperExchange(Exchange):
         Returns Order Dictionary (for CCXT consistency)
         """
         assert quantity != 0 and price != 0
-        if not self.balance.is_balance_sufficient(asset, quantity, price, order_type):
+        if not self.balance.is_balance_sufficient(
+            asset, quantity, price, order_type):
             print("Balance is not sufficient to create order!")
             return None
         # TODO: update Order class to have a update_filled_quantity method
         # TODO: update Order class to have a trades (partially filled orders)
         order = Order(self.id, asset, price, quantity,
-                order_type, self._make_order_id())
-        order.set_status(OrderStatus.CREATED)
-        self.orders.append(order)
-        # TODO: Implement pending/Open order phase
+                order_type)
+        order.status = OrderStatus.FILLED.name
         order = self._fill_order(order)
-        return order.to_dict() # for consistency with CCXT client response
+        self.orders.append(order)
+        return order # for consistency with CCXT client response
 
     def _fill_order(self, order):
         # TODO: set the filled time/canceled time, opened time etc somewhere?
@@ -353,10 +345,18 @@ class PaperExchange(Exchange):
                 delta_free=-order.quantity,
                 delta_used=0.0)
 
-        order.set_status(OrderStatus.FILLED)
-        order.filled_quantity = order.quantity
-        return order
-
+        # For consistency with CCXT
+        return {
+            'id': self._make_order_id(),
+            'asset': order.asset.symbol,
+            'price': order.price,
+            'quantity': order.quantity,
+            'type': order.order_type.value['type'],
+            'side': order.order_type.value['side'],
+            'filled': order.filled_quantity,
+            'status': order.status, # TODO: Fix inconsistency w CCXT
+            'fee': order.fee
+        }
 
     def _make_order_id(self):
         return uuid.uuid4().hex
@@ -364,6 +364,9 @@ class PaperExchange(Exchange):
     def __repr__(self):
         return 'PaperExchange({:s})'.format(self.id)
 
+
+def get_default_balance():
+    return Balance()
 
 EXCHANGE_CONFIGS = {
     c.POLONIEX: {
@@ -383,7 +386,7 @@ EXCHANGE_CONFIGS = {
     },
     c.PAPER: {
         'data_provider': CCXTExchange(c.BINANCE, {}),
-        'balance': Balance()
+        'balance': get_default_balance()
     }
 }
 

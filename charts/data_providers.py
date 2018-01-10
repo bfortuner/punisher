@@ -16,12 +16,11 @@ class ChartDataProvider():
     def __init__(self, refresh_sec=None):
         self.refresh_sec = refresh_sec
         self.thread = None
-        self.initialize()
 
     def initialize(self):
         if self.refresh_sec is not None:
             self.thread = threading.Thread(target=self._update)
-            self.thread.daemon = True
+            #self.thread.daemon = True
             self.thread.start()
 
     def update(self):
@@ -34,15 +33,17 @@ class ChartDataProvider():
             time.sleep(self.refresh_sec)
 
 
-class RecordChartDataProvider(ChartDataProvider):
-    def __init__(self, root, refresh_sec=5, t_minus=sys.maxsize):
-        super().__init__(refresh_sec)
-        self.root = root
-        self.record = Record.load(root)
+class RecordChartDataProvider():
+    def __init__(self, root_dir, refresh_sec=5, t_minus=sys.maxsize):
+        self.root_dir = root_dir
+        self.refresh_sec = refresh_sec
         self.t_minus = t_minus
+        self.thread = threading.Thread(target=self.update)
+        #self.thread.daemon = True
+        self.record = Record.load(self.root_dir)
 
     def initialize(self):
-        super().initialize()
+        self.thread.start()
 
     def get_timeline(self):
         return self.get_ohlcv()['time_utc']
@@ -142,7 +143,11 @@ class RecordChartDataProvider(ChartDataProvider):
         return self.record.metrics
 
     def update(self):
-        self.record = Record.load(self.root)
+        while True:
+            print("Refreshing data")
+            self.record = Record.load(self.root_dir)
+            time.sleep(self.refresh_sec)
+
 
 
 class OHLCVChartDataProvider(ChartDataProvider):

@@ -36,12 +36,16 @@ class Balance():
         self.total[currency] = 0.0
 
     def is_balance_sufficient(self, asset, quantity, price, order_type):
+        """
+        We don't support Margin orders yet.
+        All balances must be positive.
+        """
         self._ensure_asset_in_balance(asset)
         if order_type.is_buy():
             return price * quantity <= self.get(
                 asset.quote)[BalanceType.FREE]
         elif order_type.is_sell():
-            return quantity >= self.get(
+            return quantity <= self.get(
                 asset.base)[BalanceType.FREE]
         raise Exception("Order type {} not supported".format(order_type))
 
