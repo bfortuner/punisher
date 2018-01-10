@@ -29,6 +29,7 @@ class ChartDataProvider():
 
     def _update(self):
         while True:
+            print("Refreshing data")
             self.update()
             time.sleep(self.refresh_sec)
 

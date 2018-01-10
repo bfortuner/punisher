@@ -48,6 +48,10 @@ class Record():
         self.metrics = {}
         self.ohlcv = pd.DataFrame([])
         self.other_data = None
+        self.initialize()
+
+    def initialize(self):
+        self.save()
 
     def save(self):
         self.store.save_json(CONFIG_FNAME, self.config)

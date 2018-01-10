@@ -1,8 +1,9 @@
 import os
 import time
 from enum import Enum, unique
+import logging
 
-import config as cfg
+import config as proj_cfg
 import constants as c
 
 from data.store import DATA_STORES, FILE_STORE
@@ -20,10 +21,11 @@ from trading.record import Record
 from exchanges.exchange import load_exchange
 
 from utils.dates import str_to_date
+from utils.logger import get_logger
 
 
 DEFAULT_CONFIG = {
-    'root': os.path.join(cfg.DATA_DIR, 'default'),
+    'experiment': 'default',
     'strategy': 'my_strategy',
     'exchange_id': c.PAPER,
     'cash_asset': c.BTC,
@@ -31,7 +33,7 @@ DEFAULT_CONFIG = {
     'store': FILE_STORE,
     'feed': {
         'name': EXCHANGE_FEED,
-        'fpath': os.path.join(cfg.DATA_DIR, 'default_feed.csv'),
+        'fpath': os.path.join(proj_cfg.DATA_DIR, 'default_feed.csv'),
         'symbols': ['ETH/BTC'],
         'timeframe': Timeframe.ONE_MIN.name,
         'start': '2018-01-01T00:00:00',
@@ -51,12 +53,17 @@ class Context():
         self.feed = feed
         self.record = record
         self.config = config
+        self.logger = get_logger(fpath=os.path.join(
+            proj_cfg.DATA_DIR, config['experiment']),
+            logger_name='progress',
+            ch_log_level=logging.INFO)
 
     @classmethod
     def from_config(self, cfg=DEFAULT_CONFIG):
+        root = os.path.join(proj_cfg.DATA_DIR, cfg['experiment'])
         exchange = load_exchange(cfg['exchange_id'])
         store = DATA_STORES[cfg['store']](
-            root=cfg['root'])
+            root=root)
         feed = load_feed(
             name=cfg['feed']['name'],
             fpath=cfg['feed']['fpath'],
@@ -77,6 +84,7 @@ class Context():
             balance=Balance.from_dict(cfg['balance']),
             store=store
         )
+        record.initialize()
         return Context(
             config=cfg,
             exchange=exchange,

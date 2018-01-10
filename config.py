@@ -11,6 +11,7 @@ load_dotenv(dotenv_path, verbose=True)
 APP_NAME = os.environ.get('APP_NAME', 'PUNISHER')
 APP_SECRET_KEY = os.environ.get('APP_SECRET_KEY', 'secret_key')
 DATA_DIR = os.environ.get('DATA_DIR', '.data/')
+WEIGHTS_DIR = os.environ.get('WEIGHTS_DIR', 'models/.weights/')
 TESTING = os.environ.get('TESTING', False)
 DEBUG = os.environ.get('DEBUG', True)
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -64,3 +65,13 @@ CATALYST_DATA_PATH = os.environ.get('CATALYST_DATA_PATH')
 
 # DEFAULT funds
 DEFAULT_FUNDS = 10000
+
+
+
+def init_dirs():
+    dirs = [DATA_DIR, WEIGHTS_DIR]
+    for d in dirs:
+        if not os.path.exists(d):
+            os.makedirs(d)
+
+init_dirs()

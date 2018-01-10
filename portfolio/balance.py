@@ -75,9 +75,13 @@ class Balance():
         bal.total = dct[BalanceType.TOTAL.value]
         return bal
 
-    def __repr__(self):
+    def to_json(self):
         dct = self.to_dict()
         return json.dumps(dct, indent=4)
+
+    def __repr__(self):
+        return self.to_json()
+
 
 @unique
 class BalanceType(Enum):

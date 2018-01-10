@@ -27,13 +27,12 @@ def punish(context, strategy):
     record = context.record
     feed = context.feed
     row = feed.next()
-    while row is not None:
-        print("Timestep", row['time_utc'], "Price", row['close'])
+    while True:
         row = feed.next()
         if row is not None:
+            print("Timestep", row['time_utc'], "Price", row['close'])
             orders = strategy.process(row, context)
-        for order in orders:
-            order_manager.place_order(context.exchange, order)
+        order_manager.place_orders(context.exchange, orders)
         time.sleep(.1)
         record.save()
     return record
