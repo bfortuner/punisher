@@ -24,6 +24,7 @@ from utils.dates import str_to_date
 
 def punish(ctx, strategy):
     print("Punishing ...")
+    print(ctx.config)
     record = ctx.record
     feed = ctx.feed
     row = feed.next()
@@ -38,6 +39,10 @@ def punish(ctx, strategy):
 
         # Portolio needs to know about new filled orders
         ctx.record.portfolio.update_positions(filled_orders)
+
+        # Record needs to know about new orders, Portolio
+        for order in filled_orders:
+            ctx.record.orders[order.id] = order
 
         # Update Balance
         # We're not updating the virtual balance, only the exchange
