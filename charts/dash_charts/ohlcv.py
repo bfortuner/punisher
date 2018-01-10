@@ -75,13 +75,13 @@ class OHLCVProvider(object):
 
 asset = Asset(c.ETH, c.BTC)
 exchange = load_exchange(c.BINANCE)
-timeframe = period=Timeframe.ONE_MIN.value['id']
+timeframe = Timeframe.ONE_MIN
 print(exchange.timeframes)
 feed_fpath = get_price_data_fpath(asset, exchange.id,
     period=timeframe)
 feed = ExchangeDataFeed(
     exchange=exchange, assets=[asset],
-    period=timeframe, fpath=feed_fpath,
+    timeframe=timeframe, fpath=feed_fpath,
     start=datetime.datetime.utcnow()-datetime.timedelta(hours=1))
 data = OHLCVProvider(feed)
 
@@ -281,5 +281,5 @@ def update_spread_hist():
         }
 
 
-if __name__ == "__main__":
-    app.run_server(port=8000, debug=True, host='0.0.0.0')
+
+app.run_server(port=8000, debug=True, host='0.0.0.0')

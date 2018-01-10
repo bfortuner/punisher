@@ -54,6 +54,13 @@ class Portfolio():
         return None
 
     @property
+    def symbols(self):
+        symbols = set()
+        for pos in self.positions:
+            symbols.add(pos.asset.symbol)
+        return list(symbols)
+
+    @property
     def weights(self):
         weights = {}
         for pos in self.positions:
