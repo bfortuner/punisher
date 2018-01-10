@@ -44,7 +44,7 @@ class Record():
         self.store = store
         self.orders = {}
         self.metrics = {}
-        self.ohlcv_data = None
+        self.ohlcv = None
         self.other_data = None
 
     def save(self):
@@ -66,7 +66,7 @@ class Record():
         self.store.save_json(ORDERS_FNAME, dct)
 
     def save_ohlcv(self):
-        self.store.df_to_csv(self.ohlcv_data, OHLCV_FNAME)
+        self.store.df_to_csv(self.ohlcv, OHLCV_FNAME)
 
     @classmethod
     def load(self, root_dir):
@@ -82,7 +82,7 @@ class Record():
         orders = store.load_json(ORDERS_FNAME)
         orders = {o['id']: Order.from_dict(o) for o in orders.values()}
 
-        ohlcv_data = store.csv_to_df(OHLCV_FNAME, index='time_epoch')
+        ohlcv = store.csv_to_df(OHLCV_FNAME, index='time_epoch')
         metrics = store.load_json(METRICS_FNAME)
 
         record = Record(
@@ -92,7 +92,7 @@ class Record():
             store=store
         )
         record.orders = orders
-        record.ohlcv_data = ohlcv_data
+        record.ohlcv = ohlcv
         record.metrics = metrics
 
         return record
