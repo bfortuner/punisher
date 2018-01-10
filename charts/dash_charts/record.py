@@ -54,7 +54,6 @@ print("Refresh Sec: ", refresh_sec)
 
 
 data = RecordChartDataProvider(root_dir, refresh_sec, tminus)
-data.initialize()
 # print(data.get_config())
 # print(data.get_symbols())
 # print(data.get_metrics())

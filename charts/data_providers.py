@@ -39,7 +39,7 @@ class RecordChartDataProvider():
         self.refresh_sec = refresh_sec
         self.t_minus = t_minus
         self.thread = threading.Thread(target=self.update)
-        #self.thread.daemon = True
+        self.thread.daemon = True
         self.record = Record.load(self.root_dir)
 
     def initialize(self):

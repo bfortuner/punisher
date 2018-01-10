@@ -55,7 +55,7 @@ def make_order_from_dct(dct, ex_id, order_id=None):
         'filled_quantity': dct['filled'],
         'status': dct['status'], # CAREFUL, may be inconsistent
         'fee': dct['fee'],
-        'created_time': None,
+        'created_time': dct['created_time'],
         'filled_time': None,
         'opened_time': None,
         'canceled_time': None,
@@ -89,7 +89,6 @@ def place_order(exchange, order):
             order.order_type.name))
     if res is None:
         return None
-    print(res)
     return make_order_from_dct(res, order.exchange_id, order.id)
 
 def place_orders(exchange, orders):

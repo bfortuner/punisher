@@ -311,9 +311,10 @@ class PaperExchange(Exchange):
         order = Order(self.id, asset, price, quantity,
                 order_type)
         order.status = OrderStatus.FILLED.name
-        order = self._fill_order(order)
-        self.orders.append(order)
-        return order # for consistency with CCXT client response
+        order_dct = self._fill_order(order)
+        order_dct['created_time'] = order.created_time.isoformat()
+        self.orders.append(order_dct)
+        return order_dct # for consistency with CCXT client response
 
     def _fill_order(self, order):
         # TODO: set the filled time/canceled time, opened time etc somewhere?
