@@ -85,6 +85,13 @@ def place_order(exchange, order):
             order.order_type.name))
     return res
 
+def place_orders(exchange, orders):
+    results = []
+    for order in orders:
+        res = place_order(exchange, order)
+        results.append(res)
+    return results
+
 def cancel_order(exchange, ex_order_id):
     res = exchange.cancel_order(
         order_id=ex_order_id)
@@ -94,13 +101,6 @@ def cancel_orders(exchange, orders):
     results = []
     for order in orders:
         res = cancel_order(order.exchange_order_id)
-        results.append(res)
-    return results
-
-def retry_orders(exchange, orders):
-    results = []
-    for order in orders:
-        res = place_order(exchange, order)
         results.append(res)
     return results
 
@@ -119,11 +119,11 @@ def get_canceled_orders(orders):
     return get_orders_by_types(orders, [OrderStatus.FAILED])
 
 def get_orders_by_types(orders, order_types):
-    orders = []
-    for _, order in orders:
-        if order.get_status() in order_types:
-            orders.append(order)
-    return orders
+    results = []
+    for order in orders:
+        if order.status in order_types:
+            results.append(order)
+    return results
 
 def get_order_by_ex_order_id(orders, ex_order_id):
     for order in orders:
