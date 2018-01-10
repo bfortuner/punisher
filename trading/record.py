@@ -1,5 +1,7 @@
 from datetime import datetime
 
+import pandas as pd
+
 import config as cfg
 import constants as c
 
@@ -44,7 +46,7 @@ class Record():
         self.store = store
         self.orders = {}
         self.metrics = {}
-        self.ohlcv = None
+        self.ohlcv = pd.DataFrame([])
         self.other_data = None
 
     def save(self):
@@ -66,8 +68,22 @@ class Record():
         self.store.save_json(ORDERS_FNAME, dct)
 
     def save_ohlcv(self):
-        if self.ohlcv:
-            self.store.df_to_csv(self.ohlcv, OHLCV_FNAME)
+        self.store.df_to_csv(self.ohlcv, OHLCV_FNAME)
+
+    def add_ohlcv(self, data):
+        # TODO: Yuck! Make this less suck
+        # The DataFeed method returns a Series, which does weird things
+        # with the index column 'time_epoch' which we need to keep.
+        # Recovering the index the smart way is TBD, thus this stuff:
+        data['time_epoch'] = utils.dates.utc_to_epoch(data['time_utc'])
+        cols = ['time_epoch', 'open', 'high', 'low', 'close', 'volume', 'time_utc']
+        data = [[data[c] for c in cols]]
+        df = pd.DataFrame(data, columns=cols)
+        df.set_index('time_epoch', inplace=True)
+        if len(self.ohlcv) == 0:
+            self.ohlcv = df
+        else:
+            self.ohlcv = self.ohlcv.append(df)
 
     @classmethod
     def load(self, root_dir):

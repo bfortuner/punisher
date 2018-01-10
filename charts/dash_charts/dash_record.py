@@ -4,6 +4,7 @@ import time
 import datetime
 from collections import deque
 import threading
+import argparse
 
 import pandas as pd
 import numpy as np
@@ -24,23 +25,37 @@ from data.feed import CSVDataFeed, ExchangeDataFeed
 from trading.record import Record
 
 from charts.dash_viz import generate_table
-from utils.dates import Timeframe
+from utils.dates import Timeframe, date_to_str
 
-EXPERIMENT_NAME = sys.argv[1]
-EXPERIMENT_PATH = os.path.join(cfg.DATA_DIR, EXPERIMENT_NAME)
-print("Experiment: ", EXPERIMENT_NAME)
-print("RootDir: ", EXPERIMENT_PATH)
-REFRESH_SEC = 5
+parser = argparse.ArgumentParser(description='Punisher Dash Vizualizer')
+parser.add_argument('--name', help='name of your experiment', default='default')
+parser.add_argument('--tminus',
+                    help='Trailing # of records to include in chart',
+                    default=sys.maxsize, type=int)
+parser.add_argument('--refresh', help='How often to refresh the chart',
+                    default=5, type=int)
+
+args = parser.parse_args()
+experiment_name = args.name
+tminus = args.tminus
+refresh_sec = args.refresh
+root_dir = os.path.join(cfg.DATA_DIR, experiment_name)
+
+print("Experiment: ", experiment_name)
+print("Root: ", root_dir)
+print("Tminus: ", tminus)
+print("Refresh Sec: ", refresh_sec)
+
 
 class RecordDataProvider():
-    def __init__(self, root_dir, refresh_sec=5, t_minus=30):
+    def __init__(self, root_dir, refresh_sec=5, t_minus=tminus):
         self.root_dir = root_dir
         self.refresh_sec = refresh_sec
         self.record = Record.load(root_dir)
         self.thread = threading.Thread(target=self.update)
         self.thread.daemon = True
         self.thread.start()
-        self.t_minus = 30
+        self.t_minus = t_minus
 
     def initialize(self):
         pass
@@ -64,6 +79,8 @@ class RecordDataProvider():
              'time_utc': Timestamp('2018-01-08 22:22:00'),
              'volume': 222.514}
         """
+        if abs(self.t_minus) >= len(self.record.ohlcv):
+            return self.record.ohlcv
         return self.record.ohlcv.iloc[-self.t_minus:]
 
     def get_positions(self):
@@ -73,7 +90,7 @@ class RecordDataProvider():
     def get_positions_dct(self):
         positions = self.record.portfolio.positions
         dct = [p.to_dict() for p in positions]
-        return dct #{p['asset']: p for p in dct}
+        return dct
 
     def get_performance(self):
         return self.record.portfolio.perf
@@ -91,18 +108,51 @@ class RecordDataProvider():
         ], columns=['time_utc','returns'])
 
     def get_balance(self):
-        cols = ['coin', 'free', 'used', 'total']
+        columns = ['coin', 'free', 'used', 'total']
         balance = self.record.balance
         dct = balance.to_dict()
         return pd.DataFrame(
             data=[
                 [c, dct[c]['free'], dct[c]['used'], dct[c]['total']]
                 for c in balance.currencies],
-            columns=cols
+            columns=columns
         )
 
+    def get_balance_dct(self):
+        coins = self.record.balance.currencies
+        dct = self.record.balance.to_dict()
+        return [{
+            'coin':c, 'free':dct[c]['free'],
+            'used':dct[c]['used'], 'total':dct[c]['total']
+        } for c in coins]
+
     def get_orders(self):
-        return self.record.orders
+        columns = [
+            'created', 'exchange', 'symbol', 'type',
+            'price', 'quantity', 'filled', 'status'
+        ]
+        data = [
+            [o.created_time, o.exchange_id, o.asset.symbol,
+             o.order_type.name, o.price, o.quantity, o.filled_quantity,
+             o.status.name] for o in self.record.orders.values()
+        ]
+        return pd.DataFrame(data=data, columns=columns)
+
+    def get_orders_dct(self):
+        return [{
+            'created': date_to_str(o.created_time),
+            'exchange': o.exchange_id,
+            'symbol': o.asset.symbol,
+            'type': o.order_type.name,
+            'price': o.price,
+            'quantity': o.quantity,
+            'filled': o.filled_quantity,
+            'status': o.status.name
+            } for o in self.record.orders.values()
+        ]
+
+    def get_orders_hist(self):
+        raise NotImplemented
 
     def get_metrics(self):
         return self.record.metrics
@@ -117,7 +167,7 @@ class RecordDataProvider():
 
 
 
-data = RecordDataProvider(EXPERIMENT_PATH)
+data = RecordDataProvider(root_dir)
 # print(data.get_config())
 # print(data.get_symbols())
 # print(data.get_metrics())
@@ -135,7 +185,7 @@ app = dash.Dash()
 
 app.layout = html.Div([
     html.Div([
-        html.H1(EXPERIMENT_NAME, id='h1_title'),
+        html.H1(experiment_name, id='h1_title'),
         html.Div([
             dcc.Graph(
                 id='ohlc',
@@ -160,24 +210,24 @@ app.layout = html.Div([
                 }
             ),
         ]),
-        # html.Div([
-        #     dcc.Graph(
-        #         id='returns',
-        #         config={
-        #             'displayModeBar': False
-        #         }
-        #     ),
-        # ], className="row"),
         html.Div([
-            html.Div([
-                html.H3(children='Positions'),
-                html.Div(id='positions-table'),
-            ]),
-            html.Div([
-                html.H3(children='Balance'),
-                html.Div(id='balance-table'),
-            ])
-        ], className="two columns"),
+            dcc.Graph(
+                id='returns',
+                config={
+                    'displayModeBar': False
+                }
+            ),
+        ]),
+        # html.Div([
+        #     html.Div([
+        #         html.H3(children='Positions'),
+        #         html.Div(id='positions-table'),
+        #     ]),
+        #     html.Div([
+        #         html.H3(children='Balance'),
+        #         html.Div(id='balance-table'),
+        #     ])
+        # ]),
         # html.Div([
         #     dcc.Graph(
         #         id='weights',
@@ -186,17 +236,42 @@ app.layout = html.Div([
         #         }
         #     ),
         # ], className="row"),
-        dt.DataTable(
-            rows=[{}], # initialise the rows
-            row_selectable=True,
-            filterable=True,
-            sortable=True,
-            selected_row_indices=[],
-            id='positions-datatable'
-        ),
+        html.H3("Balance", id='balance_dt_title'),
+        html.Div([
+            dt.DataTable(
+                rows=[{}], # initialise the rows
+                row_selectable=False,
+                filterable=False,
+                sortable=True,
+                selected_row_indices=[],
+                id='balance-datatable'
+            ),
+        ]),
+        html.H3("Positions", id='positions_dt_title'),
+        html.Div([
+            dt.DataTable(
+                rows=[{}], # initialise the rows
+                row_selectable=False,
+                filterable=False,
+                sortable=True,
+                selected_row_indices=[],
+                id='positions-datatable'
+            ),
+        ]),
+        html.H3("Orders", id='orders_dt_title'),
+        html.Div([
+            dt.DataTable(
+                rows=[{}], # initialise the rows
+                row_selectable=False,
+                filterable=True,
+                sortable=True,
+                selected_row_indices=[],
+                id='orders-datatable'
+            ),
+        ]),
         dcc.Interval(
             id='interval-component',
-            interval=REFRESH_SEC*1000,
+            interval=refresh_sec*1000,
             n_intervals=0
         )
     ])
@@ -242,28 +317,49 @@ def plot_pnl(n):
         'layout': dict(title="PnL")
     }
 
-
-@app.callback(Output('positions-table', 'children'),
+@app.callback(Output('returns', 'figure'),
               [Input('interval-component', 'n_intervals')])
+def plot_returns(n):
+    global data
+    returns = data.get_returns()
+    return {
+        'data': [go.Scatter(x=returns['time_utc'],
+                        y=returns['returns'], mode='lines')],
+        'layout': dict(title="Returns")
+    }
+
+# @app.callback(Output('positions-table', 'children'),
+#               [Input('interval-component', 'n_intervals')])
 def plot_positions(n):
     global data
     df = data.get_positions()
     return generate_table(df)
 
-@app.callback(Output('balance-table', 'children'),
-              [Input('interval-component', 'n_intervals')])
+# @app.callback(Output('balance-table', 'children'),
+#               [Input('interval-component', 'n_intervals')])
 def plot_balance(n):
     global data
     df = data.get_balance()
     return generate_table(df)
 
+#https://github.com/plotly/dash-table-experiments
+@app.callback(Output('balance-datatable', 'rows'),
+              [Input('interval-component', 'n_intervals')])
+def update_balance_datatable(n):
+    global data
+    return data.get_balance_dct()
+
 @app.callback(Output('positions-datatable', 'rows'),
               [Input('interval-component', 'n_intervals')])
-def update_datatable(n):
+def update_positions_datatable(n):
     global data
-    df = data.get_positions_dct()
-    print(df)
-    return df
+    return data.get_positions_dct()
+
+@app.callback(Output('orders-datatable', 'rows'),
+              [Input('interval-component', 'n_intervals')])
+def update_orders_datatable(n):
+    global data
+    return data.get_orders_dct()
 
 def plot_weights(n):
     global data

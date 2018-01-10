@@ -34,6 +34,6 @@ def punish(context, strategy):
             orders = strategy.process(row, context)
         for order in orders:
             order_manager.place_order(context.exchange, order)
-        time.sleep(1)
+        time.sleep(.1)
         record.save()
     return record

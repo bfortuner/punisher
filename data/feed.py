@@ -34,6 +34,7 @@ class DataFeed():
         data = self.feed[self.feed.index > utils.dates.utc_to_epoch(
             self.prior_time)]
         if len(data) > 0:
+            # iloc[0] returns a series, which acts like a dictionary
             row = data.iloc[0]
             self.prior_time = row['time_utc']
             return row

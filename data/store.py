@@ -1,6 +1,7 @@
 import os
 import json
 import pandas as pd
+from filelock import FileLock
 
 import constants as c
 import utils.files
@@ -33,7 +34,8 @@ class FileStore(DataStore):
 
     def df_to_csv(self, df, name):
         fpath = self.get_fpath(name, c.CSV)
-        df.to_csv(fpath, index=True)
+        with FileLock(fpath):
+            df.to_csv(fpath, index=True)
 
     def csv_to_df(self, name, index):
         fpath = self.get_fpath(name, c.CSV)
@@ -50,7 +52,8 @@ class FileStore(DataStore):
         dct = {}
         for key,val in df_dct.items():
             dct[str(key)] = val
-        utils.files.save_dct(fpath, dct)
+        with FileLock(fpath):
+            utils.files.save_dct(fpath, dct)
 
     def json_to_df(self, name, index, orient='index'):
         fpath = self.get_fpath(name, c.JSON)
@@ -63,7 +66,8 @@ class FileStore(DataStore):
 
     def save_json(self, name, dct):
         fpath = self.get_fpath(name, c.JSON)
-        utils.files.save_dct(fpath, dct)
+        with FileLock(fpath):
+            utils.files.save_dct(fpath, dct)
 
     def load_json(self, name):
         fpath = self.get_fpath(name, c.JSON)
