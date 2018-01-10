@@ -22,56 +22,13 @@ from exchanges.exchange import load_exchange
 from charts.dash_viz import generate_table
 from utils.dates import Timeframe
 
+from charts.data_providers import OHLCVChartDataProvider
+
 # https://plot.ly/dash/live-updates
 # https://medium.com/@LeonFedden/deep-cryptocurrency-trading-1e64af6d280a
 # https://plot.ly/dash/urls
 
 REFRESH_SEC = 5
-
-class OHLCVProvider(object):
-
-    def __init__(self, feed):
-        self.feed = feed
-        self.delay_seconds = 30
-        self.ohlcv = {}
-        self.thread = threading.Thread(target=self._update)
-        self.thread.daemon = True
-        self.thread.start()
-
-    def initialize(self):
-        self.feed.initialize()
-        # Optionally include some history
-        # self.ohlcv = self.feed.history(t_minus=100)
-
-    def get_symbols(self):
-        return ['ETH/BTC','LTC/BTC']
-
-    def get_next(self):
-        """
-        Returns dictionary:
-            {'close': 0.077,
-             'high': 0.0773,
-             'low': 0.0771,
-             'open': 0.0772,
-             'time_utc': Timestamp('2018-01-08 22:22:00'),
-             'volume': 222.514}
-        """
-        return self.feed.next().to_dict()
-
-    def get_all(self):
-        """Returns Dataframe"""
-        return self.feed.history()
-
-    def _update(self):
-        while True:
-            self.feed.update()
-            time.sleep(self.delay_seconds)
-
-
-# asset = Asset(c.ETH, c.BTC)
-# feed_fpath = get_price_data_fpath(asset, c.BINANCE, period='1m')
-# feed = CSVDataFeed(feed_fpath)
-# data = OHLCVProvider(feed)
 
 asset = Asset(c.ETH, c.BTC)
 exchange = load_exchange(c.BINANCE)
@@ -83,7 +40,7 @@ feed = ExchangeDataFeed(
     exchange=exchange, assets=[asset],
     timeframe=timeframe, fpath=feed_fpath,
     start=datetime.datetime.utcnow()-datetime.timedelta(hours=1))
-data = OHLCVProvider(feed)
+data = OHLCVChartDataProvider(feed)
 
 selected_dropdown_value = asset.symbol
 

@@ -1,5 +1,6 @@
 import datetime
 
+
 class Strategy():
     def __init__(self):
         self.epoch = 1
