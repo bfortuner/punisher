@@ -66,7 +66,8 @@ class Record():
         self.store.save_json(ORDERS_FNAME, dct)
 
     def save_ohlcv(self):
-        self.store.df_to_csv(self.ohlcv_data, OHLCV_FNAME)
+        if self.ohlcv_data:
+            self.store.df_to_csv(self.ohlcv_data, OHLCV_FNAME)
 
     @classmethod
     def load(self, root_dir):

@@ -51,8 +51,9 @@ from trading.order import Order
 from trading.order import OrderStatus, OrderType
 from trading import order_manager
 from trading.record import Record
-from trading.runner import Context
-from trading.runner import DEFAULT_CONFIG
+from trading.context import Context
+from trading.context import DEFAULT_CONFIG
+from trading import punisher
 import trading.coins
 
 # Exchanges
