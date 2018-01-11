@@ -3,6 +3,7 @@ import datetime
 
 class Strategy():
     def __init__(self, logger=None):
+        self.name = self.__class__.__name__
         self.epoch = 1
         self.logger = logger
 
@@ -55,34 +56,21 @@ class Strategy():
                 i+1,order.asset.symbol, order.order_type.name,
                 order.price, order.quantity))
 
-    def process(self, data, context):
-        output = self.handle_data(data, context)
+    def process(self, data, ctx):
+        output = self.handle_data(data, ctx)
         self.epoch += 1
         return output
 
-    def update_metric(self, name, val, context):
-        metrics = context.record.metrics
+    def update_metric(self, name, val, ctx):
+        metrics = ctx.record.metrics
         if name not in metrics.keys():
             metrics[name] = [val]
         else:
             metrics[name].append(val)
 
-    def handle_data(self, data, context):
-        orders = []
-        return orders
+    def update_ohlcv(self, data, ctx):
+        ctx.record.add_ohlcv(data)
 
-
-class SimpleStrategy(Strategy):
-    def __init__(self):
-        super().__init__()
-
-    def handle_data(self, data, context):
-        self.log(data)
-        context.record.add_ohlcv(data)
-
-        # Update metrics
-        self.update_metric('SMA', 5.0, context)
-        self.update_metric('RSI', 10.0, context)
-
+    def handle_data(self, data, ctx):
         orders = []
         return orders

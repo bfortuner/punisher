@@ -1,19 +1,23 @@
-# Punisher Bot
-
-If the Punisher traded crypto..
+# If the Punisher traded crypto..
 
 ![alt text](docs/punisher.png "Logo Title Text 1")
 
-## Requirements
+## Quickstart
 
+**Users**
+* Run the demo.ipynb jupyter notebook
+
+**Developers**
+* Run developers.ipynb to see how various components interact
+
+## Install
+
+
+**Requirements:**
 * Unix
 * Anaconda3
-* PyTorch
-* GPU (for training)
-* CCXT / Twitter credentials (place in .env file)
-* Other libraries
-* QGrid - https://github.com/quantopian/qgrid
 
+**Install:**
 ```
 conda install ipywidgets
 jupyter nbextension enable --py --sys-prefix widgetsnbextension
@@ -22,11 +26,19 @@ conda install -c conda-forge python.app
 pip install -r requirements.txt
 ```
 
+**Optional (model training):**
+* PyTorch
+* GPU (for training)
+* CCXT / Twitter credentials (place in .env file)
+
+
 ## Config
 
-* Create an external directory to store your data inside (ask for data)
-* Ask for .env file template
-* Replace .env variables with your own values (GDAX, twitter, etc)
+* Open dotenv_example and rename .env
+* Replace variables with your own values (GDAX, twitter)
+
+
+**No API keys?** You can still download data with the Exchange APIs, just empty the dictionary we pass in as a config in ccxt.py
 
 ## Clients
 
@@ -36,15 +48,6 @@ pip install -r requirements.txt
 git submodule init
 git submodule update
 ```
-
-### GDAX
-
-If you don't have credentials use this client:
-
-```
-gdax_client = gdax.PublicClient()
-```
-
 
 ## Data
 
@@ -86,3 +89,4 @@ gdax_client = gdax.PublicClient()
 ### Repos
 
 * https://github.com/Crypto-AI/Gemini
+* https://github.com/quantopian/qgrid

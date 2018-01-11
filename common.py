@@ -9,6 +9,7 @@ import operator
 import copy
 import traceback
 import requests
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -36,7 +37,9 @@ import constants as c
 # Data
 from data import ohlcv
 from data.feed import CSVDataFeed, ExchangeDataFeed
+from data.feed import EXCHANGE_FEED, CSV_FEED
 from data.store import FileStore
+from data.store import DATA_STORES, FILE_STORE
 from data.provider import PaperExchangeDataProvider
 
 # Utils
@@ -68,7 +71,7 @@ from portfolio.portfolio import Portfolio
 from portfolio.performance import PerformanceTracker
 
 # Strategies
-from strategies.strategy import SimpleStrategy
+from strategies.simple import SimpleStrategy
 
 # Clients
 import ccxt

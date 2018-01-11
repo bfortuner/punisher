@@ -236,7 +236,6 @@ def update_positions_datatable(n):
 def update_orders_datatable(n):
     global data
     dct = data.get_orders_dct()
-    print(dct)
     return dct
 
 def plot_weights(n):
