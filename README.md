@@ -5,10 +5,10 @@
 ## Quickstart
 
 **Users**
-* Run the demo.ipynb jupyter notebook
+* Run the ```demo.ipynb``` jupyter notebook
 
 **Developers**
-* Run developers.ipynb to see how various components interact
+* Run ```developers.ipynb``` to see how various components interact
 
 ## Install
 
