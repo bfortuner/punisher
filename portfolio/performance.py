@@ -49,7 +49,6 @@ class PerformanceTracker():
         if len(self.periods) > 0:
             self.pnl = self.periods[-1]['pnl']
             self.returns = self.periods[-1]['returns']
-        self.save()
 
     def calc_pnl(self, start_val, end_val):
         return end_val - start_val
@@ -71,11 +70,6 @@ class PerformanceTracker():
         for pos in positions:
             total += pos.market_value
         return total
-
-    def save(self):
-        if self.store is not None:
-            dct = self.to_dict()
-            store.save(periods)
 
     def make_positions_dict(self, positions):
         return [pos.to_dict() for pos in positions]

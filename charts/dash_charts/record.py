@@ -52,18 +52,8 @@ print("Tminus: ", tminus)
 print("Refresh Sec: ", refresh_sec)
 
 
-
 data = RecordChartDataProvider(root_dir, refresh_sec, tminus)
-# print(data.get_config())
-# print(data.get_symbols())
-# print(data.get_metrics())
-# print(data.get_positions())
-# print(data.get_performance())
-# print(data.get_balance())
-# print(data.get_orders())
-# print(data.get_ohlcv().head())
-# #print(data.get_portfolio())
-# print(data.get_ohlcv_dct().keys())
+data.initialize()
 
 selected_dropdown_value = ['ETH/BTC']
 

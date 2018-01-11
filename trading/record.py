@@ -38,6 +38,8 @@ PERFORMANCE_FNAME = 'performance'
 METRICS_FNAME = 'metrics'
 BALANCE_FNAME = 'balance'
 
+OHLCV_COLS = ['time_epoch', 'open', 'high', 'low', 'close', 'volume', 'time_utc']
+
 class Record():
     def __init__(self, config, portfolio, balance, store):
         self.config = config
@@ -46,12 +48,8 @@ class Record():
         self.store = store
         self.orders = {}
         self.metrics = {}
-        self.ohlcv = pd.DataFrame([])
+        self.ohlcv = pd.DataFrame([], columns=OHLCV_COLS)
         self.other_data = None
-        self.initialize()
-
-    def initialize(self):
-        self.save()
 
     def save(self):
         self.store.save_json(CONFIG_FNAME, self.config)
@@ -80,9 +78,8 @@ class Record():
         # with the index column 'time_epoch' which we need to keep.
         # Recovering the index the smart way is TBD, thus this stuff:
         data['time_epoch'] = utils.dates.utc_to_epoch(data['time_utc'])
-        cols = ['time_epoch', 'open', 'high', 'low', 'close', 'volume', 'time_utc']
-        data = [[data[c] for c in cols]]
-        df = pd.DataFrame(data, columns=cols)
+        data = [[data[c] for c in OHLCV_COLS]]
+        df = pd.DataFrame(data, columns=OHLCV_COLS)
         df.set_index('time_epoch', inplace=True)
         if len(self.ohlcv) == 0:
             self.ohlcv = df

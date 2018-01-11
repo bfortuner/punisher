@@ -89,7 +89,6 @@ class Context():
             balance=Balance.from_dict(cfg['balance']),
             store=store
         )
-        record.initialize()
         return Context(
             config=cfg,
             exchange=exchange,
