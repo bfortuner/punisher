@@ -1,10 +1,7 @@
 poloniex==0.0.12
-graphviz==0.8.2
 python-dotenv==0.7.1
 pymongo==3.6.0
 ccxt==1.10.544
-matplotlib==2.1.1
-TA-Lib==0.4.10
 dash==0.19.0
 dash-core-components==0.15.5
 dash-html-components==0.8.0
