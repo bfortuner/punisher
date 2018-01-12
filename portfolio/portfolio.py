@@ -9,7 +9,6 @@ from .performance import PerformanceTracker
 from .position import Position
 
 
-
 class Portfolio():
     """
     Attributes:
