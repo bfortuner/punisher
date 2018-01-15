@@ -32,6 +32,9 @@ class DataProvider(metaclass=abc.ABCMeta):
     def fetch_ticker(self, asset):
         pass
 
+    def to_json(self):
+        return { "id": self.id }
+
 
 class PaperExchangeDataProvider(DataProvider):
     def __init__(self, data_feed, id_="backtest_data_provider", config=None):

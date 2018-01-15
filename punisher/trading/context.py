@@ -1,7 +1,9 @@
 import os
 import time
-from enum import Enum, unique
 import logging
+
+from datetime import datetime, timedelta
+from enum import Enum, unique
 
 import punisher.config as proj_cfg
 import punisher.constants as c
@@ -64,7 +66,7 @@ class Context():
         record = Record(
             config=cfg,
             portfolio=Portfolio(cfg['starting_cash'], perf),
-            balance=Balance.from_dict(cfg['balance']),
+            balance=cfg['balance'],
             store=store
         )
 
@@ -81,6 +83,8 @@ class Context():
             cfg=cfg['exchange']
         )
 
+        # Ensure we have the live balance if Live trading
+        record.balance = exchange.fetch_balance()
         # TODO: Maybe make exchange initialize a feed instead
         feed.initialize(exchange)
 
@@ -121,6 +125,9 @@ def default_config(trading_mode):
 
     elif trading_mode == TradingMode.SIMULATION:
         default_cfg_template['feed']['name'] = EXCHANGE_FEED
+        thirty_min_ago = (datetime.utcnow() -
+                          timedelta(minutes=30))
+        default_cfg_template['feed']['start'] = thirty_min_ago.isoformat()
         default_cfg_template['exchange']['exchange_id'] = c.PAPER
         default_cfg_template['exchange']['data_provider'] = CCXTExchange(
             c.DEFAULT_DATA_PROVIDER_EXCHANGE, {})

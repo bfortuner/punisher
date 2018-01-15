@@ -76,7 +76,7 @@ class ExchangeDataFeed(DataFeed):
         assert self.exchange != None
         self._download(self.prior_time, self.end)
 
-        if self.assets:
+        if len(self.assets) > 1:
             self.feed = ohlcv.load_multiple_assets(
                 self.exchange.id, self.assets, self.period,
                 self.start, self.end)

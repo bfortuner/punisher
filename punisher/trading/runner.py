@@ -28,6 +28,7 @@ def backtest(run_name,
     record = ctx.record
     feed =  ctx.feed
     exchange = ctx.exchange
+    orders = []
 
     while True:
         row = feed.next()
@@ -57,7 +58,7 @@ def backtest(run_name,
         # which is OK until we have a multi-exchange algo
         # But this also means, for live trading, we can't separate
         # fund from Algo to Algo.
-        record.balance = exchange.balance
+        record.balance = exchange.fetch_balance()
 
         # Save to file
         record.save()
@@ -88,6 +89,7 @@ def simulation(run_name,
     record = ctx.record
     feed = ctx.feed
     exchange = ctx.exchange
+    orders = []
 
     while True:
         row = feed.next()
@@ -103,7 +105,7 @@ def simulation(run_name,
         # TODO: Order manager handles mapping from Exchange JSON
         # Paricularly order types like CLOSED --> FILLED,
         # And OPEN vs PENDING <-- check the 'quantity' vs 'filled' amounts
-        orders = order_manager.place_orders(ctx.exchange, orders)
+        orders = order_manager.place_orders(exchange, orders)
 
         # Record needs to know about ALL new orders (open/filled)
         for order in orders:
@@ -118,7 +120,7 @@ def simulation(run_name,
         # which is OK until we have a multi-exchange algo
         # But this also means, for live trading, we can't separate
         # fund from Algo to Algo.
-        record.balance = ctx.exchange.balance
+        record.balance = exchange.fetch_balance()
 
         # Save to file
         record.save()
@@ -142,12 +144,16 @@ def live(run_name, strategy, config, context=None):
     else:
         ctx = Context.from_config(config)
 
+    ctx.logger.info("Starting Live trading ... CAREFUL!")
+    ctx.logger.info(ctx.config)
+
     record = ctx.record
     feed = ctx.feed
     exchange = ctx.exchange
+    orders = []
 
-    ctx.logger.info("Starting Live trading ... CAREFUL!")
-    ctx.logger.info(ctx.config)
+    # Get starting balance from the exchange
+    record.balance = exchange.fetch_balance()
 
     while True:
         row = feed.next()
@@ -163,7 +169,7 @@ def live(run_name, strategy, config, context=None):
         # TODO: Order manager handles mapping from Exchange JSON
         # Paricularly order types like CLOSED --> FILLED,
         # And OPEN vs PENDING <-- check the 'quantity' vs 'filled' amounts
-        orders = order_manager.place_orders(ctx.exchange, orders)
+        orders = order_manager.place_orders(exchange, orders)
 
         # Record needs to know about ALL new orders (open/filled)
         for order in orders:
@@ -178,7 +184,7 @@ def live(run_name, strategy, config, context=None):
         # which is OK until we have a multi-exchange algo
         # But this also means, for live trading, we can't separate
         # fund from Algo to Algo.
-        record.balance = ctx.exchange.balance
+        record.balance = exchange.fetch_balance()
 
         # Save to file
         record.save()
