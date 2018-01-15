@@ -34,9 +34,9 @@ def backtest(run_name,
         if row is not None:
             orders = strategy.process(row, ctx)
 
-        # TODO: Cancelling orders
+        # TODO: Implement Cancelling orders
         # should we auto-cancel any outstanding orders
-        order_manager.cancel_orders(orders['cancel_ids'])
+        # order_manager.cancel_orders(orders['cancel_ids'])
 
         # Returns both FILLED and PENDING orders
         # TODO: Order manager handles mapping from Exchange JSON
@@ -94,10 +94,10 @@ def simulation(run_name,
         if row is not None:
             orders = strategy.process(row, ctx)
 
-        # TODO: Cancelling orders
+        # TODO: Implement Cancelling orders
         # should we auto-cancel any outstanding orders
         # or should we leave this decision up to the Strategy?
-        order_manager.cancel_orders(orders['cancel_ids'])
+        # order_manager.cancel_orders(orders['cancel_ids'])
 
         # Returns both FILLED and PENDING orders
         # TODO: Order manager handles mapping from Exchange JSON
@@ -154,10 +154,10 @@ def live(run_name, strategy, config, context=None):
         if row is not None:
             orders = strategy.process(row, ctx)
 
-        # TODO: Cancelling orders
+        # TODO: Implement Cancelling orders
         # should we auto-cancel any outstanding orders
         # or should we leave this decision up to the Strategy?
-        order_manager.cancel_orders(orders['cancel_ids'])
+        # order_manager.cancel_orders(orders['cancel_ids'])
 
         # Returns both FILLED and PENDING orders
         # TODO: Order manager handles mapping from Exchange JSON
