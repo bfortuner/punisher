@@ -87,7 +87,8 @@ class ExchangeDataFeed(DataFeed):
                 coin_fpath, self.start, self.end)
 
     def _download(self, start, end):
-        ohlcv.download_chart_data(self.exchange, self.assets, self.period, start, end)
+        ohlcv.download_chart_data(
+        self.exchange, self.assets, self.period, start, end)
 
 
 EXCHANGE_FEED = 'EXCHANGE_FEED'
