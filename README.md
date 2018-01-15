@@ -90,3 +90,7 @@ git submodule update
 
 * https://github.com/Crypto-AI/Gemini
 * https://github.com/quantopian/qgrid
+
+### Known Issues
+
+* [Known Issues](known_issues.md)

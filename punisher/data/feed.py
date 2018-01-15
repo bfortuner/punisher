@@ -12,7 +12,7 @@ class DataFeed():
         self.prior_time = None
         self.feed = None
 
-    def initialize(self):
+    def initialize(self, data_provider=None):
         print("Loading feed:", self.fpath)
         if self.start is None:
             self.start = datetime.datetime(1, 1, 1, 1, 1)
@@ -49,7 +49,7 @@ class CSVDataFeed(DataFeed):
     def __init__(self, fpath, start=None, end=None):
         super().__init__(fpath, start, end)
 
-    def initialize(self):
+    def initialize(self, data_provider=None):
         super().initialize()
         self.update()
 
@@ -59,21 +59,24 @@ class CSVDataFeed(DataFeed):
 
 
 class ExchangeDataFeed(DataFeed):
-    def __init__(self, exchange, assets, timeframe,
-                 fpath, start, end=None):
+    def __init__(self, assets, timeframe,
+                 fpath, start, exchange=None, end=None):
         super().__init__(fpath, start, end)
         self.exchange = exchange
         self.assets = assets
         self.period = timeframe.value['id']
 
-    def initialize(self):
+    def initialize(self, exchange=None):
         super().initialize()
+        if exchange:
+            self.exchange = exchange
         self.update()
 
     def update(self):
+        assert self.exchange != None
         self._download(self.prior_time, self.end)
 
-        if len(self.assets) > 1:
+        if self.assets:
             self.feed = ohlcv.load_multiple_assets(
                 self.exchange.id, self.assets, self.period,
                 self.start, self.end)
@@ -84,8 +87,7 @@ class ExchangeDataFeed(DataFeed):
                 coin_fpath, self.start, self.end)
 
     def _download(self, start, end):
-        ohlcv.download_chart_data(
-            self.exchange, self.assets, self.period, start, end)
+        ohlcv.download_chart_data(self.exchange, self.assets, self.period, start, end)
 
 
 EXCHANGE_FEED = 'EXCHANGE_FEED'
@@ -95,14 +97,14 @@ DATA_FEEDS = {
     CSV_FEED: CSVDataFeed
 }
 
-def load_feed(name, fpath, exchange=None, assets=None,
+def load_feed(name, fpath, assets=None,
               timeframe=None, start=None, end=None):
     assert name in DATA_FEEDS.keys()
     if name == EXCHANGE_FEED:
         feed = ExchangeDataFeed(
-            exchange, assets, timeframe,
-            fpath, start, end)
+            assets, timeframe,
+            fpath, start, end
+        )
     else:
         feed = CSVDataFeed(fpath, start, end)
-    feed.initialize()
     return feed
