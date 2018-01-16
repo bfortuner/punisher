@@ -13,12 +13,13 @@
 ## Install
 
 1. Install [Anaconda](https://www.anaconda.com/download) with Python 3.6
+
 2. Create conda environment
 ```
 conda env create -f environment.yml -n punisher
 source activate punisher
 ```
-3. Add your own API keys to ```dotenv_example``` and rename ```.env```.
+3. Add your API keys to ```dotenv_example``` and rename ```.env```.
 
 **No API keys?** You can still download data with the Exchange APIs, just empty the dictionary we pass in as a config in ccxt.py
 
