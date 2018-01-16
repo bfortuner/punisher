@@ -72,6 +72,9 @@ class ExchangeDataFeed(DataFeed):
             self.exchange = exchange
         self.update()
 
+    def next(self, refresh=True):
+        return super().next(refresh)
+
     def update(self):
         assert self.exchange != None
         self._download(self.prior_time, self.end)

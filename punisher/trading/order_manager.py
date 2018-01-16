@@ -94,7 +94,18 @@ def place_order(exchange, order):
 def place_orders(exchange, orders):
     results = []
     for order in orders:
-        res = place_order(exchange, order)
+        res = None
+        if exchange.fetch_balance().is_balance_sufficient(
+                asset=order.asset,
+                quantity=order.quantity,
+                price=order.price,
+                order_type=order.order_type
+            ):
+            res = place_order(exchange, order)
+        else:
+            print("Insufficient funds to place order {}, \
+                    cancelling ...".format(order.id))
+            order.set_status(OrderStatus.CANCELED)
         if res is not None:
             results.append(res)
     return results

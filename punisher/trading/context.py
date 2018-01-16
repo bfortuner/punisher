@@ -4,6 +4,7 @@ import logging
 
 from datetime import datetime, timedelta
 from enum import Enum, unique
+from copy import deepcopy
 
 import punisher.config as proj_cfg
 import punisher.constants as c
@@ -74,9 +75,9 @@ class Context():
         # data provider for the Paper exchange using the feed provided
 
         if cfg['exchange'].get('data_provider') == None:
-            cfg['exchange']['data_provider']: PaperExchangeDataProvider(feed)
+            cfg['exchange']['data_provider'] = PaperExchangeDataProvider(feed)
 
-        cfg['exchange']['balance']: cfg['balance']
+        cfg['exchange']['balance'] = cfg['balance']
 
         exchange = load_exchange(
             cfg['exchange']['exchange_id'],
@@ -104,30 +105,34 @@ def default_config(trading_mode):
     """
 
     default_cfg_template = {
-        'experiment': 'default',
         'cash_asset': c.BTC,
         'starting_cash': 1.0,
         'store': FILE_STORE,
-        'balance': c.DEFAULT_BALANCE,
+        'balance': deepcopy(c.DEFAULT_BALANCE),
         'feed': {
-            'fpath': os.path.join(proj_cfg.DATA_DIR, c.DEFAULT_FEED_CSV_FILENAME),
-            'symbols': ['ETH/BTC'],
-            'timeframe': Timeframe.THIRTY_MIN.name,
+            'symbols': ['ETH/BTC']
         },
         'exchange': {}
     }
 
     if trading_mode == TradingMode.BACKTEST:
+        default_cfg_template['experiment'] = 'default-backtest'
         default_cfg_template['feed']['name'] = CSV_FEED
         default_cfg_template['feed']['start'] = '2018-01-01T00:00:00'
+        default_cfg_template['feed']['timeframe'] = Timeframe.THIRTY_MIN.name
+        default_cfg_template['feed']['fpath'] = os.path.join(
+            proj_cfg.DATA_DIR, c.DEFAULT_30M_FEED_CSV_FILENAME),
         default_cfg_template["exchange"]['exchange_id'] = c.PAPER
         return default_cfg_template
 
     elif trading_mode == TradingMode.SIMULATION:
+        default_cfg_template['experiment'] = 'default-simulation'
         default_cfg_template['feed']['name'] = EXCHANGE_FEED
-        thirty_min_ago = (datetime.utcnow() -
-                          timedelta(minutes=30))
-        default_cfg_template['feed']['start'] = thirty_min_ago.isoformat()
+        default_cfg_template['feed']['start'] = datetime.utcnow(
+            ).strftime("%Y-%m-%dT%H:%M:%S")
+        default_cfg_template['feed']['timeframe'] = Timeframe.ONE_MIN.name
+        default_cfg_template['feed']['fpath'] = os.path.join(
+            proj_cfg.DATA_DIR, c.DEFAULT_1M_FEED_CSV_FILENAME),
         default_cfg_template['exchange']['exchange_id'] = c.PAPER
         default_cfg_template['exchange']['data_provider'] = CCXTExchange(
             c.DEFAULT_DATA_PROVIDER_EXCHANGE, {})

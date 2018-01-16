@@ -42,7 +42,6 @@ class PaperExchangeDataProvider(DataProvider):
         # TODO: figure out a way to have all the data rows for each
         #       currency instead of just one
         self.data_feed = data_feed
-        self.data_feed.initialize()
         # current row data
         # time_epoch	open	high	low	close	volume	time_utc
 
