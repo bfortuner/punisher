@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
 
+from . import dates
+
 
 def plot_prices(time, close, fs=(12,6), title="Price"):
     fig, ax = plt.subplots()
@@ -35,6 +37,6 @@ def plot_prices(time, close, fs=(12,6), title="Price"):
 
 
 def plot_range(df, start, end, column_name):
-    df = utils.dates.get_time_range(df, start, end)
+    df = dates.get_time_range(df, start, end)
     vals = df[['time_utc', column_name]].values
     plot_prices(vals[:,0], vals[:,1], title=column_name)

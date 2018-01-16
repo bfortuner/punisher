@@ -49,11 +49,12 @@ import punisher.utils.general
 import punisher.utils.encoders
 
 # Trading
+from punisher.trading.context import Context
+from punisher.trading.context import TradingMode, default_config
 from punisher.trading.order import Order
 from punisher.trading.order import OrderStatus, OrderType
 from punisher.trading import order_manager
 from punisher.trading.record import Record
-from punisher.trading.context import Context
 from punisher.trading import runner
 import punisher.trading.coins
 

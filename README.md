@@ -12,53 +12,40 @@
 
 ## Install
 
-
-**Requirements:**
-* Unix
-* Anaconda3
-
-**Install:**
+1. Install [Anaconda](https://www.anaconda.com/download) with Python 3.6
+2. Create conda environment
 ```
-conda install ipywidgets
-jupyter nbextension enable --py --sys-prefix widgetsnbextension
-conda install -c tim_shawver/label/dev qgrid==1.0.0b10
-conda install -c conda-forge python.app
-pip install -r requirements.txt
+conda env create -f environment.yml -n punisher
+source activate punisher
 ```
-
-**Optional (model training):**
-* PyTorch
-* GPU (for training)
-* CCXT / Twitter credentials (place in .env file)
-
-
-## Config
-
-* Open dotenv_example and rename .env
-* Replace variables with your own values (GDAX, twitter)
-
+3. Add your own API keys to ```dotenv_example``` and rename ```.env```.
 
 **No API keys?** You can still download data with the Exchange APIs, just empty the dictionary we pass in as a config in ccxt.py
 
-## Clients
-
-* https://chrisjean.com/git-submodules-adding-using-removing-and-updating/
-
+4. Initialize [submodules](https://chrisjean.com/git-submodules-adding-using-removing-and-updating/)
 ```
 git submodule init
 git submodule update
 ```
 
-## Data
+**Optional:**
+```
+conda install ipywidgets
+jupyter nbextension enable --py --sys-prefix widgetsnbextension
+conda install -c tim_shawver/label/dev qgrid==1.0.0b10
+conda install -c conda-forge python.app
+conda install pytorch torchvision -c pytorch
+```
 
-* https://www.dropbox.com/home/punisher
+## Resources
+
+### Data
+
 * https://www.quandl.com/collections/markets/bitcoin-data
 * https://market.mashape.com/bravenewcoin/digital-currency-tickers
 * https://bravenewcoin.com/
 * https://coinmetrics.io/data-downloads/
 
-
-## Resources
 
 ### Exchanges
 
