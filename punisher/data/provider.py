@@ -70,8 +70,6 @@ class PaperExchangeDataProvider(DataProvider):
         return markets
 
     def fetch_ohlcv(self, asset, timeframe=None):
-        # TODO: only doing minute data for now until we figure out how to
-        #       update the data_feed
         all_rows = self.data_feed.history().tail()
         return all_rows
 

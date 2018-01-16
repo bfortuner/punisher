@@ -22,6 +22,7 @@ def fetch_ohlcv_data(exchange, asset, period, start, end=None):
     assert period in exchange.timeframes
     end = datetime.datetime.utcnow() if end is None else end
     data = exchange.fetch_ohlcv(asset, period)
+    print("DDD", data[:2])
     df = make_ohlcv_df(data, start, end)
     print("Downloaded rows:", (len(df) -1))
     return df
@@ -66,6 +67,7 @@ def load_multiple_assets(exchange_id, assets, period, start, end=None):
 
 def make_ohlcv_df(data, start=None, end=None):
     df = pd.DataFrame(data, columns=c.OHLCV_COLUMNS)
+    #print(df.head())
     df['time_epoch'] = df['time_epoch'] // 1000 # ccxt includes millis
     df['time_utc'] = [epoch_to_utc(t) for t in df['time_epoch']]
     df.set_index('time_epoch', inplace=True)

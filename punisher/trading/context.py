@@ -48,6 +48,8 @@ class Context():
     @classmethod
     def from_config(self, cfg):
         assert cfg is not None
+        print("CFG", cfg)
+        cfg = deepcopy(cfg)
         root = os.path.join(proj_cfg.DATA_DIR, cfg['experiment'])
         store = DATA_STORES[cfg['store']](
             root=root)
@@ -75,6 +77,7 @@ class Context():
         # data provider for the Paper exchange using the feed provided
 
         if cfg['exchange'].get('data_provider') == None:
+            print("DP", cfg['exchange'].get('data_provider'))
             cfg['exchange']['data_provider'] = PaperExchangeDataProvider(feed)
 
         cfg['exchange']['balance'] = cfg['balance']
@@ -121,7 +124,8 @@ def default_config(trading_mode):
         default_cfg_template['feed']['start'] = '2018-01-01T00:00:00'
         default_cfg_template['feed']['timeframe'] = Timeframe.THIRTY_MIN.name
         default_cfg_template['feed']['fpath'] = os.path.join(
-            proj_cfg.DATA_DIR, c.DEFAULT_30M_FEED_CSV_FILENAME),
+            proj_cfg.DATA_DIR, c.DEFAULT_30M_FEED_CSV_FILENAME)
+        print(default_cfg_template['feed']['fpath'])
         default_cfg_template["exchange"]['exchange_id'] = c.PAPER
         return default_cfg_template
 
@@ -132,7 +136,7 @@ def default_config(trading_mode):
             ).strftime("%Y-%m-%dT%H:%M:%S")
         default_cfg_template['feed']['timeframe'] = Timeframe.ONE_MIN.name
         default_cfg_template['feed']['fpath'] = os.path.join(
-            proj_cfg.DATA_DIR, c.DEFAULT_1M_FEED_CSV_FILENAME),
+            proj_cfg.DATA_DIR, c.DEFAULT_1M_FEED_CSV_FILENAME)
         default_cfg_template['exchange']['exchange_id'] = c.PAPER
         default_cfg_template['exchange']['data_provider'] = CCXTExchange(
             c.DEFAULT_DATA_PROVIDER_EXCHANGE, {})

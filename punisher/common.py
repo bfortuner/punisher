@@ -18,7 +18,7 @@ import matplotlib.dates as mdates
 import seaborn as sns
 import dash
 
-# Pytorch
+# Machine learning
 # import torch
 # import torchvision
 # import torch.nn as nn
@@ -28,6 +28,9 @@ import dash
 # from torch.autograd import Variable
 # import torch.autograd as autograd
 # import torchvision.models
+
+# Clients
+import ccxt
 
 # Config
 import punisher.config as cfg
@@ -73,5 +76,5 @@ from punisher.portfolio.performance import PerformanceTracker
 # Strategies
 from punisher.strategies.simple import SimpleStrategy
 
-# Clients
-import ccxt
+# Visualizations
+from punisher.charts.data_providers import RecordChartDataProvider

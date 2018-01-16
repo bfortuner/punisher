@@ -1,6 +1,7 @@
 import abc
 import ccxt
 import uuid
+from copy import deepcopy
 
 import punisher.constants as c
 import punisher.config as proj_cfg
@@ -397,10 +398,11 @@ def load_exchange(id_, cfg=None):
     """
     exchange_id: ['poloniex', 'simulate', 'gdax']
     """
+    cfg = deepcopy(cfg)
     if id_ not in EXCHANGE_CONFIGS.keys():
         raise NotImplemented
 
-    config = EXCHANGE_CONFIGS.get(id_)
+    config = deepcopy(EXCHANGE_CONFIGS.get(id_))
 
     # Add/replace any exchange configs from the input config
     if cfg:
