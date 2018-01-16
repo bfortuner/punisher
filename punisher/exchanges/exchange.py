@@ -3,7 +3,7 @@ import ccxt
 import uuid
 
 import punisher.constants as c
-import punisher.config as cfg
+import punisher.config as proj_cfg
 from punisher.portfolio.asset import Asset
 from punisher.portfolio.balance import Balance, BalanceType
 from punisher.trading.order import Order, OrderType, OrderStatus
@@ -82,7 +82,6 @@ class CCXTExchange(Exchange, DataProvider):
         Exchange.__init__(self, id_, config)
         DataProvider.__init__(self, id_, config)
         self.client = EXCHANGE_CLIENTS[id_](config)
-        self.client.fetch_markets()
 
     def get_markets(self):
         if self.client.markets is None:
@@ -199,8 +198,9 @@ class CCXTExchange(Exchange, DataProvider):
 class PaperExchange(Exchange):
     def __init__(self, id_, config):
         super().__init__(id_, config)
-        self.balance = config['balance']
-        self.data_provider = config['data_provider']
+        self.balance = Balance.from_dict(config['balance'])
+        # TODO: implement get_data_provider
+        self.data_provider = self._get_data_provider(config.get("data_provider"))
         self.orders = []
         self.commissions = []
 
@@ -359,6 +359,11 @@ class PaperExchange(Exchange):
             'fee': order.fee
         }
 
+    def _get_data_provider(self, data_provider):
+        if data_provider:
+            return data_provider
+        return CCXTExchange(c.DEFAULT_DATA_PROVIDER_EXCHANGE, {})
+
     def _make_order_id(self):
         return uuid.uuid4().hex
 
@@ -366,41 +371,41 @@ class PaperExchange(Exchange):
         return 'PaperExchange({:s})'.format(self.id)
 
 
-def get_default_balance():
-    return Balance()
-
 EXCHANGE_CONFIGS = {
     c.POLONIEX: {
-        'apiKey': cfg.POLONIEX_API_KEY,
-        'secret': cfg.POLONIEX_API_SECRET_KEY,
+        'apiKey': proj_cfg.POLONIEX_API_KEY,
+        'secret': proj_cfg.POLONIEX_API_SECRET_KEY,
     },
     c.GDAX: {
-        'apiKey': cfg.GDAX_API_KEY,
-        'secret': cfg.GDAX_API_SECRET_KEY,
-        'password': cfg.GDAX_PASSPHRASE,
+        'apiKey': proj_cfg.GDAX_API_KEY,
+        'secret': proj_cfg.GDAX_API_SECRET_KEY,
+        'password': proj_cfg.GDAX_PASSPHRASE,
         'verbose':False,
     },
     c.BINANCE: {
-        'apiKey': cfg.BINANCE_API_KEY,
-        'secret': cfg.BINANCE_API_SECRET_KEY,
+        'apiKey': proj_cfg.BINANCE_API_KEY,
+        'secret': proj_cfg.BINANCE_API_SECRET_KEY,
         'verbose':False,
     },
     c.PAPER: {
-        'data_provider': CCXTExchange(c.BINANCE, {}),
-        'balance': get_default_balance()
+        'data_provider': None,
+        'balance': c.DEFAULT_BALANCE
     }
 }
 
-def load_exchange(id_, config=None):
+def load_exchange(id_, cfg=None):
     """
     exchange_id: ['poloniex', 'simulate', 'gdax']
-    c.EX
     """
     if id_ not in EXCHANGE_CONFIGS.keys():
         raise NotImplemented
 
-    if config is None:
-        config = EXCHANGE_CONFIGS.get(id_)
+    config = EXCHANGE_CONFIGS.get(id_)
+
+    # Add/replace any exchange configs from the input config
+    if cfg:
+        for key, value in cfg.items():
+            config[key] = value
 
     if id_ == c.PAPER:
         return PaperExchange(id_, config)

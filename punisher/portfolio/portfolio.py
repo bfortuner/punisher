@@ -61,11 +61,13 @@ class Portfolio():
 
     @property
     def weights(self):
-        weights = {}
+        res = {'cash':0.0}
+        if self.total_value == 0.0:
+            return res
         for pos in self.positions:
-            weights[pos.asset.id] = pos.market_value / self.total_value
-        weights['cash'] = self.cash / self.total_value
-        return weights
+            res[pos.asset.id] = pos.market_value / self.total_value
+        res['cash'] = self.cash / self.total_value
+        return res
 
     @property
     def positions_value(self):

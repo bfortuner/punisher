@@ -54,4 +54,16 @@ RECORD_DATA_FNAME = 'data.csv'
 CONFIG_FNAME = 'config.json'
 
 # Backtest
-BACKTEST_DATA_PROVIDER_NAME = 'SILLY'
+DEFAULT_DATA_PROVIDER_EXCHANGE = BINANCE
+
+# Balance
+DEFAULT_BALANCE = {
+    BTC: {'free': 1.0, 'used':0.0, 'total': 1.0},
+    'free': {BTC: 1.0},
+    'used': {BTC: 0.0},
+    'total': {BTC: 1.0},
+}
+
+# Feed
+DEFAULT_1M_FEED_CSV_FILENAME = 'paper_ETH_BTC_1m.csv'
+DEFAULT_30M_FEED_CSV_FILENAME = 'paper_ETH_BTC_30m.csv'

@@ -23,7 +23,7 @@ def fetch_ohlcv_data(exchange, asset, period, start, end=None):
     end = datetime.datetime.utcnow() if end is None else end
     data = exchange.fetch_ohlcv(asset, period)
     df = make_ohlcv_df(data, start, end)
-    print("Downloaded rows:", len(df))
+    print("Downloaded rows:", (len(df) -1))
     return df
 
 def fetch_and_save_ohlcv_data(exchange, asset, period, start, end=None):

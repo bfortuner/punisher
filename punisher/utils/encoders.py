@@ -1,7 +1,9 @@
 import json
+import pandas
 from enum import Enum
 from datetime import datetime, date
-import pandas
+
+from punisher.data.provider import DataProvider
 
 
 class EnumEncoder(json.JSONEncoder):
@@ -10,6 +12,8 @@ class EnumEncoder(json.JSONEncoder):
             return obj.name
         if isinstance(obj, (datetime, date)):
             return obj.isoformat()
+        if isinstance(obj, DataProvider):
+            return obj.to_json()
         return json.JSONEncoder.default(self, obj)
 
 

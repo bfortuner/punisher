@@ -32,6 +32,9 @@ class DataProvider(metaclass=abc.ABCMeta):
     def fetch_ticker(self, asset):
         pass
 
+    def to_json(self):
+        return { "id": self.id }
+
 
 class PaperExchangeDataProvider(DataProvider):
     def __init__(self, data_feed, id_="backtest_data_provider", config=None):
@@ -39,7 +42,6 @@ class PaperExchangeDataProvider(DataProvider):
         # TODO: figure out a way to have all the data rows for each
         #       currency instead of just one
         self.data_feed = data_feed
-        self.data_feed.initialize()
         # current row data
         # time_epoch	open	high	low	close	volume	time_utc
 
