@@ -52,9 +52,7 @@ def get_order(exchange, ex_order_id, symbol):
     '2018-01-17T02:46:29.872Z', 'symbol': 'XRP/BTC', 'type': 'market', 'side': 'sell',
     'price': 0.0, 'amount': 20.0, 'cost': 0.0, 'filled': 20.0,
     'remaining': 0.0, 'status': 'closed', 'fee': None}"""
-    order_dct = exchange.fetch_order(ex_order_id, symbol)
-    order = make_order_from_dct(order_dct, exchange.id)
-    return order
+    return exchange.fetch_order(ex_order_id, symbol)
 
 def make_order_from_dct(dct, ex_id, order_id=None):
     print("Order dictionary", dct)
@@ -64,12 +62,12 @@ def make_order_from_dct(dct, ex_id, order_id=None):
         'exchange_order_id': dct['id'],
         'symbol': dct['symbol'],
         'price': dct['price'],
-        'quantity': dct['quantity'],
+        'quantity': dct['amount'],
         'order_type': OrderType.from_type_side(dct['type'], dct['side']).name,
         'filled_quantity': dct['filled'],
         'status': dct['status'], # CAREFUL, may be inconsistent
         'fee': dct['fee'],
-        'created_time': dct['created_time'],
+        'created_time': dct.get('created_time'),
         'filled_time': None,
         'opened_time': None,
         'canceled_time': None,
@@ -97,24 +95,22 @@ def place_order(exchange, order):
     'timeInForce': 'GTC', 'type': 'LIMIT', 'side': 'BUY'}, 'id': '19049767'}
     """
     if order.order_type == OrderType.LIMIT_BUY:
-        res = exchange.create_limit_buy_order(
+        order = exchange.create_limit_buy_order(
             order.asset, order.quantity, order.price)
     elif order.order_type == OrderType.LIMIT_SELL:
-        res = exchange.create_limit_sell_order(
+        order = exchange.create_limit_sell_order(
             order.asset, order.quantity, order.price)
     elif order.order_type == OrderType.MARKET_BUY:
-        res = exchange.create_market_buy_order(
+        order = exchange.create_market_buy_order(
             order.asset, order.quantity)
     elif order.order_type == OrderType.MARKET_SELL:
-        res = exchange.create_market_sell_order(
+        order = exchange.create_market_sell_order(
             order.asset, order.quantity)
     else:
         raise Exception("Order type {:s} not supported".format(
             order.order_type.name))
-    if res is None:
+    if order is None:
         return None
-    print("Order Places Response", res)
-    order = make_order_from_dct(res, order.exchange_id, order.id)
     print("Order made", order)
     return order
 

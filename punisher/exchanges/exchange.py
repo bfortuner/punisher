@@ -1,6 +1,7 @@
 import abc
 import ccxt
 import uuid
+from datetime import datetime
 from copy import deepcopy
 
 import punisher.constants as c
@@ -110,7 +111,7 @@ class CCXTExchange(Exchange):
         """Returns list of most recent trades for a particular symbol"""
         return self.client.fetch_trades(asset.symbol)
 
-    def fetch_my_trades(self, asset, since, limit, params=None):
+    def fetch_my_trades(self, asset, since=None, limit=None, params=None):
         """Returns list of most recent trades for a particular symbol"""
         params = self.get_default_params_if_none(params)
         return self.client.fetch_my_trades(asset.symbol, since, limit, params)
@@ -128,23 +129,27 @@ class CCXTExchange(Exchange):
 
     def create_limit_buy_order(self, asset, quantity, price, params=None):
         params = self.get_default_params_if_none(params)
-        return self.client.create_limit_buy_order(
+        response = self.client.create_limit_buy_order(
             asset.symbol, quantity, price, params)
+        return self.fetch_order(response.get("id"), asset.symbol)
 
     def create_limit_sell_order(self, asset, quantity, price, params=None):
         print(asset.symbol, quantity, price)
-        return self.client.create_limit_sell_order(
+        response = self.client.create_limit_sell_order(
             asset.symbol, quantity, price, params)
+        return self.fetch_order(response.get("id"), asset.symbol)
 
     def create_market_buy_order(self, asset, quantity, params=None):
         params = self.get_default_params_if_none(params)
-        return self.client.create_market_buy_order(
+        response = self.client.create_market_buy_order(
             asset.symbol, quantity, params)
+        return self.fetch_order(response.get("id"), asset.symbol)
 
     def create_market_sell_order(self, asset, quantity, params=None):
         params = self.get_default_params_if_none(params)
-        return self.client.create_market_sell_order(
+        response =  self.client.create_market_sell_order(
             asset.symbol, quantity, params)
+        return self.fetch_order(response.get("id"), asset.symbol)
 
     def cancel_order(self, order_id, asset=None, params=None):
         """
@@ -155,21 +160,25 @@ class CCXTExchange(Exchange):
     def fetch_order(self, order_id, symbol=None, params=None):
         """https://github.com/ccxt/ccxt/wiki/Manual#orders"""
         params = self.get_default_params_if_none(params)
-        return self.client.fetch_order(order_id, symbol, params)
+        response = self.client.fetch_order(order_id, symbol, params)
+        return Order.from_dict(response)
 
     def fetch_orders(self, asset, since=None, limit=None, params=None):
         params = self.get_default_params_if_none(params)
-        return self.client.fetch_orders(asset.symbol, since, limit, params)
+        response = self.client.fetch_orders(asset.symbol, since, limit, params)
+        return self._build_orders(response)
 
     def fetch_open_orders(self, asset, since=None, limit=None, params=None):
         params = self.get_default_params_if_none(params)
-        return self.client.fetch_open_orders(
+        response =  self.client.fetch_open_orders(
             asset.symbol, since, limit, params)
+        return self._build_orders(response)
 
     def fetch_closed_orders(self, asset, since=None, limit=None, params=None):
         params = self.get_default_params_if_none(params)
-        return self.client.fetch_closed_orders(
+        response = self.client.fetch_closed_orders(
             asset.symbol, since, limit, params)
+        return self._build_orders(response)
 
     def deposit(self, asset):
         return NotImplemented
@@ -187,6 +196,23 @@ class CCXTExchange(Exchange):
         params = self.get_default_params_if_none(params)
         return self.client.calculate_fee(asset.symbol, type, side,
             quantity, price, taker_or_maker, params)
+
+    def get_market_price_paid(self, asset, order):
+        trades = self.fetch_my_trades(asset)
+        total_quantity = order.quantity
+        weighted_avg_price = 0.0
+        for trade in trades:
+            if trade.get("order") == order.id:
+                trade_qty = trade.get("amount")
+                trade_cost = trade.get("cost")
+                trade_price = trade.get("price")
+                trade_feed = trade.get("fee")
+
+    def _build_orders(self, orders_jsn):
+        orders = []
+        for order in orders_jsn:
+            orders.append(Order.from_dict(order))
+        return orders
 
     def __repr__(self):
         return 'CCXTExchange({:s})'.format(self.id)
@@ -224,7 +250,7 @@ class PaperExchange(Exchange):
 
     # Paper trading methods
 
-    def fetch_my_trades(self, asset, since, limit, params=None):
+    def fetch_my_trades(self, asset, since=None, limit=None, params=None):
         """Returns list of most recent trades for a particular symbol"""
         return NotImplemented
 
@@ -297,20 +323,17 @@ class PaperExchange(Exchange):
         and calls methods to update balance (_open_order, _fill_order
         Returns Order Dictionary (for CCXT consistency)
         """
+        # TODO: Change this to only create the order
+        #       Implement something else to keep the Paper exchange orders
+        #       updated.
+
         assert quantity != 0 and price != 0
-        if not self.balance.is_balance_sufficient(
-            asset, quantity, price, order_type):
-            print("Balance is not sufficient to create order!")
-            return None
         # TODO: update Order class to have a update_filled_quantity method
         # TODO: update Order class to have a trades (partially filled orders)
-        order = Order(self.id, asset, price, quantity,
-                order_type)
-        order.status = OrderStatus.FILLED.name
-        order_dct = self._fill_order(order)
-        order_dct['created_time'] = order.created_time.isoformat()
-        self.orders.append(order_dct)
-        return order_dct # for consistency with CCXT client response
+        order = Order(self.id, asset, price, quantity, order_type)
+        self._fill_order(order)
+        self.orders.append(order)
+        return order
 
     def _fill_order(self, order):
         # TODO: set the filled time/canceled time, opened time etc somewhere?
@@ -318,24 +341,13 @@ class PaperExchange(Exchange):
         # TODO: write a cleaner fill order that doesnt need to check order type
         # TODO: handle pending orders, where "used" is also updated
         # For example, when I place a limit order that doesn't get filled
-        # my Quote currency total value doesn't change, but its "used" amount does
-
-        base = order.asset.base
-        quote = order.asset.quote
+        # my Quote currency total value doesn't change,
+        # but its "used" amount does
         self.balance.update_by_order(order)
+        order.filled_quantity = order.quantity
+        order.filled_time = datetime.utcnow()
+        order.status = OrderStatus.FILLED
 
-        # For consistency with CCXT
-        return {
-            'id': self._make_order_id(),
-            'symbol': order.asset.symbol,
-            'price': order.price,
-            'quantity': order.quantity,
-            'type': order.order_type.type,
-            'side': order.order_type.side,
-            'filled': order.filled_quantity,
-            'status': order.status, # TODO: Fix inconsistency w CCXT
-            'fee': order.fee
-        }
 
     def _make_order_id(self):
         return uuid.uuid4().hex
