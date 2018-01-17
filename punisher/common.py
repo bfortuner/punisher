@@ -42,7 +42,6 @@ from punisher.data.feed import CSVDataFeed, ExchangeDataFeed
 from punisher.data.feed import EXCHANGE_FEED, CSV_FEED
 from punisher.data.store import FileStore
 from punisher.data.store import DATA_STORES, FILE_STORE
-from punisher.data.provider import PaperExchangeDataProvider
 
 # Utils
 import punisher.utils.dates
@@ -53,7 +52,8 @@ import punisher.utils.encoders
 
 # Trading
 from punisher.trading.context import Context
-from punisher.trading.context import TradingMode, default_config
+from punisher.trading.context import TradingMode
+from punisher.trading.context import get_default_backtest_config
 from punisher.trading.order import Order
 from punisher.trading.order import OrderStatus, OrderType
 from punisher.trading import order_manager
@@ -65,6 +65,10 @@ import punisher.trading.coins
 from punisher.exchanges.exchange import load_exchange
 from punisher.exchanges.exchange import CCXTExchange
 from punisher.exchanges.exchange import PaperExchange
+from punisher.exchanges.exchange import load_csv_paper_exchange
+from punisher.exchanges.exchange import load_ccxt_paper_exchange
+from punisher.exchanges.data_providers import CSVExchangeDataProvider
+from punisher.exchanges.data_providers import CCXTExchangeDataProvider
 
 # Portfolio
 from punisher.portfolio.asset import Asset

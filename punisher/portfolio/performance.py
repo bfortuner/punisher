@@ -13,10 +13,9 @@ from .balance import get_total_value
 
 
 class PerformanceTracker():
-    def __init__(self, starting_cash, timeframe, store=None):
+    def __init__(self, starting_cash, timeframe):
         self.starting_cash = starting_cash
         self.timeframe = timeframe
-        self.store = store
         self.periods = []
         self.pnl = 0.0
         self.returns = 0.0
@@ -77,7 +76,6 @@ class PerformanceTracker():
     def to_dict(self):
         dct = copy.deepcopy(vars(self))
         dct['timeframe'] = self.timeframe.name
-        dct.pop('store')
         for p in dct['periods']:
             p['start_time'] = date_to_str(p['start_time'])
             p['end_time'] = date_to_str(p['end_time'])

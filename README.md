@@ -16,7 +16,7 @@
 
 2. Create conda environment
 ```
-conda env create -f environment.yml -n punisher
+conda env create -f environment.yaml -n punisher
 source activate punisher
 ```
 3. Add your API keys to ```dotenv_example``` and rename ```.env```.

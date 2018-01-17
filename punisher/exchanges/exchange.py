@@ -4,11 +4,14 @@ import uuid
 from copy import deepcopy
 
 import punisher.constants as c
-import punisher.config as proj_cfg
+import punisher.config as cfg
 from punisher.portfolio.asset import Asset
 from punisher.portfolio.balance import Balance, BalanceType
 from punisher.trading.order import Order, OrderType, OrderStatus
-from punisher.data.provider import DataProvider, PaperExchangeDataProvider
+from punisher.trading import order_manager
+
+from .data_providers import CCXTExchangeDataProvider
+from .data_providers import CSVExchangeDataProvider
 
 
 EXCHANGE_CLIENTS = {
@@ -17,12 +20,9 @@ EXCHANGE_CLIENTS = {
     c.GDAX: ccxt.gdax,
 }
 
-
 class Exchange(metaclass=abc.ABCMeta):
-
-    def __init__(self, id_, config):
-        self.id = id_
-        self.config = config
+    def __init__(self, ex_id):
+        self.id = ex_id
 
     @abc.abstractmethod
     def create_limit_buy_order(self, asset, quantity, price):
@@ -63,26 +63,21 @@ class Exchange(metaclass=abc.ABCMeta):
     def calculate_fee(self):
         pass
 
-    # Wrapper around balance method to give people the ability to
-    # just ask if_balance_sufficient from the exchange without separately
-    # requesting the balance
     def is_balance_sufficient(self, asset, quantity, price, order_type):
         return self.fetch_balance().is_balance_sufficient(
             asset, quantity, price, order_type)
-
 
     def get_default_params_if_none(self, params):
         return {} if params is None else params
 
 
-class CCXTExchange(Exchange, DataProvider):
-
-    def __init__(self, id_, config):
+class CCXTExchange(Exchange):
+    def __init__(self, ex_id, config):
         # Removing super here in favor of init because
         # http://bit.ly/2qJ9RAP
-        Exchange.__init__(self, id_, config)
-        DataProvider.__init__(self, id_, config)
-        self.client = EXCHANGE_CLIENTS[id_](config)
+        Exchange.__init__(self, ex_id)
+        self.config = config
+        self.client = EXCHANGE_CLIENTS[ex_id](config)
 
     def get_markets(self):
         if self.client.markets is None:
@@ -137,6 +132,7 @@ class CCXTExchange(Exchange, DataProvider):
             asset.symbol, quantity, price, params)
 
     def create_limit_sell_order(self, asset, quantity, price, params=None):
+        print(asset.symbol, quantity, price)
         return self.client.create_limit_sell_order(
             asset.symbol, quantity, price, params)
 
@@ -197,11 +193,10 @@ class CCXTExchange(Exchange, DataProvider):
 
 
 class PaperExchange(Exchange):
-    def __init__(self, id_, config):
-        super().__init__(id_, config)
-        self.balance = Balance.from_dict(config['balance'])
-        # TODO: implement get_data_provider
-        self.data_provider = self._get_data_provider(config.get("data_provider"))
+    def __init__(self, ex_id, balance, data_provider):
+        super().__init__(ex_id)
+        self.balance = balance
+        self.data_provider = data_provider
         self.orders = []
         self.commissions = []
 
@@ -327,25 +322,7 @@ class PaperExchange(Exchange):
 
         base = order.asset.base
         quote = order.asset.quote
-        if order.order_type.is_buy():
-            self.balance.update(
-                currency=quote,
-                delta_free=-(order.price * order.quantity),
-                delta_used=0.0)
-            self.balance.update(
-                currency=base,
-                delta_free=order.quantity,
-                delta_used=0.0)
-
-        elif order.order_type.is_sell():
-            self.balance.update(
-                currency=quote,
-                delta_free=(order.price * order.quantity),
-                delta_used=0.0)
-            self.balance.update(
-                currency=base,
-                delta_free=-order.quantity,
-                delta_used=0.0)
+        self.balance.update_by_order(order)
 
         # For consistency with CCXT
         return {
@@ -353,17 +330,12 @@ class PaperExchange(Exchange):
             'asset': order.asset.symbol,
             'price': order.price,
             'quantity': order.quantity,
-            'type': order.order_type.value['type'],
-            'side': order.order_type.value['side'],
+            'type': order.order_type.type,
+            'side': order.order_type.side,
             'filled': order.filled_quantity,
             'status': order.status, # TODO: Fix inconsistency w CCXT
             'fee': order.fee
         }
-
-    def _get_data_provider(self, data_provider):
-        if data_provider:
-            return data_provider
-        return CCXTExchange(c.DEFAULT_DATA_PROVIDER_EXCHANGE, {})
 
     def _make_order_id(self):
         return uuid.uuid4().hex
@@ -374,42 +346,51 @@ class PaperExchange(Exchange):
 
 EXCHANGE_CONFIGS = {
     c.POLONIEX: {
-        'apiKey': proj_cfg.POLONIEX_API_KEY,
-        'secret': proj_cfg.POLONIEX_API_SECRET_KEY,
+        'apiKey': cfg.POLONIEX_API_KEY,
+        'secret': cfg.POLONIEX_API_SECRET_KEY,
     },
     c.GDAX: {
-        'apiKey': proj_cfg.GDAX_API_KEY,
-        'secret': proj_cfg.GDAX_API_SECRET_KEY,
-        'password': proj_cfg.GDAX_PASSPHRASE,
+        'apiKey': cfg.GDAX_API_KEY,
+        'secret': cfg.GDAX_API_SECRET_KEY,
+        'password': cfg.GDAX_PASSPHRASE,
         'verbose':False,
     },
     c.BINANCE: {
-        'apiKey': proj_cfg.BINANCE_API_KEY,
-        'secret': proj_cfg.BINANCE_API_SECRET_KEY,
+        'apiKey': cfg.BINANCE_API_KEY,
+        'secret': cfg.BINANCE_API_SECRET_KEY,
         'verbose':False,
     },
     c.PAPER: {
-        'data_provider': None,
+        'data_provider_type': 'exchange', #or 'csv'
+        'data_provider_exchange_id': cfg.DEFAULT_EXCHANGE_ID,
+        'data_provider_ohlcv_fpath': c.DEFAULT_30M_FEED_CSV_FILENAME,
         'balance': c.DEFAULT_BALANCE
     }
 }
 
-def load_exchange(id_, cfg=None):
-    """
-    exchange_id: ['poloniex', 'simulate', 'gdax']
-    """
-    cfg = deepcopy(cfg)
-    if id_ not in EXCHANGE_CONFIGS.keys():
+def load_csv_paper_exchange(balance, ohlcv_fpath):
+    data_provider = CSVExchangeDataProvider(ohlcv_fpath)
+    return PaperExchange(c.PAPER, balance, data_provider)
+
+def load_ccxt_paper_exchange(balance, exchange_id):
+    exchange = load_exchange(exchange_id)
+    data_provider = CCXTExchangeDataProvider(exchange)
+    return PaperExchange(c.PAPER, balance, data_provider)
+
+def load_exchange(ex_id, config=None):
+    if ex_id not in EXCHANGE_CONFIGS.keys():
         raise NotImplemented
 
-    config = deepcopy(EXCHANGE_CONFIGS.get(id_))
+    if config is None:
+        config = deepcopy(EXCHANGE_CONFIGS.get(ex_id))
 
-    # Add/replace any exchange configs from the input config
-    if cfg:
-        for key, value in cfg.items():
-            config[key] = value
+    if ex_id == c.PAPER:
+        balance = Balance.from_dict(config['balance'])
+        if config['data_provider_type'] == 'exchange':
+            return load_ccxt_paper_exchange(
+                balance, config['data_provider_exchange_id'])
+        elif config['data_provider_type'] == 'csv':
+            return load_csv_paper_exchange(
+                balance, config['data_provider_ohlcv_fpath'])
 
-    if id_ == c.PAPER:
-        return PaperExchange(id_, config)
-
-    return CCXTExchange(id_, config)
+    return CCXTExchange(ex_id, config)

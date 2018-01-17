@@ -24,6 +24,29 @@ class Balance():
             BalanceType.TOTAL: self.total[currency],
         }
 
+    def update_by_order(self, order):
+        base = order.asset.base
+        quote = order.asset.quote
+        if order.order_type.is_buy():
+            self.update(
+                currency=quote,
+                delta_free=-(order.price * order.quantity),
+                delta_used=0.0)
+            self.update(
+                currency=base,
+                delta_free=order.quantity,
+                delta_used=0.0)
+
+        elif order.order_type.is_sell():
+            self.update(
+                currency=quote,
+                delta_free=(order.price * order.quantity),
+                delta_used=0.0)
+            self.update(
+                currency=base,
+                delta_free=-order.quantity,
+                delta_used=0.0)
+
     def update(self, currency, delta_free, delta_used):
         self.free[currency] += delta_free
         self.used[currency] += delta_used
@@ -73,7 +96,7 @@ class Balance():
         bal = Balance(
             cash_currency=c.BTC,
             starting_cash=0.0
-            )
+        )
         bal.free = dct[BalanceType.FREE.value]
         bal.used = dct[BalanceType.USED.value]
         bal.total = dct[BalanceType.TOTAL.value]

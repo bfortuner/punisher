@@ -1,3 +1,5 @@
+from punisher.portfolio.asset import Asset
+
 from .order import Order
 from .order import OrderType, OrderStatus
 
@@ -38,17 +40,29 @@ def build_market_sell_order(exchange, asset, quantity):
         order_type=OrderType.MARKET_SELL,
     )
 
-def get_order(exchange, ex_order_id, symbol=None):
+def get_order(exchange, ex_order_id, symbol):
+    """Returns this for Market Sell
+        {'info': {'symbol': 'XRPBTC', 'orderId': 19056893,
+    'clientOrderId': 'sRNNKORMgER6jmGrrbgh84', 'price': '0.00000000',
+    'origQty': '20.00000000', 'executedQty': '20.00000000',
+    'status': 'FILLED', 'timeInForce': 'GTC', 'type': 'MARKET',
+    'side': 'SELL', 'stopPrice': '0.00000000', 'icebergQty': '0.00000000',
+    'time': 1516157188872, 'isWorking': True},
+    'id': '19056893', 'timestamp': 1516157188872, 'datetime':
+    '2018-01-17T02:46:29.872Z', 'symbol': 'XRP/BTC', 'type': 'market', 'side': 'sell',
+    'price': 0.0, 'amount': 20.0, 'cost': 0.0, 'filled': 20.0,
+    'remaining': 0.0, 'status': 'closed', 'fee': None}"""
     order_dct = exchange.fetch_order(ex_order_id, symbol)
     order = make_order_from_dct(order_dct, exchange.id)
     return order
 
 def make_order_from_dct(dct, ex_id, order_id=None):
+    print("Order dictionary", dct)
     return Order.from_dict({
         'id': order_id,
         'exchange_id': ex_id,
         'exchange_order_id': dct['id'],
-        'asset': dct['asset'],
+        'asset': Asset.from_symbol(dct['symbol']),
         'price': dct['price'],
         'quantity': dct['quantity'],
         'order_type': OrderType.from_type_side(dct['type'], dct['side']).name,
@@ -71,7 +85,17 @@ def get_orders(exchange, ex_order_ids, symbols=None):
         orders.append(order)
     return orders
 
+def get_orders_by_symbol(exchange, symbols=None):
+    pass
+
 def place_order(exchange, order):
+    """
+    Res = this for Buy
+    {'info': {'symbol': 'XRPBTC', 'orderId': 19049767, 'clientOrderId': 'tLxVbs1AB9ZTvshuNLeEz9',
+    'transactTime': 1516155731253, 'price': '0.00010452',
+    'origQty': '20.00000000', 'executedQty': '0.00000000', 'status': 'NEW',
+    'timeInForce': 'GTC', 'type': 'LIMIT', 'side': 'BUY'}, 'id': '19049767'}
+    """
     if order.order_type == OrderType.LIMIT_BUY:
         res = exchange.create_limit_buy_order(
             order.asset, order.quantity, order.price)
@@ -89,7 +113,10 @@ def place_order(exchange, order):
             order.order_type.name))
     if res is None:
         return None
-    return make_order_from_dct(res, order.exchange_id, order.id)
+    print("Order Places Response", res)
+    order = get_order(exchange, res['id'], order.asset.symbol)
+    print("Order fetched", order)
+    return order
 
 def place_orders(exchange, orders):
     results = []

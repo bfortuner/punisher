@@ -92,7 +92,7 @@ class SQLStore(DataStore):
         return None
 
 
-FILE_STORE = 'CSV_STORE'
+FILE_STORE = 'FILE_STORE'
 
 DATA_STORES = {
     FILE_STORE: FileStore

@@ -42,7 +42,7 @@ class OrderType(Enum):
             'market_buy': OrderType.MARKET_BUY,
             'market_sell': OrderType.MARKET_SELL,
         }
-        key = type_ + '_' + side
+        key = type_.lower() + '_' + side.lower()
         return order_type_map[key]
 
     @classmethod
@@ -60,6 +60,14 @@ class OrderType(Enum):
             OrderType.MARKET_SELL,
             OrderType.STOP_LIMIT_SELL
         ])
+
+    @property
+    def type(self):
+        return self.value['type']
+
+    @property
+    def side(self):
+        return self.value['side']
 
     def is_buy(self):
         return self in self.buy_types()

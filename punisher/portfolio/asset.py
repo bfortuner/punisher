@@ -38,7 +38,11 @@ class Asset():
 
     @classmethod
     def from_symbol(self, symbol):
-        base,quote = symbol.split('/')
+        if '/' in symbol:
+            base,quote = symbol.split('/')
+        else:
+            base = symbol[:3]
+            quote = symbol[3:]
         return Asset(base, quote)
 
 

@@ -22,9 +22,8 @@ def fetch_ohlcv_data(exchange, asset, period, start, end=None):
     assert period in exchange.timeframes
     end = datetime.datetime.utcnow() if end is None else end
     data = exchange.fetch_ohlcv(asset, period)
-    print("DDD", data[:2])
     df = make_ohlcv_df(data, start, end)
-    print("Downloaded rows:", (len(df) -1))
+    print("Downloaded rows:", len(df))
     return df
 
 def fetch_and_save_ohlcv_data(exchange, asset, period, start, end=None):

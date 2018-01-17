@@ -1,194 +1,146 @@
+import os
 import time
 
+import punisher.config as cfg
+import punisher.constants as c
+
+from punisher.data.store import DATA_STORES
+from punisher.portfolio.portfolio import Portfolio
 from punisher.trading import order_manager
-from punisher.trading.context import Context, default_config, TradingMode
 from punisher.exchanges.exchange import load_exchange
 
+from .context import Context
+from .context import TradingMode
+from .record import Record
 
-def backtest(run_name,
-             strategy,
-             config=default_config(TradingMode.BACKTEST),
-             context=None):
+
+def backtest(name, exchange, balance, portfolio, feed, strategy):
     '''
-    Backtest entrypoint
-    run_name : name of your current experiment (multiple runs per strategy)
-    strategy : strategy implementation to be used in this backtest
-    config : default or custom config for building a Backtest Context
-    context: None by default, but will override the config if it is passed in.
+    name = name of your current experiment run
     '''
+    # Where we will save the record
+    root = os.path.join(cfg.DATA_DIR, name)
 
-    if context:
-        ctx = context
-    else:
-        ctx = Context.from_config(config)
+    # This can be retrieved from the user's global config
+    store = DATA_STORES[cfg.DATA_STORE](root=root)
 
-    ctx.logger.info("Starting backtest ...")
-    ctx.logger.info(ctx.config)
+    config = {
+        'experiment': name,
+        'strategy': strategy.name,
+    }
+    record = Record(
+        config=config,
+        portfolio=portfolio,
+        balance=balance,
+        store=store
+    )
+    ctx = Context(
+        exchange=exchange,
+        feed=feed,
+        record=record
+    )
+    feed.initialize()
 
-    record = ctx.record
-    feed =  ctx.feed
-    exchange = ctx.exchange
-    orders = []
+    row = feed.next()
+    while row is not None:
 
-    while True:
-        row = feed.next()
-        if row is not None:
-            orders = strategy.process(row, ctx)
+        # Call strategy
+        # {
+        #   'orders': [Order(), Order()]
+        #   'cancel_ids': ['order_id', order_id']
+        # }
+        orders = strategy.process(row, ctx)
 
-        # TODO: Implement Cancelling orders
+        # TODO: Cancelling orders
         # should we auto-cancel any outstanding orders
-        # order_manager.cancel_orders(orders['cancel_ids'])
+        # or should we leave this decision up to the Strategy?
+        order_manager.cancel_orders(exchange, orders['cancel_ids'])
 
         # Returns both FILLED and PENDING orders
         # TODO: Order manager handles mapping from Exchange JSON
-        # Paricularly order types like CLOSED --> FILLED,
+        # Particularly order types like CLOSED --> FILLED,
         # And OPEN vs PENDING <-- check the 'quantity' vs 'filled' amounts
-        orders = order_manager.place_orders(exchange, orders)
+        orders = order_manager.place_orders(exchange, orders['orders'])
         filled_orders = order_manager.get_filled_orders(orders)
 
-        # Portfolio only needs to know about new FILLED orders
+        # Portfolio needs to know about new filled orders
         record.portfolio.update(filled_orders)
 
-        # Record needs to know about ALL new orders (open/filled)
+        # Record needs to know about all new orders
         for order in orders:
             record.orders[order.id] = order
 
-        # TODO: Update Balance
-        # We're not updating the virtual balance, only the exchange
-        # which is OK until we have a multi-exchange algo
-        # But this also means, for live trading, we can't separate
-        # fund from Algo to Algo.
-        record.balance = exchange.fetch_balance()
+        # Update Virtual Balance (exchange balance left alone)
+        for order in filled_orders:
+            record.balance.update_by_order(order)
+            print("Equal?", record.balance == exchange.fetch_balance())
 
-        # Save to file
         record.save()
+        row = feed.next()
 
     return record
 
 
-def simulation(run_name,
-               strategy,
-               config=default_config(TradingMode.SIMULATION),
-               context=None):
+def simulate(name, exchange, balance, portfolio, feed, strategy):
     '''
-    Simulation entrypoint
-    run_name : name of your current experiment (multiple runs per strategy)
-    strategy : strategy implementation to be used in this simulation
-    config : default or custom config for building a Simulation Context
-    context: None by default, but will override the config if it is passed in.
+    exp_name = name of your current experiment (multiple runs per strategy)
     '''
+    # Where we will save the record
+    root = os.path.join(cfg.DATA_DIR, name)
 
-    if context:
-        ctx = context
-    else:
-        ctx = Context.from_config(config)
+    # This can be retrieved from the user's global config
+    store = DATA_STORES[cfg.DATA_STORE](root=root)
 
-    ctx.logger.info("Starting Simulation ...")
-    ctx.logger.info(ctx.config)
+    config = {
+        'experiment': name,
+        'strategy': strategy.name,
+    }
+    record = Record(
+        config=config,
+        portfolio=portfolio,
+        balance=balance,
+        store=store
+    )
+    ctx = Context(
+        exchange=exchange,
+        feed=feed,
+        record=record
+    )
+    feed.initialize()
 
-    record = ctx.record
-    feed = ctx.feed
-    exchange = ctx.exchange
-    orders = []
 
     while True:
         row = feed.next()
+
         if row is not None:
             orders = strategy.process(row, ctx)
 
-        # TODO: Implement Cancelling orders
-        # should we auto-cancel any outstanding orders
-        # or should we leave this decision up to the Strategy?
-        # order_manager.cancel_orders(orders['cancel_ids'])
+            # TODO: Cancelling orders
+            # should we auto-cancel any outstanding orders
+            # or should we leave this decision up to the Strategy?
+            order_manager.cancel_orders(exchange, orders['cancel_ids'])
 
-        # Returns both FILLED and PENDING orders
-        # TODO: Order manager handles mapping from Exchange JSON
-        # Paricularly order types like CLOSED --> FILLED,
-        # And OPEN vs PENDING <-- check the 'quantity' vs 'filled' amounts
-        orders = order_manager.place_orders(exchange, orders)
+            # Returns both FILLED and PENDING orders
+            # TODO: Order manager handles mapping from Exchange JSON
+            # Particularly order types like CLOSED --> FILLED,
+            # And OPEN vs PENDING <-- check the 'quantity' vs 'filled' amounts
+            orders = order_manager.place_orders(exchange, orders['orders'])
+            filled_orders = order_manager.get_filled_orders(orders)
 
-        # Record needs to know about ALL new orders (open/filled)
-        for order in orders:
-            ctx.record.orders[order.id] = order
+            # Portfolio needs to know about new filled orders
+            record.portfolio.update(filled_orders)
 
-        # Portfolio only needs to know about new FILLED orders
-        filled_orders = order_manager.get_filled_orders(orders)
-        record.portfolio.update(filled_orders)
+            # Record needs to know about all new orders
+            for order in orders:
+                record.orders[order.id] = order
 
-        # TODO: Update Balance
-        # We're not updating the virtual balance, only the exchange
-        # which is OK until we have a multi-exchange algo
-        # But this also means, for live trading, we can't separate
-        # fund from Algo to Algo.
-        record.balance = exchange.fetch_balance()
+            # Update Virtual Balance
+            # exchange balance may be impacted by external trading
+            for order in filled_orders:
+                record.balance.update_by_order(order)
 
-        # Save to file
-        record.save()
+            record.save()
 
-        time.sleep(2)
-
-    return record
-
-
-def live(run_name, strategy, config, context=None):
-    '''
-    Live Trading entrypoint.
-    run_name : name of your current experiment (multiple runs per strategy)
-    strategy : strategy implementation to be used
-    config : default or custom config for building a Context
-    context: None by default, but will override the config if it is passed in.
-    '''
-
-    if context:
-        ctx = context
-    else:
-        ctx = Context.from_config(config)
-
-    ctx.logger.info("Starting Live trading ... CAREFUL!")
-    ctx.logger.info(ctx.config)
-
-    record = ctx.record
-    feed = ctx.feed
-    exchange = ctx.exchange
-    orders = []
-
-    # Get starting balance from the exchange
-    record.balance = exchange.fetch_balance()
-
-    while True:
-        row = feed.next()
-        if row is not None:
-            orders = strategy.process(row, ctx)
-
-        # TODO: Implement Cancelling orders
-        # should we auto-cancel any outstanding orders
-        # or should we leave this decision up to the Strategy?
-        # order_manager.cancel_orders(orders['cancel_ids'])
-
-        # Returns both FILLED and PENDING orders
-        # TODO: Order manager handles mapping from Exchange JSON
-        # Paricularly order types like CLOSED --> FILLED,
-        # And OPEN vs PENDING <-- check the 'quantity' vs 'filled' amounts
-        orders = order_manager.place_orders(exchange, orders)
-
-        # Record needs to know about ALL new orders (open/filled)
-        for order in orders:
-            ctx.record.orders[order.id] = order
-
-        # Portfolio only needs to know about new FILLED orders
-        filled_orders = order_manager.get_filled_orders(orders)
-        record.portfolio.update(filled_orders)
-
-        # TODO: Update Balance
-        # We're not updating the virtual balance, only the exchange
-        # which is OK until we have a multi-exchange algo
-        # But this also means, for live trading, we can't separate
-        # fund from Algo to Algo.
-        record.balance = exchange.fetch_balance()
-
-        # Save to file
-        record.save()
-
-        time.sleep(2)
+        time.sleep(30)
 
     return record

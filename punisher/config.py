@@ -4,6 +4,8 @@ import logging
 from os.path import join, dirname
 from dotenv import load_dotenv
 
+from . import constants as c
+
 # Load env variables
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path, verbose=True)
@@ -11,11 +13,16 @@ load_dotenv(dotenv_path, verbose=True)
 # App
 APP_NAME = os.environ.get('APP_NAME', 'PUNISHER')
 APP_SECRET_KEY = os.environ.get('APP_SECRET_KEY', 'secret_key')
+PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
 DATA_DIR = os.environ.get('DATA_DIR', '.data/')
 WEIGHTS_DIR = os.environ.get('WEIGHTS_DIR', '.weights/')
 TESTING = os.environ.get('TESTING', False)
 DEBUG = os.environ.get('DEBUG', True)
-PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# Data store (file, sql)
+DATA_STORE = 'FILE_STORE'
+
+# Logging
 APP_LOG_LEVEL = logging.INFO
 MAIL_LOG_LEVEL = logging.ERROR
 
@@ -27,6 +34,8 @@ AWS_SECRET_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', 'password')
 
 
 ### Exchanges ###
+
+DEFAULT_EXCHANGE_ID = c.BINANCE
 
 # GDAX
 GDAX_ACCOUNT_ID = os.environ.get('GDAX_ACCOUNT_ID')
@@ -49,7 +58,7 @@ BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
 BINANCE_API_SECRET_KEY = os.environ.get('BINANCE_API_SECRET_KEY')
 
 
-### Data ###
+### External Data ###
 
 # Brave New Coin
 BNC_API_KEY = os.environ.get('BNC_API_KEY', 'none')
@@ -60,13 +69,6 @@ TWITTER_CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY')
 TWITTER_CONSUMER_SECRET = os.environ.get('TWITTER_CONSUMER_SECRET')
 TWITTER_ACCESS_TOKEN = os.environ.get('TWITTER_ACCESS_TOKEN')
 TWITTER_ACCESS_TOKEN_SECRET = os.environ.get('TWITTER_ACCESS_TOKEN_SECRET')
-
-# Catalyst
-CATALYST_DATA_PATH = os.environ.get('CATALYST_DATA_PATH')
-
-# DEFAULT funds
-DEFAULT_FUNDS = 10000
-
 
 
 def init_dirs():

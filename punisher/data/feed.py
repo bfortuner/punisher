@@ -5,15 +5,13 @@ from . import ohlcv
 
 
 class DataFeed():
-    def __init__(self, fpath, start=None, end=None):
-        self.fpath = fpath
+    def __init__(self, start=None, end=None):
         self.start = start
         self.end = end
         self.prior_time = None
         self.feed = None
 
-    def initialize(self, data_provider=None):
-        print("Loading feed:", self.fpath)
+    def initialize(self):
         if self.start is None:
             self.start = datetime.datetime(1, 1, 1, 1, 1)
         self.prior_time = self.start - datetime.timedelta(minutes=1)
@@ -47,9 +45,10 @@ class DataFeed():
 
 class CSVDataFeed(DataFeed):
     def __init__(self, fpath, start=None, end=None):
-        super().__init__(fpath, start, end)
+        super().__init__(start, end)
+        self.fpath = fpath
 
-    def initialize(self, data_provider=None):
+    def initialize(self):
         super().initialize()
         self.update()
 
@@ -59,39 +58,36 @@ class CSVDataFeed(DataFeed):
 
 
 class ExchangeDataFeed(DataFeed):
-    def __init__(self, assets, timeframe,
-                 fpath, start, exchange=None, end=None):
-        super().__init__(fpath, start, end)
+    def __init__(self, exchange, assets, timeframe,
+                 start, end=None):
+        super().__init__(start, end)
         self.exchange = exchange
         self.assets = assets
-        self.period = timeframe.value['id']
+        self.period = timeframe.id
 
-    def initialize(self, exchange=None):
+    def initialize(self):
         super().initialize()
-        if exchange:
-            self.exchange = exchange
         self.update()
 
     def next(self, refresh=True):
         return super().next(refresh)
 
     def update(self):
-        assert self.exchange != None
         self._download(self.prior_time, self.end)
-
         if len(self.assets) > 1:
             self.feed = ohlcv.load_multiple_assets(
                 self.exchange.id, self.assets, self.period,
                 self.start, self.end)
         else:
-            coin_fpath = ohlcv.get_price_data_fpath(
+            fpath = ohlcv.get_price_data_fpath(
                 self.assets[0], self.exchange.id, self.period)
             self.feed = ohlcv.load_chart_data_from_file(
-                coin_fpath, self.start, self.end)
+                fpath, self.start, self.end)
 
     def _download(self, start, end):
         ohlcv.download_chart_data(
-        self.exchange, self.assets, self.period, start, end)
+            self.exchange, self.assets,
+            self.period, start, end)
 
 
 EXCHANGE_FEED = 'EXCHANGE_FEED'
@@ -101,14 +97,13 @@ DATA_FEEDS = {
     CSV_FEED: CSVDataFeed
 }
 
+# TODO remove or refactor this method
 def load_feed(name, fpath, assets=None,
               timeframe=None, start=None, end=None):
     assert name in DATA_FEEDS.keys()
     if name == EXCHANGE_FEED:
-        feed = ExchangeDataFeed(
+        return ExchangeDataFeed(
             assets, timeframe,
             fpath, start, end
         )
-    else:
-        feed = CSVDataFeed(fpath, start, end)
-    return feed
+    return CSVDataFeed(fpath, start, end)

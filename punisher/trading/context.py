@@ -6,13 +6,12 @@ from datetime import datetime, timedelta
 from enum import Enum, unique
 from copy import deepcopy
 
-import punisher.config as proj_cfg
+import punisher.config as cfg
 import punisher.constants as c
 
 from punisher.data.store import DATA_STORES, FILE_STORE
 from punisher.data.feed import EXCHANGE_FEED, CSV_FEED
 from punisher.data.feed import load_feed
-from punisher.data.provider import PaperExchangeDataProvider
 from punisher.utils.dates import Timeframe
 
 from punisher.portfolio.portfolio import Portfolio
@@ -22,6 +21,7 @@ from punisher.portfolio.performance import PerformanceTracker
 
 from punisher.trading import order_manager
 from punisher.trading.record import Record
+
 from punisher.exchanges.exchange import load_exchange, CCXTExchange
 
 from punisher.utils.dates import str_to_date
@@ -35,113 +35,107 @@ class TradingMode(Enum):
 
 
 class Context():
-    def __init__(self, exchange, feed, record, config):
+    def __init__(self, exchange, feed, record):
         self.exchange = exchange
         self.feed = feed
         self.record = record
-        self.config = config
-        self.logger = get_logger(fpath=os.path.join(
-            proj_cfg.DATA_DIR, config['experiment']),
+        self.logger = self.init_logger(record)
+
+    def init_logger(self, record):
+        root = os.path.join(cfg.DATA_DIR, record.config['experiment'])
+        return get_logger(
+            fpath=root,
             logger_name='progress',
-            ch_log_level=logging.INFO)
+            ch_log_level=logging.INFO
+        )
 
     @classmethod
-    def from_config(self, cfg):
-        assert cfg is not None
-        print("CFG", cfg)
-        cfg = deepcopy(cfg)
-        root = os.path.join(proj_cfg.DATA_DIR, cfg['experiment'])
-        store = DATA_STORES[cfg['store']](
-            root=root)
+    def from_config(self, config):
+        root = os.path.join(cfg.DATA_DIR, config['experiment'])
+        store = DATA_STORES[cfg.DATA_STORE](root)
         feed = load_feed(
-            name=cfg['feed']['name'],
-            fpath=cfg['feed']['fpath'],
-            assets=[Asset.from_symbol(a) for a in cfg['feed']['symbols']],
-            timeframe=Timeframe[cfg['feed']['timeframe']],
-            start=str_to_date(cfg['feed'].get('start')),
-            end=str_to_date(cfg['feed'].get('end')),
+            name=config['feed']['name'],
+            fpath=config['feed']['fpath'],
+            assets=[Asset.from_symbol(a) for a in config['feed']['symbols']],
+            timeframe=Timeframe[config['feed']['timeframe']],
+            start=str_to_date(config['feed'].get('start')),
+            end=str_to_date(config['feed'].get('end')),
         )
+        feed.initialize(exchange)
         perf = PerformanceTracker(
-            starting_cash=cfg['starting_cash'],
-            timeframe=Timeframe[cfg['feed']['timeframe']],
+            starting_cash=config['starting_cash'],
+            timeframe=Timeframe[config['feed']['timeframe']],
             store=store
         )
         record = Record(
             config=cfg,
-            portfolio=Portfolio(cfg['starting_cash'], perf),
-            balance=cfg['balance'],
+            portfolio=Portfolio(config['starting_cash'], perf),
+            balance=Balance.from_dict(config['balance']),
             store=store
         )
-
-        # Hack to create the PaperExchangeDataProvider here as our default
-        # data provider for the Paper exchange using the feed provided
-
-        if cfg['exchange'].get('data_provider') == None:
-            print("DP", cfg['exchange'].get('data_provider'))
-            cfg['exchange']['data_provider'] = PaperExchangeDataProvider(feed)
-
-        cfg['exchange']['balance'] = cfg['balance']
-
         exchange = load_exchange(
-            cfg['exchange']['exchange_id'],
-            cfg=cfg['exchange']
+            config['exchange']['exchange_id'],
+            cfg=config['exchange']
         )
-
-        # Ensure we have the live balance if Live trading
-        record.balance = exchange.fetch_balance()
-        # TODO: Maybe make exchange initialize a feed instead
-        feed.initialize(exchange)
+        logger = get_logger(
+            fpath=root,
+            logger_name='progress',
+            ch_log_level=logging.INFO
+        )
 
         return Context(
-            config=cfg,
             exchange=exchange,
             feed=feed,
-            record=record
+            record=record,
+            logger=logger
         )
 
 
-def default_config(trading_mode):
-    """
-    Method to get sensible defaults for each trading mode.
-    Can be used by users as a set of base configs to work with.
-    Returns config dictionary
-    """
-
-    default_cfg_template = {
+def get_default_backtest_config(name, symbols):
+    name = name + '_backtest'
+    root = os.path.join(cfg.DATA_DIR, name)
+    return {
+        'experiment': name,
         'cash_asset': c.BTC,
         'starting_cash': 1.0,
-        'store': FILE_STORE,
-        'balance': deepcopy(c.DEFAULT_BALANCE),
+        'store': cfg.DATA_STORE,
+        'feed': CSV_FEED,
+        'balance': c.DEFAULT_BALANCE,
         'feed': {
-            'symbols': ['ETH/BTC']
+            'name': name,
+            'root': root,
+            'symbols': symbols,
+            'start': '2018-01-01T00:00:00',
+            'timeframe': Timeframe.THIRTY_MIN.name,
+            'fpath': None
         },
-        'exchange': {}
+        'exchange': {
+            'id': c.PAPER
+        }
     }
 
-    if trading_mode == TradingMode.BACKTEST:
-        default_cfg_template['experiment'] = 'default-backtest'
-        default_cfg_template['feed']['name'] = CSV_FEED
-        default_cfg_template['feed']['start'] = '2018-01-01T00:00:00'
-        default_cfg_template['feed']['timeframe'] = Timeframe.THIRTY_MIN.name
-        default_cfg_template['feed']['fpath'] = os.path.join(
-            proj_cfg.DATA_DIR, c.DEFAULT_30M_FEED_CSV_FILENAME)
-        print(default_cfg_template['feed']['fpath'])
-        default_cfg_template["exchange"]['exchange_id'] = c.PAPER
-        return default_cfg_template
+def get_default_simulation_config(name, symbols):
+    name = name + '_sim'
+    root = os.path.join(cfg.DATA_DIR, name)
+    return {
+        'experiment': name,
+        'cash_asset': c.BTC,
+        'starting_cash': 1.0,
+        'store': cfg.DATA_STORE,
+        'feed': EXCHANGE_FEED,
+        'balance': c.DEFAULT_BALANCE,
+        'feed': {
+            'name': name,
+            'root': root,
+            'symbols': symbols,
+            'start': datetime.utcnow().isoformat(),
+            'timeframe': Timeframe.ONE_MIN.name,
+            'fpath': None
+        },
+        'exchange': {
+            'id': c.PAPER,
+        }
+    }
 
-    elif trading_mode == TradingMode.SIMULATION:
-        default_cfg_template['experiment'] = 'default-simulation'
-        default_cfg_template['feed']['name'] = EXCHANGE_FEED
-        default_cfg_template['feed']['start'] = datetime.utcnow(
-            ).strftime("%Y-%m-%dT%H:%M:%S")
-        default_cfg_template['feed']['timeframe'] = Timeframe.ONE_MIN.name
-        default_cfg_template['feed']['fpath'] = os.path.join(
-            proj_cfg.DATA_DIR, c.DEFAULT_1M_FEED_CSV_FILENAME)
-        default_cfg_template['exchange']['exchange_id'] = c.PAPER
-        default_cfg_template['exchange']['data_provider'] = CCXTExchange(
-            c.DEFAULT_DATA_PROVIDER_EXCHANGE, {})
-        return default_cfg_template
-
-    else:
-        print("No default config for {} trading mode".format(trading_mode))
-        exit(1)
+def get_default_live_config(name, symbols):
+    return {}

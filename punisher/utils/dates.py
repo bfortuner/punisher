@@ -18,9 +18,16 @@ class Timeframe(Enum):
     ONE_HOUR = {'id': '1h', 'delta': datetime.timedelta(hours=1)}
     ONE_DAY = {'id': '1d', 'delta': datetime.timedelta(days=1)}
 
+    @property
+    def id(self):
+        return self.value['id']
+
+    @property
+    def delta(self):
+        return self.value['delta']
+
 
 def is_str_digit(string):
-
     if 'numpy' in type(string).__module__:
         return np.issubdtype(string, np.number)
     return string.isdigit()

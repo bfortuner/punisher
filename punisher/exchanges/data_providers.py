@@ -2,15 +2,15 @@ import abc
 import numpy as np
 from enum import Enum
 
+from punisher.data import ohlcv
 from punisher.utils.dates import utc_to_epoch
 
 supported_timeframes = { '1m': 1, '5m': 5, '30m': 30 }
 
 
-class DataProvider(metaclass=abc.ABCMeta):
-    def __init__(self, id_, config):
-        self.id = id_
-        self.config = config
+class ExchangeDataProvider(metaclass=abc.ABCMeta):
+    def __init__(self):
+        pass
 
     @abc.abstractmethod
     def get_markets(self):
@@ -32,18 +32,13 @@ class DataProvider(metaclass=abc.ABCMeta):
     def fetch_ticker(self, asset):
         pass
 
-    def to_json(self):
-        return { "id": self.id }
 
-
-class PaperExchangeDataProvider(DataProvider):
-    def __init__(self, data_feed, id_="backtest_data_provider", config=None):
-        super().__init__(id_, config)
-        # TODO: figure out a way to have all the data rows for each
-        #       currency instead of just one
-        self.data_feed = data_feed
-        # current row data
-        # time_epoch	open	high	low	close	volume	time_utc
+class CSVExchangeDataProvider(ExchangeDataProvider):
+    def __init__(self, ohlcv_fpath, start=None, end=None):
+        super().__init__()
+        self.ohlcv_fpath = ohlcv_fpath
+        self.start = None
+        self.end = None
 
     def get_markets(self):
         markets = []
@@ -70,11 +65,11 @@ class PaperExchangeDataProvider(DataProvider):
         return markets
 
     def fetch_ohlcv(self, asset, timeframe=None):
-        all_rows = self.data_feed.history().tail()
-        return all_rows
+        df = ohlcv.load_chart_data_from_file(
+            self.ohlcv_fpath, self.start, self.end)
+        return df.tail()
 
     def fetch_order_book(self, asset):
-        # TODO: actually get historical order book data
         order_book = {
             'bids': [],
             'asks': [],
@@ -84,7 +79,6 @@ class PaperExchangeDataProvider(DataProvider):
         return order_book
 
     def fetch_public_trades(self, asset):
-        """Returns list of most recent trades for a particular symbol"""
         trades = []
         return trades
 
@@ -113,3 +107,29 @@ class PaperExchangeDataProvider(DataProvider):
     @property
     def timeframes(self):
         return supported_timeframes
+
+
+
+class CCXTExchangeDataProvider(ExchangeDataProvider):
+    def __init__(self, exchange):
+        super().__init__()
+        self.exchange = exchange
+
+    def get_markets(self):
+        return self.exchange.get_markets()
+
+    def fetch_ohlcv(self, asset, timeframe=None):
+        return self.exchange.fetch_ohlcv(asset, timeframe)
+
+    def fetch_order_book(self, asset):
+        return self.exchange.fetch_order_book(asset)
+
+    def fetch_public_trades(self, asset):
+        return self.exchange.fetch_public_trades(asset)
+
+    def fetch_ticker(self, asset):
+        return self.exchange.fetch_ticker(asset)
+
+    @property
+    def timeframes(self):
+        return self.exchange.timeframes
