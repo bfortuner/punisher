@@ -1,4 +1,45 @@
-{
-    'id': 'string',  // order id
-    'info': { ... }, // decoded original JSON response from the exchange as is
-}
+
+// limit buy Binance response
+{'id': '19121540',
+ 'info': {'clientOrderId': 'XcRu3uVEd3fg4V657P6Tq2',
+          'executedQty': '0.00000000',
+          'orderId': 19121540,
+          'origQty': '20.00000000',
+          'price': '0.00010221',
+          'side': 'BUY',
+          'status': 'NEW',
+          'symbol': 'XRPBTC',
+          'timeInForce': 'GTC',
+          'transactTime': 1516167604841,
+          'type': 'LIMIT'}}
+
+// limit sell Binance response
+NOT isWorking
+
+// market sell Binance Response
+{'id': '19123522',
+ 'info': {'clientOrderId': 'XplE01gtT5Oepyb7CpT3Qw',
+          'executedQty': '20.00000000',
+          'orderId': 19123522,
+          'origQty': '20.00000000',
+          'price': '0.00000000',
+          'side': 'SELL',
+          'status': 'FILLED',
+          'symbol': 'XRPBTC',
+          'timeInForce': 'GTC',
+          'transactTime': 1516168063192,
+          'type': 'MARKET'}}
+
+// market buy Binance Response
+{'id': '19123922',
+ 'info': {'clientOrderId': 'AirnAOarZeKa39YGear9hh',
+          'executedQty': '10.00000000',
+          'orderId': 19123922,
+          'origQty': '10.00000000',
+          'price': '0.00000000',
+          'side': 'BUY',
+          'status': 'FILLED',
+          'symbol': 'XRPBTC',
+          'timeInForce': 'GTC',
+          'transactTime': 1516168163119,
+          'type': 'MARKET'}}

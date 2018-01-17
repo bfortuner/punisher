@@ -67,3 +67,9 @@ DEFAULT_BALANCE = {
 # Feed
 DEFAULT_1M_FEED_CSV_FILENAME = 'paper_ETH_BTC_1m.csv'
 DEFAULT_30M_FEED_CSV_FILENAME = 'paper_ETH_BTC_30m.csv'
+
+# Min Asset quantities for live exchange orders
+MIN_BTC=.001
+MIN_ETH=.01
+MIN_BNB=1
+MIN_USDT=1
