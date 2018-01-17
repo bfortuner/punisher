@@ -1,26 +1,38 @@
-{
-    'symbol':      string symbol of the market ('BTC/USD', 'ETH/BTC', ...)
-    'info':      { the original non-modified unparsed reply from exchange API },
-    'timestamp':   int (64-bit Unix Timestamp in milliseconds since Epoch 1 Jan 1970)
-    'datetime':    ISO8601 datetime string with milliseconds
-    'high':        float (highest price)
-    'low':         float (lowest price)
-    'bid':         float (current bid (buy) price)
-    'ask':         float (current ask (sell) price)
-    'vwap':        float (volume weighed average price)
-    'open':        float (open price),
-    'first':       float (price of first trade),
-    'last':        float (price of last trade),
-    'change':      float (percentage change),
-    'average':     float (average),
-    'baseVolume':  float (volume of base currency),
-    'quoteVolume': float (volume of quote currency),
-}
-
-// Or all tickers at once using fetch_tickers()
-{
-    'info':    { ... }, // the original JSON response from the exchange as is
-    'BTC/USD': { ... }, // a single ticker for BTC/USD
-    'ETH/BTC': { ... }, // a ticker for ETH/BTC
-    ...
-}
+{'ask': 0.00010187,
+ 'average': None,
+ 'baseVolume': 165639838.0,
+ 'bid': 0.00010161,
+ 'change': -16.156,
+ 'close': 0.00012149,
+ 'datetime': '2018-01-17T05:13:59.765Z',
+ 'first': None,
+ 'high': 0.0001237,
+ 'info': {'askPrice': '0.00010187',
+          'askQty': '4481.00000000',
+          'bidPrice': '0.00010161',
+          'bidQty': '1904.00000000',
+          'closeTime': 1516166038765,
+          'count': 292091,
+          'firstId': 9483999,
+          'highPrice': '0.00012370',
+          'lastId': 9776089,
+          'lastPrice': '0.00010187',
+          'lastQty': '583.00000000',
+          'lowPrice': '0.00008400',
+          'openPrice': '0.00012150',
+          'openTime': 1516079638765,
+          'prevClosePrice': '0.00012149',
+          'priceChange': '-0.00001963',
+          'priceChangePercent': '-16.156',
+          'quoteVolume': '17560.33279278',
+          'symbol': 'XRPBTC',
+          'volume': '165639838.00000000',
+          'weightedAvgPrice': '0.00010602'},
+ 'last': 0.00010187,
+ 'low': 8.4e-05,
+ 'open': 0.0001215,
+ 'percentage': None,
+ 'quoteVolume': 17560.33279278,
+ 'symbol': 'XRP/BTC',
+ 'timestamp': 1516166038765,
+ 'vwap': 0.00010602}
