@@ -134,20 +134,24 @@ class Order():
         return d
 
     @classmethod
-    def from_dict(self, order_dct):
+    def from_dict(self, d):
         order = Order(
-            exchange_id=order_dct['id'],
-            asset=Asset.from_symbol(order_dct['symbol']),
-            price=order_dct['price'],
-            quantity=order_dct['amount'],
-            order_type=OrderType.from_type_side(
-                order_dct['type'], order_dct['side']),
-            exchange_order_id=order_dct['id']
+            exchange_id=d['exchange_id'],
+            asset=Asset.from_symbol(d['symbol']),
+            price=d['price'],
+            quantity=d['quantity'],
+            order_type=OrderType[d['order_type']],
         )
-        order.filled_quantity = order_dct.get('filled', 0)
-        order.status = OrderStatus[
-            order_dct.get('status', OrderStatus.CREATED.name).upper()]
-        order.fee = order_dct.get('fee', 0.0)
+        order.id = d.get('id', order.id)
+        order.exchange_order_id = d.get('exchange_order_id')
+        order.filled_quantity = d.get('filled_quantity', 0)
+        order.status = OrderStatus[d.get('status', OrderStatus.CREATED.name)]
+        order.created_time = str_to_date(d.get('created_time'))
+        order.opened_time = str_to_date(d.get('opened_time'))
+        order.filled_time = str_to_date(d.get('filled_time'))
+        order.canceled_time = str_to_date(d.get('canceled_time'))
+        order.retries = d.get('retries', 0)
+        order.fee = d.get('fee', {})
         return order
 
     def to_json(self):

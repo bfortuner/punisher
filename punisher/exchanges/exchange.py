@@ -137,19 +137,19 @@ class CCXTExchange(Exchange):
         print(asset.symbol, quantity, price)
         response = self.client.create_limit_sell_order(
             asset.symbol, quantity, price, params)
-        return self.fetch_order(response.get("id"), asset.symbol)
+        return self.fetch_order(response["id"], asset.symbol)
 
     def create_market_buy_order(self, asset, quantity, params=None):
         params = self.get_default_params_if_none(params)
         response = self.client.create_market_buy_order(
             asset.symbol, quantity, params)
-        return self.fetch_order(response.get("id"), asset.symbol)
+        return self.fetch_order(response["id"], asset.symbol)
 
     def create_market_sell_order(self, asset, quantity, params=None):
         params = self.get_default_params_if_none(params)
         response =  self.client.create_market_sell_order(
             asset.symbol, quantity, params)
-        return self.fetch_order(response.get("id"), asset.symbol)
+        return self.fetch_order(response["id"], asset.symbol)
 
     def cancel_order(self, order_id, asset=None, params=None):
         """
@@ -161,7 +161,7 @@ class CCXTExchange(Exchange):
         """https://github.com/ccxt/ccxt/wiki/Manual#orders"""
         params = self.get_default_params_if_none(params)
         response = self.client.fetch_order(order_id, symbol, params)
-        return Order.from_dict(response)
+        return self._build_order(response)
 
     def fetch_orders(self, asset, since=None, limit=None, params=None):
         params = self.get_default_params_if_none(params)
@@ -203,16 +203,33 @@ class CCXTExchange(Exchange):
         weighted_avg_price = 0.0
         for trade in trades:
             if trade.get("order") == order.id:
-                trade_qty = trade.get("amount")
-                trade_cost = trade.get("cost")
-                trade_price = trade.get("price")
-                trade_feed = trade.get("fee")
+                trade_qty = trade["amount"]
+                trade_cost = trade["cost"]
+                trade_price = trade["price"]
+                trade_feed = trade["fee"]
+        return NotImplemented
 
-    def _build_orders(self, orders_jsn):
+    def _build_orders(self, orders_dct):
         orders = []
-        for order in orders_jsn:
-            orders.append(Order.from_dict(order))
+        for order in orders_dct:
+            orders.append(self._build_order(order))
         return orders
+
+    def _build_order(self, order_dct):
+        order = Order(
+            exchange_id=order_dct['id'],
+            asset=Asset.from_symbol(order_dct['symbol']),
+            price=order_dct['price'],
+            quantity=order_dct['amount'],
+            order_type=OrderType.from_type_side(
+                order_dct['type'], order_dct['side']),
+            exchange_order_id=order_dct['id']
+        )
+        order.filled_quantity = order_dct.get('filled', 0)
+        order.status = OrderStatus[
+            order_dct.get('status', OrderStatus.CREATED.name).upper()]
+        order.fee = order_dct.get('fee', 0.0)
+        return order
 
     def __repr__(self):
         return 'CCXTExchange({:s})'.format(self.id)
