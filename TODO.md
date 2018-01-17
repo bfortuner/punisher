@@ -27,6 +27,12 @@
 
 * Add method rebalancePortfolio(assets, weights) to OrderManager which places the necessary buy/sell orders to rebalance a portfolio provided a list of weights
 * How to handle pending orders? Always cancel? Edit? Reorder?
+* Implement Order_Updater for the Paper exchange which updates orders from Created -> Pending - > FILLED
+* Implement order market price calculator that uses trade data to determine the cost of the order.
+    - Use this when determining performance of market orders
+    - Make performance trackers use Cost instead of price * quantity so we can use this feature
+    - Figure out what should be updating orders (i.e. fetching pending/open orders and updating them until they are filled)
+        - Maybe order manager?
 
 ### Trading
 
