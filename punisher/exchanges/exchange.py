@@ -11,7 +11,7 @@ from punisher.trading.order import Order, OrderType, OrderStatus
 from punisher.trading import order_manager
 
 from .data_providers import CCXTExchangeDataProvider
-from .data_providers import CSVExchangeDataProvider
+from .data_providers import FeedExchangeDataProvider
 
 
 EXCHANGE_CLIENTS = {
@@ -368,11 +368,11 @@ EXCHANGE_CONFIGS = {
     }
 }
 
-def load_csv_paper_exchange(balance, ohlcv_fpath):
-    data_provider = CSVExchangeDataProvider(ohlcv_fpath)
+def load_feed_based_paper_exchange(balance, feed):
+    data_provider = FeedExchangeDataProvider(feed)
     return PaperExchange(c.PAPER, balance, data_provider)
 
-def load_ccxt_paper_exchange(balance, exchange_id):
+def load_ccxt_based_paper_exchange(balance, exchange_id):
     exchange = load_exchange(exchange_id)
     data_provider = CCXTExchangeDataProvider(exchange)
     return PaperExchange(c.PAPER, balance, data_provider)
@@ -383,14 +383,5 @@ def load_exchange(ex_id, config=None):
 
     if config is None:
         config = deepcopy(EXCHANGE_CONFIGS.get(ex_id))
-
-    if ex_id == c.PAPER:
-        balance = Balance.from_dict(config['balance'])
-        if config['data_provider_type'] == 'exchange':
-            return load_ccxt_paper_exchange(
-                balance, config['data_provider_exchange_id'])
-        elif config['data_provider_type'] == 'csv':
-            return load_csv_paper_exchange(
-                balance, config['data_provider_ohlcv_fpath'])
 
     return CCXTExchange(ex_id, config)

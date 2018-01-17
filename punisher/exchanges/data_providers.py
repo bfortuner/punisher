@@ -33,10 +33,10 @@ class ExchangeDataProvider(metaclass=abc.ABCMeta):
         pass
 
 
-class CSVExchangeDataProvider(ExchangeDataProvider):
-    def __init__(self, ohlcv_fpath, start=None, end=None):
+class FeedExchangeDataProvider(ExchangeDataProvider):
+    def __init__(self, feed, start=None, end=None):
         super().__init__()
-        self.ohlcv_fpath = ohlcv_fpath
+        self.feed = feed
         self.start = None
         self.end = None
 
@@ -64,10 +64,8 @@ class CSVExchangeDataProvider(ExchangeDataProvider):
         markets.append(market)
         return markets
 
-    def fetch_ohlcv(self, asset, timeframe=None):
-        df = ohlcv.load_chart_data_from_file(
-            self.ohlcv_fpath, self.start, self.end)
-        return df.tail()
+    def fetch_ohlcv(self, asset, timeframe):
+        return self.feed.history()
 
     def fetch_order_book(self, asset):
         order_book = {
@@ -83,7 +81,7 @@ class CSVExchangeDataProvider(ExchangeDataProvider):
         return trades
 
     def fetch_ticker(self, asset):
-        latest = self.fetch_ohlcv(asset).iloc[-1]
+        latest = self.feed.peek()
         return {
             'symbol': asset.symbol,
             'info': {},
@@ -118,7 +116,7 @@ class CCXTExchangeDataProvider(ExchangeDataProvider):
     def get_markets(self):
         return self.exchange.get_markets()
 
-    def fetch_ohlcv(self, asset, timeframe=None):
+    def fetch_ohlcv(self, asset, timeframe):
         return self.exchange.fetch_ohlcv(asset, timeframe)
 
     def fetch_order_book(self, asset):

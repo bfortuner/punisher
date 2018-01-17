@@ -21,9 +21,17 @@ class DataFeed():
 
     def history(self, t_minus=0):
         """Return t_minus rows from feed
-        Which should represent the latest dates
+        Which should represent the latest dates seen by Strategy
         """
-        return self.feed.iloc[-t_minus:]
+        data = self.feed[self.feed.index <= date_utils.utc_to_epoch(
+            self.prior_time)]
+        return data[-t_minus:]
+
+    def peek(self):
+        data = self.history()
+        if len(data) > 0:
+            return data.iloc[-1]
+        return None
 
     def next(self, refresh=False):
         if refresh:

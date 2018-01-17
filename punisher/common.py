@@ -65,9 +65,9 @@ import punisher.trading.coins
 from punisher.exchanges.exchange import load_exchange
 from punisher.exchanges.exchange import CCXTExchange
 from punisher.exchanges.exchange import PaperExchange
-from punisher.exchanges.exchange import load_csv_paper_exchange
-from punisher.exchanges.exchange import load_ccxt_paper_exchange
-from punisher.exchanges.data_providers import CSVExchangeDataProvider
+from punisher.exchanges.exchange import load_feed_based_paper_exchange
+from punisher.exchanges.exchange import load_ccxt_based_paper_exchange
+from punisher.exchanges.data_providers import FeedExchangeDataProvider
 from punisher.exchanges.data_providers import CCXTExchangeDataProvider
 
 # Portfolio
