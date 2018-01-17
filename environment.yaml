@@ -3,7 +3,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - appnope=0.1.0
   - bleach=2.0.0
   - entrypoints=0.2.3
   - html5lib=1.0.1
@@ -58,11 +57,8 @@ dependencies:
   - ipython_genutils=0.2.0
   - jsonschema=2.6.0
   - jupyter_core=4.4.0
-  - libcxx=4.0.1
-  - libcxxabi=4.0.1
   - libedit=3.1
   - libffi=3.2.1
-  - libgfortran=3.0.1
   - libpng=1.6.32
   - matplotlib=2.1.1
   - mkl=2018.0.1
