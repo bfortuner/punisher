@@ -122,7 +122,8 @@ class Order():
             name: getattr(self, name)
             for name in self.__slots__
         }
-        d['asset'] = self.asset.symbol
+        del d['asset']
+        d['symbol'] = self.asset.symbol
         d['status'] = self.status.name
         d['order_type'] = self.order_type.name
         d['created_time'] = date_to_str(self.created_time)
@@ -135,7 +136,7 @@ class Order():
     def from_dict(self, d):
         order = Order(
             exchange_id=d['exchange_id'],
-            asset=Asset.from_symbol(d['asset']),
+            asset=Asset.from_symbol(d['symbol']),
             price=d['price'],
             quantity=d['quantity'],
             order_type=OrderType[d['order_type']],

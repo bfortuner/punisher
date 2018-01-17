@@ -62,7 +62,7 @@ def make_order_from_dct(dct, ex_id, order_id=None):
         'id': order_id,
         'exchange_id': ex_id,
         'exchange_order_id': dct['id'],
-        'asset': Asset.from_symbol(dct['symbol']),
+        'symbol': dct['symbol'],
         'price': dct['price'],
         'quantity': dct['quantity'],
         'order_type': OrderType.from_type_side(dct['type'], dct['side']).name,
@@ -114,8 +114,8 @@ def place_order(exchange, order):
     if res is None:
         return None
     print("Order Places Response", res)
-    order = get_order(exchange, res['id'], order.asset.symbol)
-    print("Order fetched", order)
+    order = make_order_from_dct(res, order.exchange_id, order.id)
+    print("Order made", order)
     return order
 
 def place_orders(exchange, orders):

@@ -327,7 +327,7 @@ class PaperExchange(Exchange):
         # For consistency with CCXT
         return {
             'id': self._make_order_id(),
-            'asset': order.asset.symbol,
+            'symbol': order.asset.symbol,
             'price': order.price,
             'quantity': order.quantity,
             'type': order.order_type.type,
