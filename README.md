@@ -21,7 +21,8 @@ source activate punisher
 ```
 3. Add your API keys to ```dotenv_example``` and rename ```.env```.
 
-**No API keys?** You can still download data with the Exchange APIs, just empty the dictionary we pass in as a config in ccxt.py
+**No API keys?** 
+You can still download data with the Exchange APIs, just empty the dictionary we pass in as a config in exchange.py
 
 4. Initialize [submodules](https://chrisjean.com/git-submodules-adding-using-removing-and-updating/)
 ```
