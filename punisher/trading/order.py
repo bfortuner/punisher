@@ -105,10 +105,6 @@ class Order():
         self.retries = 0
         self.trades = []
 
-    @classmethod
-    def make_id(self):
-        return uuid.uuid4().hex
-
     def set_order_type(self, order_type):
         assert order_type in OrderType
         self.order_type = order_type
@@ -162,6 +158,10 @@ class Order():
     def from_json(self, json_str):
         dct = json.loads(json_str)
         return self.from_dict(dct)
+
+    @staticmethod
+    def make_id():
+        return uuid.uuid4().hex
 
     def __repr__(self):
         return self.to_json()

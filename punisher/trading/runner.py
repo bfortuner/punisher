@@ -14,6 +14,13 @@ from .context import TradingMode
 from .record import Record
 
 
+def get_latest_prices(positions, row):
+    # TODO: refactor this to work for multiple assets
+    latest_prices = {}
+    for pos in positions:
+        latest_prices[pos.asset.symbol] = row['close']
+    return latest_prices
+
 def backtest(name, exchange, balance, portfolio, feed, strategy):
     '''
     name = name of your current experiment run
@@ -63,8 +70,12 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         orders = order_manager.place_orders(exchange, orders['orders'])
         filled_orders = order_manager.get_filled_orders(orders)
 
+        # Getting the latest prices for each of our positions
+        positions = record.portfolio.positions
+        latest_prices = get_latest_prices(postions, row)
+
         # Portfolio needs to know about new filled orders
-        record.portfolio.update(filled_orders)
+        record.portfolio.update(filled_orders, latest_prices)
 
         # Record needs to know about all new orders
         for order in orders:
@@ -108,7 +119,6 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
     )
     feed.initialize()
 
-
     while True:
         row = feed.next()
 
@@ -127,8 +137,12 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
             orders = order_manager.place_orders(exchange, orders['orders'])
             filled_orders = order_manager.get_filled_orders(orders)
 
+            # Getting the latest prices for each of our positions
+            positions = record.portfolio.positions
+            latest_prices = get_latest_prices(postions, row)
+
             # Portfolio needs to know about new filled orders
-            record.portfolio.update(filled_orders)
+            record.portfolio.update(filled_orders, latest_prices)
 
             # Record needs to know about all new orders
             for order in orders:

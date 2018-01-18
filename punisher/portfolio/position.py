@@ -54,7 +54,6 @@ class Position():
                 self.cost_price = total_value / total_quantity
 
         self.quantity = total_quantity
-        self.latest_price = txn_price
 
     @property
     def cost_value(self):
