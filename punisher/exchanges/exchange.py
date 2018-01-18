@@ -10,6 +10,7 @@ from punisher.portfolio.asset import Asset
 from punisher.portfolio.balance import Balance, BalanceType
 from punisher.trading.order import Order, OrderType, OrderStatus
 from punisher.trading import order_manager
+from punisher.utils.dates import str_to_date
 
 from .data_providers import CCXTExchangeDataProvider
 from .data_providers import FeedExchangeDataProvider
@@ -54,7 +55,7 @@ class Exchange(metaclass=abc.ABCMeta):
         pass
 
     @staticmethod
-    def calculate_market_price(order_book):
+    def get_bid_ask_spread(order_book):
         bid = orderbook['bids'][0][0] if len (orderbook['bids']) > 0 else None
         ask = orderbook['asks'][0][0] if len (orderbook['asks']) > 0 else None
         spread = (ask - bid) if (bid and ask) else None
@@ -116,6 +117,14 @@ class CCXTExchange(Exchange):
         params = self.get_default_params_if_none(params)
         return self.client.fetch_my_trades(asset.symbol, since, limit, params)
 
+    def fetch_order_trades(self, order_id, asset):
+        trades = []
+        all_trades = self.fetch_my_trades(asset)
+        for trade in all_trades:
+            if trade['order'] == order_id:
+                trades.append(trade)
+        return trades
+
     def fetch_ticker(self, asset):
         return self.client.fetch_ticker(asset.symbol)
 
@@ -131,36 +140,36 @@ class CCXTExchange(Exchange):
         params = self.get_default_params_if_none(params)
         response = self.client.create_limit_buy_order(
             asset.symbol, quantity, price, params)
-        return self.fetch_order(response.get("id"), asset.symbol)
+        return self.fetch_order(response['id'], asset)
 
     def create_limit_sell_order(self, asset, quantity, price, params=None):
         print(asset.symbol, quantity, price)
+        params = self.get_default_params_if_none(params)
         response = self.client.create_limit_sell_order(
             asset.symbol, quantity, price, params)
-        return self.fetch_order(response["id"], asset.symbol)
+        return self.fetch_order(response['id'], asset)
 
     def create_market_buy_order(self, asset, quantity, params=None):
         params = self.get_default_params_if_none(params)
         response = self.client.create_market_buy_order(
             asset.symbol, quantity, params)
-        return self.fetch_order(response["id"], asset.symbol)
+        return self.fetch_order(response['id'], asset)
 
     def create_market_sell_order(self, asset, quantity, params=None):
         params = self.get_default_params_if_none(params)
         response =  self.client.create_market_sell_order(
             asset.symbol, quantity, params)
-        return self.fetch_order(response["id"], asset.symbol)
+        return self.fetch_order(response['id'], asset)
 
-    def cancel_order(self, order_id, asset=None, params=None):
-        """
-        https://github.com/ccxt/ccxt/wiki/Manual#cancelling-orders"""
+    def cancel_order(self, order_id, asset, params=None):
+        """https://github.com/ccxt/ccxt/wiki/Manual#cancelling-orders"""
         params = self.get_default_params_if_none(params)
-        return self.client.cancel_order(order_id)
+        return self.client.cancel_order(order_id, asset.symbol)
 
-    def fetch_order(self, order_id, symbol=None, params=None):
+    def fetch_order(self, order_id, asset, params=None):
         """https://github.com/ccxt/ccxt/wiki/Manual#orders"""
         params = self.get_default_params_if_none(params)
-        response = self.client.fetch_order(order_id, symbol, params)
+        response = self.client.fetch_order(order_id, asset.symbol, params)
         return self._build_order(response)
 
     def fetch_orders(self, asset, since=None, limit=None, params=None):
@@ -197,17 +206,23 @@ class CCXTExchange(Exchange):
         return self.client.calculate_fee(asset.symbol, type, side,
             quantity, price, taker_or_maker, params)
 
-    def get_market_price_paid(self, asset, order):
-        trades = self.fetch_my_trades(asset)
-        total_quantity = order.quantity
-        weighted_avg_price = 0.0
+    def calculate_order_price(self, total_quantity, trades):
+        avg_price = 0.0
         for trade in trades:
-            if trade.get("order") == order.id:
-                trade_qty = trade["amount"]
-                trade_cost = trade["cost"]
-                trade_price = trade["price"]
-                trade_feed = trade["fee"]
-        return NotImplemented
+            trade_qty = trade['amount']
+            trade_cost = trade['cost']
+            trade_price = trade['price']
+            trade_feed = trade['fee']
+            avg_price += (trade_qty / total_quantity) * trade_price
+        return avg_price
+
+    def calculate_filled_time(self, trades):
+        max_time = None
+        for trade in trades:
+            filled_time = str_to_date(trade['datetime'])
+            if max_time is None or filled_time > max_time:
+                max_time = filled_time
+        return max_time
 
     def _build_orders(self, orders_dct):
         orders = []
@@ -216,8 +231,10 @@ class CCXTExchange(Exchange):
         return orders
 
     def _build_order(self, order_dct):
+        # TODO: Add Fees and commissions (using trades)
+        print("ORDER Input", order_dct)
         order = Order(
-            exchange_id=order_dct['id'],
+            exchange_id=self.id,
             asset=Asset.from_symbol(order_dct['symbol']),
             price=order_dct['price'],
             quantity=order_dct['amount'],
@@ -225,11 +242,38 @@ class CCXTExchange(Exchange):
                 order_dct['type'], order_dct['side']),
             exchange_order_id=order_dct['id']
         )
-        order.filled_quantity = order_dct.get('filled', 0)
-        order.status = OrderStatus[
-            order_dct.get('status', OrderStatus.CREATED.name).upper()]
-        order.fee = order_dct.get('fee', 0.0)
+        order.opened_time = str_to_date(order_dct['datetime'])
+        order.filled_quantity = order_dct['filled']
+        order.fee = order_dct.get('fee', {})
+        order.status = self._get_order_status(order_dct)
+        order.trades = self.fetch_order_trades(
+            order.exchange_order_id, order.asset)
+
+        if order.status == OrderStatus.FILLED:
+            order.filled_time = self.calculate_filled_time(order.trades)
+            order.price = self.calculate_order_price(
+                order.filled_quantity, order.trades)
+
+        print("Order Output", order.to_dict())
         return order
+
+    def _get_order_status(self, order_dct):
+        # Only aware of 2 statuses
+        # TODO: What about pending / canceled / failed?
+        status = order_dct['status'].upper()
+        print("Order status:", status)
+        assert status in ['OPEN', 'CLOSED', 'CANCELED']
+        if status == 'CLOSED':
+            if order_dct['amount'] == order_dct['filled']:
+                return OrderStatus.FILLED
+            else:
+                raise Exception("Not sure what this CLOSED is", order_dct)
+        elif status == 'OPEN':
+            return OrderStatus.OPEN
+        elif status == 'CANCELED':
+            return OrderStatus.CANCELED
+        else:
+            raise Exception("Order status not found", status)
 
     def __repr__(self):
         return 'CCXTExchange({:s})'.format(self.id)

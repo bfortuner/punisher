@@ -23,6 +23,7 @@ BNC = 'bravenewcoin'
 PAPER = 'paper'
 
 # Currencies
+ADA = 'ADA'
 BTC = 'BTC'
 ETH = 'ETH'
 LTC = 'LTC'
