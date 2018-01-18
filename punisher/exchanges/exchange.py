@@ -72,6 +72,27 @@ class Exchange(metaclass=abc.ABCMeta):
     def get_default_params_if_none(self, params):
         return {} if params is None else params
 
+    @staticmethod
+    def create_ex_order_dct(self, exchange_order_id, asset, quantity, price,
+            filled_quantity, order_type, status, opened_time,
+            filled_time, canceled_time, fee, retries, trades):
+        return {
+            "exchange_id": self.id,
+            "exchange_order_id": exchange_order_id,
+            "asset": asset,
+            "price": price,
+            "quantity": quantity,
+            "filled_quantity": filled_quantity,
+            "order_type": order_type,
+            "status": OrderStatus.CREATED,
+            "opened_time": opened_time,
+            "filled_time": filled_time,
+            "canceled_time": canceled_time,
+            "fee": fee,
+            "retries": retries,
+            "trades": trades
+        }
+
 
 class CCXTExchange(Exchange):
     def __init__(self, ex_id, config):
@@ -233,29 +254,35 @@ class CCXTExchange(Exchange):
     def _build_order(self, order_dct):
         # TODO: Add Fees and commissions (using trades)
         print("ORDER Input", order_dct)
-        order = Order(
-            exchange_id=self.id,
-            asset=Asset.from_symbol(order_dct['symbol']),
-            price=order_dct['price'],
+        asset = Asset.from_symbol(order_dct['symbol']),
+        status = self._get_order_status(order_dct)
+        trades = self.fetch_order_trades(
+                order_dct['id'], asset)
+        filled_quantity=order_dct['filled'],
+        order_res = create_ex_order_dct(
+            exchange_order_id=order_dct['id'],
+            asset=asset,
             quantity=order_dct['amount'],
+            price=order_dct['price'],
+            filled_quantity=filled_quantity,
             order_type=OrderType.from_type_side(
                 order_dct['type'], order_dct['side']),
-            exchange_order_id=order_dct['id']
+            status=status,
+            opened_time=str_to_date(order_dct['datetime']),
+            filled_time=None,
+            canceled_time=None,
+            fee=order_dct.get('fee', {}),
+            retries=0,
+            trades=trades
         )
-        order.opened_time = str_to_date(order_dct['datetime'])
-        order.filled_quantity = order_dct['filled']
-        order.fee = order_dct.get('fee', {})
-        order.status = self._get_order_status(order_dct)
-        order.trades = self.fetch_order_trades(
-            order.exchange_order_id, order.asset)
 
-        if order.status == OrderStatus.FILLED:
-            order.filled_time = self.calculate_filled_time(order.trades)
+        if status == OrderStatus.FILLED:
+            order.filled_time = self.calculate_filled_time(trades)
             order.price = self.calculate_order_price(
-                order.filled_quantity, order.trades)
+                filled_quantity, trades)
 
-        print("Order Output", order.to_dict())
-        return order
+        print("Order Output", order_res)
+        return order_res
 
     def _get_order_status(self, order_dct):
         # Only aware of 2 statuses
@@ -376,30 +403,37 @@ class PaperExchange(Exchange):
 
     def _create_order(self, asset, quantity, price, order_type):
         assert quantity != 0 and price != 0
-        order = Order(
-            exchange_id=self.id,
+        order_dct = Exchange.create_ex_order_dct(
+            exchange_order_id=PaperExchange.make_order_id(),
             asset=asset,
-            price=price,
             quantity=quantity,
+            price=price,
+            filled_quantity=0.0,
             order_type=order_type,
-            exchange_order_id=self.make_order_id()
+            status=OrderStatus.OPENED,
+            opened_time=datetime.utcnow(),
+            filled_time=None,
+            canceled_time=None,
+            fee=0.0,
+            retries=0,
+            trade=None
         )
         if not self.balance.is_balance_sufficient(
-            asset=order.asset,
-            quantity=order.quantity,
-            price=order.price,
-            order_type=order.order_type):
+            asset=asset,
+            quantity=quantity,
+            price=price,
+            order_type=order_type):
             raise Exception((
                 'Insufficient funds to place order for asset {:s} of' +
                 ' cost: {:.5f} Available {:s} balance is: {}').format(
-                order.asset.symbol, order.quantity*order.price, order.asset.quote,
-                self.balance.get(order.asset.quote)[BalanceType.FREE])
+                asset.symbol, quantity*price, asset.quote,
+                self.balance.get(asset.quote)[BalanceType.FREE])
             )
-        order = self._fill_order(order)
-        self.orders.append(order)
-        return order
+        order_dct = self._fill_order(order_dct)
+        self.orders.append(order_dct)
+        return order_dct
 
-    def _fill_order(self, order):
+    def _fill_order(self, order_dct):
         # TODO: set the filled time/canceled time, opened time etc somewhere?
         # TODO: change to request_fill_order based on volume
         # TODO: write a cleaner fill order that doesnt need to check order type
@@ -407,13 +441,14 @@ class PaperExchange(Exchange):
         # For example, when I place a limit order that doesn't get filled
         # my Quote currency total value doesn't change,
         # but its "used" amount does
-        self.balance.update_by_order(order)
-        order.filled_quantity = order.quantity
-        order.filled_time = datetime.utcnow()
-        order.status = OrderStatus.FILLED
+        self.balance.update_by_order_dct(order_dct)
+        order_dct['filled_quantity'] = order_dct['quantity']
+        order_dct['filled_time'] = datetime.utcnow()
+        order_dct['status'] = OrderStatus.FILLED
         return order
 
-    def make_order_id(self):
+    @staticmethod
+    def make_order_id():
         return uuid.uuid4().hex
 
     def __repr__(self):

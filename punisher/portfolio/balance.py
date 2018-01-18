@@ -47,6 +47,33 @@ class Balance():
                 delta_free=-order.quantity,
                 delta_used=0.0)
 
+    def update_by_order_dct(self, order_dct):
+        base = order_dct['asset'].base
+        quote = order_dct['asset'].quote
+        order_type = order_dct['order_type']
+        price = order_dct['price']
+        quantity = order_dct['quantity']
+        if order_type.is_buy():
+            self.update(
+                currency=quote,
+                delta_free=-(price * quantity),
+                delta_used=0.0)
+            self.update(
+                currency=base,
+                delta_free=quantity,
+                delta_used=0.0)
+
+        elif order_type.is_sell():
+            self.update(
+                currency=quote,
+                delta_free=(price * quantity),
+                delta_used=0.0)
+            self.update(
+                currency=base,
+                delta_free=-quantity,
+                delta_used=0.0)
+
+
     def update(self, currency, delta_free, delta_used):
         self.free[currency] += delta_free
         self.used[currency] += delta_used
