@@ -44,7 +44,6 @@ def build_market_buy_order(exchange, asset, quantity):
     order.created_time = datetime.datetime.utcnow()
     return order
 
-
 def build_market_sell_order(exchange, asset, quantity):
     order = Order(
         exchange_id=exchange.id,
@@ -70,7 +69,40 @@ def get_orders(exchange, ex_order_ids, assets):
         ex_orders.append(ex_order)
     return ex_orders
 
+def process_orders(exchange, orders):
+    filled_orders = []
+    
+    # sync OPEN orders (to check if FILLED)
+    open_orders = get_open_orders(orders)
+    for oo in open_orders:
+        ex_order = get_order(exchange, oo.exchange_order_id, oo.asset)
+        sync_order_with_exchange(oo, ex_order)
+    filled_orders.extend(get_filled_orders(open_orders))
+
+    # retry FAILED orders (if retries < RETRY_LIMIT)
+    failed_orders = get_failed_orders(orders, retry_limit=3)
+    retried_orders = place_orders(exchange, failed_orders)
+    filled_orders.extend(get_filled_orders(retried_orders))
+
+    # place CREATED orders
+    created_orders = get_created_orders(orders)
+    placed_orders = place_orders(exchange, created_orders)
+    filled_orders.extend(get_filled_orders(placed_orders))
+
+    assert_no_duplicates(filled_orders)
+
+    return filled_orders
+
+def assert_no_duplicates(orders):
+    keys = set()
+    for o in orders:
+        if o.id in keys:
+            raise Exception("duplicate found", o.id, orders)
+        keys.add(o.id)
+
 def place_order(exchange, order):
+    """Places order with exchange.
+       Updates local copy of order IN-PLACE"""
     print("Placing Order", order)
     if order.order_type == OrderType.LIMIT_BUY:
         ex_order = exchange.create_limit_buy_order(
@@ -88,7 +120,7 @@ def place_order(exchange, order):
         raise Exception("Order type {:s} not supported".format(
             order.order_type.name))
     print("Exchange Response", ex_order)
-    order = sync_order_with_exchange(order, ex_order)
+    sync_order_with_exchange(order, ex_order)
     print("Updated order", order)
     return order
 
@@ -101,7 +133,6 @@ def sync_order_with_exchange(order, ex_order):
     order.filled_quantity = ex_order.filled_quantity
     order.price = ex_order.price
     order.fee = ex_order.fee
-    return order
 
 def place_orders(exchange, orders):
     placed = []
@@ -122,9 +153,12 @@ def cancel_orders(exchange, orders):
         cancel_responses.append(resp)
     return cancel_responses
 
-def get_pending_orders(orders):
-    return get_orders_by_types(
-        orders, [OrderStatus.CREATED, OrderStatus.OPEN])
+
+def get_created_orders(orders):
+    return get_orders_by_types(orders, [OrderStatus.CREATED])
+
+def get_open_orders(orders):
+    return get_orders_by_types(orders, [OrderStatus.OPEN])
 
 def get_filled_orders(orders):
     return get_orders_by_types(orders, [OrderStatus.FILLED])
@@ -132,8 +166,13 @@ def get_filled_orders(orders):
 def get_canceled_orders(orders):
     return get_orders_by_types(orders, [OrderStatus.CANCELED])
 
-def get_failed_orders(orders):
-    return get_orders_by_types(orders, [OrderStatus.FAILED])
+def get_failed_orders(orders, retry_limit=0):
+    orders = get_orders_by_types(orders, [OrderStatus.FAILED])
+    failed_orders = []
+    for order in orders:
+        if order.retries <= retry_limit:
+            failed_orders.append(order)
+    return failed_orders
 
 def get_orders_by_types(orders, order_types):
     results = []

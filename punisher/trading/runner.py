@@ -21,6 +21,7 @@ def get_latest_prices(positions, row):
         latest_prices[pos.asset.symbol] = row['close']
     return latest_prices
 
+
 def backtest(name, exchange, balance, portfolio, feed, strategy):
     '''
     name = name of your current experiment run
@@ -50,39 +51,30 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
 
     row = feed.next()
     while row is not None:
-
-        # Call strategy
-        # {
-        #   'orders': [Order(), Order()]
-        #   'cancel_ids': ['order_id', order_id']
-        # }
         orders = strategy.process(row, ctx)
+
+        # Record needs to know about all new orders
+        for order in orders['orders']:
+            record.orders[order.id] = order
 
         # TODO: Cancelling orders
         # should we auto-cancel any outstanding orders
         # or should we leave this decision up to the Strategy?
-        order_manager.cancel_orders(exchange, orders['cancel_ids'])
+        # order_manager.cancel_orders(exchange, orders['cancel_ids'])
 
-        # Returns both FILLED and PENDING orders
-        # TODO: Order manager handles mapping from Exchange JSON
-        # Particularly order types like CLOSED --> FILLED,
-        # And OPEN vs PENDING <-- check the 'quantity' vs 'filled' amounts
-        orders = order_manager.place_orders(exchange, orders['orders'])
-        filled_orders = order_manager.get_filled_orders(orders)
+        # Place new orders, retry failed orders, sync existing orders
+        newly_filled_orders = order_manager.process_orders(
+            exchange, record.orders.values())
 
         # Portfolio needs to know about new filled orders
-        portfolio.update(filled_orders)
+        portfolio.update(newly_filled_orders)
 
-        # Getting the latest prices for each of our positions
+        # Update latest prices of positions
         latest_prices = get_latest_prices(portfolio.positions, row)
         portfolio.update_position_prices(latest_prices)
 
-        # Record needs to know about all new orders
-        for order in orders:
-            record.orders[order.id] = order
-
         # Update Virtual Balance (exchange balance left alone)
-        for order in filled_orders:
+        for order in newly_filled_orders:
             balance.update_by_order(order.asset, order.quantity,
                                     order.price, order.order_type)
             print("Equal?", record.balance == exchange.fetch_balance())
@@ -125,44 +117,39 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
 
         if row is not None:
             orders = strategy.process(row, ctx)
+            print("ORDERS", orders)
+            # Record needs to know about all new orders
+            for order in orders['orders']:
+                record.orders[order.id] = order
 
             # TODO: Cancelling orders
             # should we auto-cancel any outstanding orders
             # or should we leave this decision up to the Strategy?
-            order_manager.cancel_orders(exchange, orders['cancel_ids'])
+            # order_manager.cancel_orders(exchange, orders['cancel_ids'])
 
-            # Returns both FILLED and PENDING orders
-            # TODO: Order manager handles mapping from Exchange JSON
-            # Particularly order types like CLOSED --> FILLED,
-            # And OPEN vs PENDING <-- check the 'quantity' vs 'filled' amounts
-            orders = order_manager.place_orders(exchange, orders['orders'])
-
-            # TODO: Order manager.update_orders(record.orders, exchange)
-
-            filled_orders = order_manager.get_filled_orders(orders)
+            # Place new orders, retry failed orders, sync existing orders
+            newly_filled_orders = order_manager.process_orders(
+                exchange, record.orders.values())
 
             # Portfolio needs to know about new filled orders
-            portfolio.update(filled_orders)
+            portfolio.update(newly_filled_orders)
 
-            # Getting the latest prices for each of our positions
+            # Update latest prices of positions
             latest_prices = get_latest_prices(portfolio.positions, row)
             portfolio.update_position_prices(latest_prices)
 
-            # Record needs to know about all new orders
-            for order in orders:
-                record.orders[order.id] = order
-
-            # Update Virtual Balance
-            # exchange balance may be impacted by external trading
-            for order in filled_orders:
+            # Update Virtual Balance (exchange balance left alone)
+            for order in newly_filled_orders:
                 balance.update_by_order(order.asset, order.quantity,
                                         order.price, order.order_type)
+                print("Equal?", record.balance == exchange.fetch_balance())
 
             record.save()
 
-        time.sleep(30)
+        time.sleep(60)
 
     return record
+
 
 def live(name, exchange, balance, portfolio, feed, strategy):
     print("LIVE TRADING DUDE!!!!")
@@ -198,36 +185,34 @@ def live(name, exchange, balance, portfolio, feed, strategy):
         if row is not None:
             orders = strategy.process(row, ctx)
 
+            # Record needs to know about all new orders
+            for order in orders['orders']:
+                record.orders[order.id] = order
+
             # TODO: Cancelling orders
             # should we auto-cancel any outstanding orders
             # or should we leave this decision up to the Strategy?
-            order_manager.cancel_orders(exchange, orders['cancel_ids'])
+            # order_manager.cancel_orders(exchange, orders['cancel_ids'])
 
-            # Returns both FILLED and PENDING orders
-            # TODO: Order manager handles mapping from Exchange JSON
-            # Particularly order types like CLOSED --> FILLED,
-            # And OPEN vs PENDING <-- check the 'quantity' vs 'filled' amounts
-            orders = order_manager.place_orders(exchange, orders['orders'])
-            filled_orders = order_manager.get_filled_orders(orders)
+            # Place new orders, retry failed orders, sync existing orders
+            newly_filled_orders = order_manager.process_orders(
+                exchange, record.orders.values())
 
             # Portfolio needs to know about new filled orders
-            portfolio.update(filled_orders)
+            portfolio.update(newly_filled_orders)
 
-            # Getting the latest prices for each of our positions
+            # Update latest prices of positions
             latest_prices = get_latest_prices(portfolio.positions, row)
             portfolio.update_position_prices(latest_prices)
 
-            # Record needs to know about all new orders
-            for order in orders:
-                record.orders[order.id] = order
-
-            # Update Virtual Balance
-            # exchange balance may be impacted by external trading
-            for order in filled_orders:
-                balance.update_by_order(order)
+            # Update Virtual Balance (exchange balance left alone)
+            for order in newly_filled_orders:
+                balance.update_by_order(order.asset, order.quantity,
+                                        order.price, order.order_type)
+                print("Equal?", record.balance == exchange.fetch_balance())
 
             record.save()
 
-        time.sleep(30)
+        time.sleep(60)
 
     return record
