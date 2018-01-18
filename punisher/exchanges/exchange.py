@@ -326,18 +326,10 @@ class PaperExchange(Exchange):
         return self._create_order(asset, quantity, price, OrderType.LIMIT_SELL)
 
     def create_market_buy_order(self, asset, quantity):
-        # Getting next market price
-        # TODO: Decide if we should use the ticker
-        #       or the orderbook for market Price
-        # if we use orderbook, consider using the calculate_market_price method
         price = self.fetch_ticker(asset)['ask']
         return self._create_order(asset, quantity, price, OrderType.MARKET_BUY)
 
     def create_market_sell_order(self, asset, quantity):
-        # Getting next market price
-        # TODO: Decide if we should use the ticker
-        #       or the orderbook for market Price
-        # if we use orderbook, consider using the calculate_market_price method
         price = self.fetch_ticker(asset)['bid']
         return self._create_order(asset, quantity, price, OrderType.MARKET_SELL)
 
@@ -345,26 +337,31 @@ class PaperExchange(Exchange):
         # TODO: Implement this when we have pending orders
         return NotImplemented
 
-    def fetch_order(self, order_id, symbol=None):
+    def fetch_order(self, order_id, asset):
+        """Asset Required for CCXT"""
         for order in self.orders:
-            if order['id'] == order_id:
+            if order.id == order_id:
                 return order
         return None
 
     def fetch_orders(self, asset):
-        return self.orders
+        orders = []
+        for order in self.orders:
+            if order.asset == asset:
+                orders.append(order)
+        return orders
 
     def fetch_open_orders(self, asset):
         open_orders = []
         for order in self.orders:
-            if order.status == OrderStatus.OPEN:
+            if order.status == OrderStatus.OPEN and order.asset == asset:
                 open_orders.append(order)
         return open_orders
 
     def fetch_closed_orders(self, asset):
         open_orders = []
         for order in self.orders:
-            if order.status == OrderStatus.CLOSED:
+            if order.status == OrderStatus.OPEN and order.asset == asset:
                 open_orders.append(order)
         return open_orders
 
@@ -378,21 +375,27 @@ class PaperExchange(Exchange):
         return NotImplemented
 
     def _create_order(self, asset, quantity, price, order_type):
-        """
-        Helper method to create orders based on type
-        Checks if balance is sufficient, creates Order object
-        and calls methods to update balance (_open_order, _fill_order
-        Returns Order Dictionary (for CCXT consistency)
-        """
-        # TODO: Change this to only create the order
-        #       Implement something else to keep the Paper exchange orders
-        #       updated.
-
         assert quantity != 0 and price != 0
-        # TODO: update Order class to have a update_filled_quantity method
-        # TODO: update Order class to have a trades (partially filled orders)
-        order = Order(self.id, asset, price, quantity, order_type)
-        self._fill_order(order)
+        order = Order(
+            exchange_id=self.id,
+            asset=asset,
+            price=price,
+            quantity=quantity,
+            order_type=order_type,
+            exchange_order_id=self.make_order_id()
+        )
+        if not self.balance.is_balance_sufficient(
+            asset=order.asset,
+            quantity=order.quantity,
+            price=order.price,
+            order_type=order.order_type):
+            raise Exception((
+                'Insufficient funds to place order for asset {:s} of' +
+                ' cost: {:.5f} Available {:s} balance is: {}').format(
+                order.asset.symbol, order.quantity*order.price, order.asset.quote,
+                self.balance.get(order.asset.quote)[BalanceType.FREE])
+            )
+        order = self._fill_order(order)
         self.orders.append(order)
         return order
 
@@ -408,9 +411,9 @@ class PaperExchange(Exchange):
         order.filled_quantity = order.quantity
         order.filled_time = datetime.utcnow()
         order.status = OrderStatus.FILLED
+        return order
 
-
-    def _make_order_id(self):
+    def make_order_id(self):
         return uuid.uuid4().hex
 
     def __repr__(self):
