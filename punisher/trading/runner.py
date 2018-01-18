@@ -70,12 +70,12 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         orders = order_manager.place_orders(exchange, orders['orders'])
         filled_orders = order_manager.get_filled_orders(orders)
 
-        # Getting the latest prices for each of our positions
-        positions = record.portfolio.positions
-        latest_prices = get_latest_prices(postions, row)
-
         # Portfolio needs to know about new filled orders
-        record.portfolio.update(filled_orders, latest_prices)
+        portfolio.update(filled_orders)
+
+        # Getting the latest prices for each of our positions
+        latest_prices = get_latest_prices(portfolio.positions, row)
+        portfolio.update_position_prices(latest_prices)
 
         # Record needs to know about all new orders
         for order in orders:
@@ -83,7 +83,7 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
 
         # Update Virtual Balance (exchange balance left alone)
         for order in filled_orders:
-            record.balance.update_by_order(order)
+            balance.update_by_order(order)
             print("Equal?", record.balance == exchange.fetch_balance())
 
         record.save()
@@ -137,12 +137,12 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
             orders = order_manager.place_orders(exchange, orders['orders'])
             filled_orders = order_manager.get_filled_orders(orders)
 
-            # Getting the latest prices for each of our positions
-            positions = record.portfolio.positions
-            latest_prices = get_latest_prices(postions, row)
-
             # Portfolio needs to know about new filled orders
-            record.portfolio.update(filled_orders, latest_prices)
+            portfolio.update(filled_orders)
+
+            # Getting the latest prices for each of our positions
+            latest_prices = get_latest_prices(portfolio.positions, row)
+            portfolio.update_position_prices(latest_prices)
 
             # Record needs to know about all new orders
             for order in orders:
@@ -151,7 +151,7 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
             # Update Virtual Balance
             # exchange balance may be impacted by external trading
             for order in filled_orders:
-                record.balance.update_by_order(order)
+                balance.update_by_order(order)
 
             record.save()
 

@@ -26,9 +26,8 @@ class Portfolio():
         self.perf = perf_tracker
         self.positions = [] if positions is None else positions
 
-    def update(self, filled_orders, latest_prices):
+    def update(self, filled_orders):
         self.update_positions(filled_orders)
-        self.update_position_prices(latest_prices)
         start_time = datetime.datetime.utcnow()
         self.perf.add_period(start_time, self.cash, self.positions)
 
