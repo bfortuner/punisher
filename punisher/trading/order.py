@@ -13,9 +13,8 @@ from punisher.utils.encoders import EnumEncoder
 @unique
 class OrderStatus(Enum):
     CREATED = "Order not yet submitted to exchange"
-    OPEN = "Order successfully created on exchange"
+    OPEN = "Order created on exchange, but not completely filled"
     FILLED = "Order completely filled on exchange"
-    CLOSED = "Order closed/filled by exchange" # ccxt returns this ???
     CANCELED = "Order canceled by user"
     FAILED = "Order failed/rejected by exchange. Will retry"
     KILLED = "Order rejected by exchange. Will not retry"
@@ -82,13 +81,14 @@ class OrderType(Enum):
 class Order():
     __slots__ = [
         "id", "exchange_id", "exchange_order_id", "asset", "price",
-        "quantity", "filled_quantity", "order_type", "status", "created_time",
-        "opened_time", "filled_time", "canceled_time", "fee", "retries"
+        "quantity", "filled_quantity", "order_type", "status",
+        "created_time", "opened_time", "filled_time", "canceled_time",
+        "fee", "retries", "trades"
     ]
 
     def __init__(self, exchange_id, asset, price, quantity,
-                 order_type, exchange_order_id=None):
-        self.id = self.make_id()
+                 order_type, order_id=None, exchange_order_id=None):
+        self.id = order_id
         self.exchange_id = exchange_id
         self.exchange_order_id = exchange_order_id
         self.asset = asset
@@ -97,12 +97,13 @@ class Order():
         self.filled_quantity = 0.0
         self.order_type = self.set_order_type(order_type)
         self.status = OrderStatus.CREATED
-        self.created_time = datetime.utcnow()
+        self.created_time = None
         self.opened_time = None
         self.filled_time = None
         self.canceled_time = None
         self.fee = {}
         self.retries = 0
+        self.trades = []
 
     @classmethod
     def make_id(self):
@@ -118,19 +119,19 @@ class Order():
         self.status = status
 
     def to_dict(self):
-        d = {
+        dct = {
             name: getattr(self, name)
             for name in self.__slots__
         }
-        del d['asset']
-        d['symbol'] = self.asset.symbol
-        d['status'] = self.status.name
-        d['order_type'] = self.order_type.name
-        d['created_time'] = date_to_str(self.created_time)
-        d['opened_time'] = date_to_str(self.opened_time)
-        d['filled_time'] = date_to_str(self.filled_time)
-        d['canceled_time'] = date_to_str(self.canceled_time)
-        return d
+        del dct['asset']
+        dct['symbol'] = self.asset.symbol
+        dct['status'] = self.status.name
+        dct['order_type'] = self.order_type.name
+        dct['created_time'] = date_to_str(self.created_time)
+        dct['opened_time'] = date_to_str(self.opened_time)
+        dct['filled_time'] = date_to_str(self.filled_time)
+        dct['canceled_time'] = date_to_str(self.canceled_time)
+        return dct
 
     @classmethod
     def from_dict(self, d):

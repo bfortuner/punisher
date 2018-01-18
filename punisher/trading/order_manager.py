@@ -1,166 +1,129 @@
+import datetime
+from copy import deepcopy
+
 from punisher.portfolio.asset import Asset
+from punisher.portfolio.balance import BalanceType
 
 from .order import Order
 from .order import OrderType, OrderStatus
 
 
-def build_limit_buy_order(exchange, asset, price, quantity):
-    return Order(
+def build_limit_buy_order(exchange, asset, quantity, price):
+    order = Order(
         exchange_id=exchange.id,
         asset=asset,
         price=price,
         quantity=quantity,
         order_type=OrderType.LIMIT_BUY,
     )
+    order.id = Order.make_id()
+    order.created_time = datetime.datetime.utcnow()
+    return order
 
-def build_limit_sell_order(exchange, asset, price, quantity):
-    return Order(
+def build_limit_sell_order(exchange, asset, quantity, price):
+    order = Order(
         exchange_id=exchange.id,
         asset=asset,
         price=price,
         quantity=quantity,
         order_type=OrderType.LIMIT_SELL,
     )
+    order.id = Order.make_id()
+    order.created_time = datetime.datetime.utcnow()
+    return order
+
 
 def build_market_buy_order(exchange, asset, quantity):
-    return Order(
+    order = Order(
         exchange_id=exchange.id,
         asset=asset,
         price=None,
         quantity=quantity,
         order_type=OrderType.MARKET_BUY,
     )
+    order.id = Order.make_id()
+    order.created_time = datetime.datetime.utcnow()
+    return order
+
 
 def build_market_sell_order(exchange, asset, quantity):
-    return Order(
+    order = Order(
         exchange_id=exchange.id,
         asset=asset,
         price=None,
         quantity=quantity,
         order_type=OrderType.MARKET_SELL,
     )
-
-def get_order(exchange, ex_order_id, symbol):
-    """Returns this for Market Sell
-        {'info': {'symbol': 'XRPBTC', 'orderId': 19056893,
-    'clientOrderId': 'sRNNKORMgER6jmGrrbgh84', 'price': '0.00000000',
-    'origQty': '20.00000000', 'executedQty': '20.00000000',
-    'status': 'FILLED', 'timeInForce': 'GTC', 'type': 'MARKET',
-    'side': 'SELL', 'stopPrice': '0.00000000', 'icebergQty': '0.00000000',
-    'time': 1516157188872, 'isWorking': True},
-    'id': '19056893', 'timestamp': 1516157188872, 'datetime':
-    '2018-01-17T02:46:29.872Z', 'symbol': 'XRP/BTC', 'type': 'market', 'side': 'sell',
-    'price': 0.0, 'amount': 20.0, 'cost': 0.0, 'filled': 20.0,
-    'remaining': 0.0, 'status': 'closed', 'fee': None}"""
-    order_dct = exchange.fetch_order(ex_order_id, symbol)
-    order = make_order_from_dct(order_dct, exchange.id)
+    order.id = Order.make_id()
+    order.created_time = datetime.datetime.utcnow()
     return order
 
-def make_order_from_dct(dct, ex_id, order_id=None):
-    print("Order dictionary", dct)
-    return Order.from_dict({
-        'id': order_id,
-        'exchange_id': ex_id,
-        'exchange_order_id': dct['id'],
-        'symbol': dct['symbol'],
-        'price': dct['price'],
-        'quantity': dct['quantity'],
-        'order_type': OrderType.from_type_side(dct['type'], dct['side']).name,
-        'filled_quantity': dct['filled'],
-        'status': dct['status'], # CAREFUL, may be inconsistent
-        'fee': dct['fee'],
-        'created_time': dct['created_time'],
-        'filled_time': None,
-        'opened_time': None,
-        'canceled_time': None,
-        'retries': 0,
-    })
+def get_order(exchange, ex_order_id, asset):
+    return exchange.fetch_order(ex_order_id, asset)
 
-def get_orders(exchange, ex_order_ids, symbols=None):
+def get_orders(exchange, ex_order_ids, assets):
     orders = []
-    if symbols is None:
-        symbols = [None] * len(ex_order_ids)
-    for id_, sym in zip(ex_order_ids, symbols):
-        order = get_order(exchange, id_, sym)
+    if not isinstance(assets, list):
+        asset = deepcopy(assets)
+        assets = [asset for i in range(len(ex_order_ids))]
+    for ex_order_id, asset in zip(ex_order_ids, assets):
+        order = get_order(exchange, ex_order_id, asset)
         orders.append(order)
     return orders
 
-def get_orders_by_symbol(exchange, symbols=None):
-    pass
-
 def place_order(exchange, order):
-    """
-    Res = this for Buy
-    {'info': {'symbol': 'XRPBTC', 'orderId': 19049767, 'clientOrderId': 'tLxVbs1AB9ZTvshuNLeEz9',
-    'transactTime': 1516155731253, 'price': '0.00010452',
-    'origQty': '20.00000000', 'executedQty': '0.00000000', 'status': 'NEW',
-    'timeInForce': 'GTC', 'type': 'LIMIT', 'side': 'BUY'}, 'id': '19049767'}
-    """
+    print("Placing Order", order)
     if order.order_type == OrderType.LIMIT_BUY:
-        res = exchange.create_limit_buy_order(
+        ex_order = exchange.create_limit_buy_order(
             order.asset, order.quantity, order.price)
     elif order.order_type == OrderType.LIMIT_SELL:
-        res = exchange.create_limit_sell_order(
+        ex_order = exchange.create_limit_sell_order(
             order.asset, order.quantity, order.price)
     elif order.order_type == OrderType.MARKET_BUY:
-        res = exchange.create_market_buy_order(
+        ex_order = exchange.create_market_buy_order(
             order.asset, order.quantity)
     elif order.order_type == OrderType.MARKET_SELL:
-        res = exchange.create_market_sell_order(
+        ex_order = exchange.create_market_sell_order(
             order.asset, order.quantity)
     else:
         raise Exception("Order type {:s} not supported".format(
             order.order_type.name))
-    if res is None:
-        return None
-    print("Order Places Response", res)
-    order = make_order_from_dct(res, order.exchange_id, order.id)
-    print("Order made", order)
-    return order
+
+    ex_order.id = order.id
+    ex_order.created_time = order.created_time
+    print("Placed order", ex_order)
+    return ex_order
 
 def place_orders(exchange, orders):
     results = []
     for order in orders:
-        res = None
-        if exchange.fetch_balance().is_balance_sufficient(
-                asset=order.asset,
-                quantity=order.quantity,
-                price=order.price,
-                order_type=order.order_type
-            ):
-            res = place_order(exchange, order)
-        else:
-            print("Insufficient funds to place order {}, \
-                    cancelling ...".format(order.id))
-            order.set_status(OrderStatus.CANCELED)
-        if res is not None:
-            results.append(res)
+        ex_order = place_order(exchange, order)
+        results.append(ex_order)
     return results
 
 def cancel_order(exchange, ex_order_id):
-    res = exchange.cancel_order(
+    cancel_response = exchange.cancel_order(
         order_id=ex_order_id)
-    return res
+    return cancel_response
 
 def cancel_orders(exchange, orders):
-    results = []
+    cancel_responses = []
     for order in orders:
-        res = cancel_order(order.exchange_order_id)
-        results.append(res)
-    return results
+        resp = cancel_order(exchange, order.exchange_order_id)
+        cancel_responses.append(resp)
+    return cancel_responses
 
 def get_pending_orders(orders):
     return get_orders_by_types(
         orders, [OrderStatus.CREATED, OrderStatus.OPEN])
 
 def get_filled_orders(orders):
-    # possibly add "closed" ?
     return get_orders_by_types(orders, [OrderStatus.FILLED])
 
 def get_canceled_orders(orders):
     return get_orders_by_types(orders, [OrderStatus.CANCELED])
 
-def get_canceled_orders(orders):
+def get_failed_orders(orders):
     return get_orders_by_types(orders, [OrderStatus.FAILED])
 
 def get_orders_by_types(orders, order_types):
