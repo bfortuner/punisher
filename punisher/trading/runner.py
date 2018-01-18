@@ -83,7 +83,8 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
 
         # Update Virtual Balance (exchange balance left alone)
         for order in filled_orders:
-            balance.update_by_order(order)
+            balance.update_by_order(order.asset, order.quantity,
+                                    order.price, order.order_type)
             print("Equal?", record.balance == exchange.fetch_balance())
 
         record.save()
@@ -154,7 +155,8 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
             # Update Virtual Balance
             # exchange balance may be impacted by external trading
             for order in filled_orders:
-                balance.update_by_order(order)
+                balance.update_by_order(order.asset, order.quantity,
+                                        order.price, order.order_type)
 
             record.save()
 

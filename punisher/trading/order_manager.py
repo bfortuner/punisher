@@ -32,7 +32,6 @@ def build_limit_sell_order(exchange, asset, quantity, price):
     order.created_time = datetime.datetime.utcnow()
     return order
 
-
 def build_market_buy_order(exchange, asset, quantity):
     order = Order(
         exchange_id=exchange.id,
@@ -62,14 +61,14 @@ def get_order(exchange, ex_order_id, asset):
     return exchange.fetch_order(ex_order_id, asset)
 
 def get_orders(exchange, ex_order_ids, assets):
-    orders = []
+    ex_orders = []
     if not isinstance(assets, list):
         asset = deepcopy(assets)
         assets = [asset for i in range(len(ex_order_ids))]
     for ex_order_id, asset in zip(ex_order_ids, assets):
-        order = get_order(exchange, ex_order_id, asset)
-        orders.append(order)
-    return orders
+        ex_order = get_order(exchange, ex_order_id, asset)
+        ex_orders.append(ex_order)
+    return ex_orders
 
 def place_order(exchange, order):
     print("Placing Order", order)
@@ -88,18 +87,28 @@ def place_order(exchange, order):
     else:
         raise Exception("Order type {:s} not supported".format(
             order.order_type.name))
+    print("Exchange Response", ex_order)
+    order = sync_order_with_exchange(order, ex_order)
+    print("Updated order", order)
+    return order
 
-    ex_order.id = order.id
-    ex_order.created_time = order.created_time
-    print("Placed order", ex_order)
-    return ex_order
+def sync_order_with_exchange(order, ex_order):
+    order.exchange_order_id = ex_order.ex_order_id
+    order.opened_time = ex_order.opened_time
+    order.filled_time = ex_order.filled_time
+    order.canceled_time = ex_order.canceled_time
+    order.status = ex_order.status
+    order.filled_quantity = ex_order.filled_quantity
+    order.price = ex_order.price
+    order.fee = ex_order.fee
+    return order
 
 def place_orders(exchange, orders):
-    results = []
+    placed = []
     for order in orders:
-        ex_order = place_order(exchange, order)
-        results.append(ex_order)
-    return results
+        placed_order = place_order(exchange, order)
+        placed.append(placed_order)
+    return placed
 
 def cancel_order(exchange, ex_order_id):
     cancel_response = exchange.cancel_order(

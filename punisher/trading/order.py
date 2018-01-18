@@ -166,6 +166,96 @@ class Order():
     def __repr__(self):
         return self.to_json()
 
+
+class ExchangeOrder():
+    __slots__ = [
+        "ex_order_id", "exchange_id", "asset", "quantity", "price",
+        "filled_quantity", "order_type", "status", "opened_time",
+        "filled_time", "canceled_time", "fee", "trades"
+    ]
+
+    def __init__(self, ex_order_id, exchange_id, asset, quantity,
+                 price, filled_quantity, order_type, status):
+        self.ex_order_id = ex_order_id
+        self.exchange_id = exchange_id
+        self.asset = asset
+        self.quantity = quantity
+        self.price = price
+        self.filled_quantity = filled_quantity
+        self.order_type = self.set_order_type(order_type)
+        self.status = self.set_status(status)
+        self.opened_time = None
+        self.filled_time = None
+        self.canceled_time = None
+        self.fee = {}
+        self.trades = []
+
+    def set_order_type(self, order_type):
+        assert order_type in OrderType
+        self.order_type = order_type
+        return self.order_type
+
+    def set_status(self, status):
+        assert status in OrderStatus
+        self.status = status
+        return self.status
+
+    def to_dict(self):
+        dct = {
+            name: getattr(self, name)
+            for name in self.__slots__
+        }
+        dct['id'] = self.ex_order_id
+        dct['amount'] = self.quantity
+        dct['filled'] = self.filled_quantity
+        dct['symbol'] = self.asset.symbol
+        dct['datetime'] = date_to_str(self.opened_time)
+        dct['side'] = self.order_type.side
+        dct['type'] = self.order_type.type
+
+        del dct['ex_order_id']
+        del dct['quantity']
+        del dct['filled_quantity']
+        del dct['asset']
+        del dct['datetime']
+        del dct['order_type']
+
+        dct['status'] = self.status.name
+        dct['filled_time'] = date_to_str(self.filled_time)
+        dct['canceled_time'] = date_to_str(self.canceled_time)
+        return dct
+
+    @classmethod
+    def from_dict(self, d):
+        order = ExchangeOrder(
+            ex_order_id = d['id'],
+            exchange_id=d['exchange_id'],
+            asset=Asset.from_symbol(d['symbol']),
+            price=d['price'],
+            quantity=d['amount'],
+            filled_quantity=d['filled'],
+            order_type=OrderType.from_type_side(d['type'], d['side']),
+            status=OrderStatus[d['status']],
+        )
+        order.opened_time = str_to_date(d['datetime'])
+        order.filled_time = str_to_date(d.get('filled_time'))
+        order.canceled_time = str_to_date(d.get('canceled_time'))
+        order.fee = d.get('fee', {})
+        return order
+
+    def to_json(self):
+        dct = self.to_dict()
+        return json.dumps(dct, cls=EnumEncoder, indent=4)
+
+    @classmethod
+    def from_json(self, json_str):
+        dct = json.loads(json_str)
+        return self.from_dict(dct)
+
+    def __repr__(self):
+        return self.to_json()
+
+
 def buy_order_types():
     return [OrderType.LIMIT_BUY,
             OrderType.MARKET_BUY,
