@@ -24,27 +24,25 @@ class Balance():
             BalanceType.TOTAL: self.total[currency],
         }
 
-    def update_by_order(self, order):
-        base = order.asset.base
-        quote = order.asset.quote
-        if order.order_type.is_buy():
+    def update_by_order(self, asset, quantity, price, order_type):
+        if order_type.is_buy():
             self.update(
-                currency=quote,
-                delta_free=-(order.price * order.quantity),
+                currency=asset.quote,
+                delta_free=-(price * quantity),
                 delta_used=0.0)
             self.update(
-                currency=base,
-                delta_free=order.quantity,
+                currency=asset.base,
+                delta_free=quantity,
                 delta_used=0.0)
 
-        elif order.order_type.is_sell():
+        elif order_type.is_sell():
             self.update(
-                currency=quote,
-                delta_free=(order.price * order.quantity),
+                currency=asset.quote,
+                delta_free=(price * quantity),
                 delta_used=0.0)
             self.update(
-                currency=base,
-                delta_free=-order.quantity,
+                currency=asset.base,
+                delta_free=-quantity,
                 delta_used=0.0)
 
     def update(self, currency, delta_free, delta_used):

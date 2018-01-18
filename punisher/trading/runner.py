@@ -83,7 +83,8 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
 
         # Update Virtual Balance (exchange balance left alone)
         for order in filled_orders:
-            balance.update_by_order(order)
+            balance.update_by_order(order.asset, order.quantity,
+                                    order.price, order.order_type)
             print("Equal?", record.balance == exchange.fetch_balance())
 
         record.save()
@@ -135,6 +136,9 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
             # Particularly order types like CLOSED --> FILLED,
             # And OPEN vs PENDING <-- check the 'quantity' vs 'filled' amounts
             orders = order_manager.place_orders(exchange, orders['orders'])
+
+            # TODO: Order manager.update_orders(record.orders, exchange)
+
             filled_orders = order_manager.get_filled_orders(orders)
 
             # Portfolio needs to know about new filled orders
@@ -151,7 +155,8 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
             # Update Virtual Balance
             # exchange balance may be impacted by external trading
             for order in filled_orders:
-                balance.update_by_order(order)
+                balance.update_by_order(order.asset, order.quantity,
+                                        order.price, order.order_type)
 
             record.save()
 
