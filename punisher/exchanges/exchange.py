@@ -384,9 +384,10 @@ class PaperExchange(Exchange):
             # TODO: Implement our own InsufficientFunds
             raise ccxt.errors.InsufficientFunds((
                 'Insufficient funds to place order for asset {:s} of' +
-                ' cost: {:.5f} Available {:s} balance is: {}').format(
+                ' cost: {:.5f}. {:s} balance is: {}. {:s} balance is {}').format(
                 asset.symbol, quantity*price, asset.quote,
-                self.balance.get(asset.quote)[BalanceType.FREE])
+                self.balance.get(asset.quote)[BalanceType.FREE],
+                asset.base, self.balance.get(asset.base)[BalanceType.FREE])
             )
 
         order = self._fill_order(order)

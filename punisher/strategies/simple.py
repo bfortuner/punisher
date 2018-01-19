@@ -29,14 +29,17 @@ parser.add_argument('-p', '--plot', help='include Dash visualizations?', action=
 parser.add_argument('-m', '--mode', help='TradeMode - backtest, simulate, live', default='backtest', type=str)
 parser.add_argument('-v', '--verbose', help='log to console?', action="store_true")
 parser.add_argument('-c', '--cash', help='starting cash', default=1.0, type=float)
-parser.add_argument('-a', '--asset', help='ETH/BTC (quote/base)', default='ETH/BTC', type=str)
+parser.add_argument('-a', '--asset', help='ETH/BTC (quote/base)', default=None, type=str)
+parser.add_argument('-q', '--quantity', help='# of base coin to purchase', default=.05, type=float)
 parser.add_argument('-t', '--timeframe', help='timeframe of OHLCV trading data (1m, 5m, 30m, 1h)', default='30m', type=str)
 parser.add_argument('-ohlcv', '--ohlcv_fpath', help='path to OHLCV csv file', default='', type=str)
 parser.add_argument('-ex', '--exchange_id', help='CCXT exchange name', default='', type=str)
 
 class SimpleStrategy(Strategy):
-    def __init__(self):
+    def __init__(self, asset, quantity):
         super().__init__()
+        self.asset = asset
+        self.quantity = quantity
 
     def log_all(self, orders, data, ctx, time_utc):
         self.logger = ctx.logger
@@ -51,17 +54,15 @@ class SimpleStrategy(Strategy):
 
     def handle_data(self, data, ctx):
         orders = []
-        asset = Asset(c.ETH, c.BTC)
         price = data['close']
-        quantity = .05
 
         if random.random() > 0.5:
             order = order_manager.build_limit_buy_order(
-                ctx.exchange, asset, quantity, price)
+                ctx.exchange, self.asset, self.quantity, price)
             orders.append(order)
         else:
             order = order_manager.build_market_sell_order(
-                ctx.exchange, asset, quantity)
+                ctx.exchange, self.asset, self.quantity)
             orders.append(order)
 
         # Optionally cancel pending orders (LIVE trading)
@@ -87,6 +88,7 @@ if __name__ == "__main__":
     timeframe = Timeframe.from_id(args.timeframe)
     starting_cash = args.cash
     asset = Asset.from_symbol(args.asset)
+    quantity = args.quantity
     cash_currency = asset.quote
     plot = args.plot
     verbose = args.verbose
@@ -98,16 +100,17 @@ if __name__ == "__main__":
          + "TradeMode: {:s}\n"
          + "Timeframe: {:s}\n"
          + "Asset: {:s}\n"
+         + "Quantity: {:.4f}\n"
          + "StartingCash: {:4f}\n"
          + "OHLCV: {:s}\n"
          + "Exchange: {:s}\n"
          + "----------------------\n").format(
-         experiment_name, trade_mode.name, timeframe.id,
-         asset.symbol, starting_cash, ohlcv_fpath, exchange_id))
+         experiment_name, trade_mode.name, timeframe.id, asset.symbol,
+         quantity, starting_cash, ohlcv_fpath, exchange_id))
 
     print(("To visualize, run: `python -m punisher.charts.dash_charts.dash_record --name {:s}`\n").format(experiment_name))
 
-    strategy = SimpleStrategy()
+    strategy = SimpleStrategy(asset, quantity)
     balance = Balance(
         cash_currency=cash_currency,
         starting_cash=starting_cash

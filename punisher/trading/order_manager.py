@@ -70,7 +70,7 @@ def process_orders(exchange, orders):
         sync_order_with_exchange(oo, ex_order)
     filled_orders.extend(get_filled_orders(open_orders))
 
-    # retry FAILED orders (if retries < RETRY_LIMIT)
+    # retry FAILED orders (if attempts < RETRY_LIMIT)
     failed_orders = get_failed_orders(orders, retry_limit=3)
     retried_orders = place_orders(exchange, failed_orders)
     filled_orders.extend(get_filled_orders(retried_orders))
@@ -118,6 +118,7 @@ def place_order(exchange, order):
         order.status = OrderStatus.FAILED
         print("Order Failed", order)
 
+    order.attempts += 1
     return order
 
 def sync_order_with_exchange(order, ex_order):
@@ -166,7 +167,7 @@ def get_failed_orders(orders, retry_limit=0):
     orders = get_orders_by_types(orders, [OrderStatus.FAILED])
     failed_orders = []
     for order in orders:
-        if order.retries <= retry_limit:
+        if order.attempts <= retry_limit:
             failed_orders.append(order)
     return failed_orders
 

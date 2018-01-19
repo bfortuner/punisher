@@ -84,7 +84,7 @@ class Order():
         "id", "exchange_id", "exchange_order_id", "asset", "price",
         "quantity", "filled_quantity", "order_type", "status",
         "created_time", "opened_time", "filled_time", "canceled_time",
-        "fee", "retries", "trades", "error"
+        "fee", "attempts", "trades", "error"
     ]
 
     def __init__(self, exchange_id, asset, price, quantity, order_type):
@@ -102,7 +102,7 @@ class Order():
         self.filled_time = None
         self.canceled_time = None
         self.fee = {}
-        self.retries = 0
+        self.attempts = 0
         self.trades = []
         self.error = None
 
@@ -148,7 +148,7 @@ class Order():
         order.opened_time = str_to_date(d['opened_time'])
         order.filled_time = str_to_date(d['filled_time'])
         order.canceled_time = str_to_date(d['canceled_time'])
-        order.retries = d['retries']
+        order.attempts = d['attempts']
         order.fee = d['fee']
         order.error = OrderingError.from_dict(d['error'])
         return order
