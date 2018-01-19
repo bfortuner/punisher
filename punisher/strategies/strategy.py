@@ -21,8 +21,8 @@ class Strategy():
     def log_ohlcv(self, data):
         self.log("OHLCV")
         self.log("    O: {:.4f} | C: {:.4f} | V: {:.1f} | T: {:s}".format(
-            data['open'], data['close'], data['volume'],
-            data['time_utc'].isoformat()))
+            data.get('open'), data.get('close'), data.get('volume'),
+            data.get('time_utc').isoformat()))
 
     def log_performance(self, cxt):
         self.log("PERFORMANCE")

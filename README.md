@@ -36,7 +36,7 @@ git submodule init
 git submodule update
 ```
 
-**Optional:**
+5. Install Extras (Optional)
 ```
 conda install ipywidgets
 jupyter nbextension enable --py --sys-prefix widgetsnbextension

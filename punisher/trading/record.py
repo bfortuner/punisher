@@ -6,7 +6,6 @@ import punisher.config as cfg
 import punisher.constants as c
 
 from punisher.data.store import FileStore
-from punisher.data.feed import CSVDataFeed
 from punisher.utils.dates import Timeframe
 from punisher.utils.dates import utc_to_epoch
 
@@ -76,14 +75,12 @@ class Record():
         # The DataFeed method returns a Series, which does weird things
         # with the index column 'time_epoch' which we need to keep.
         # Recovering the index the smart way is TBD, thus this stuff:
-        data['time_epoch'] = utc_to_epoch(data['time_utc'])
-        data = [[data[c] for c in OHLCV_COLS]]
-        df = pd.DataFrame(data, columns=OHLCV_COLS)
-        df.set_index('time_epoch', inplace=True)
-        if len(self.ohlcv) == 0:
-            self.ohlcv = df
-        else:
-            self.ohlcv = self.ohlcv.append(df)
+        data = data.ohlcv_df.copy()
+        data['time_epoch'] = [utc_to_epoch(t) for t in data['time_utc']]
+        # if len(self.ohlcv) == 0:
+        #     self.ohlcv = data.ohlcv_df
+        # else:
+        self.ohlcv = self.ohlcv.append(data)
 
     @classmethod
     def load(self, root_dir):

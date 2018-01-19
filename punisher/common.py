@@ -37,9 +37,8 @@ import punisher.config as cfg
 import punisher.constants as c
 
 # Data
-from punisher.data import ohlcv
-from punisher.data.feed import CSVDataFeed, ExchangeDataFeed
-from punisher.data.feed import EXCHANGE_FEED, CSV_FEED
+from punisher.feeds import OHLCVFileFeed, OHLCVExchangeFeed
+from punisher.feeds.ohlcv_feed import EXCHANGE_FEED, CSV_FEED
 from punisher.data.store import FileStore
 from punisher.data.store import DATA_STORES, FILE_STORE
 

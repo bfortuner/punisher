@@ -9,8 +9,8 @@ from copy import deepcopy
 import punisher.config as cfg
 import punisher.constants as c
 from punisher.data.store import DATA_STORES, FILE_STORE
-from punisher.data.feed import EXCHANGE_FEED, CSV_FEED
-from punisher.data.feed import load_feed
+from punisher.feeds.ohlcv_feed import EXCHANGE_FEED, CSV_FEED
+from punisher.feeds.ohlcv_feed import load_feed
 from punisher.utils.dates import Timeframe
 from punisher.portfolio.portfolio import Portfolio
 from punisher.portfolio.asset import Asset
