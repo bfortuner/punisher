@@ -105,6 +105,9 @@ class Balance():
         dct = self.to_dict()
         return json.dumps(dct, indent=4)
 
+    def __eq__(self, other):
+        return self.to_dict() == other.to_dict()
+
     def __repr__(self):
         return self.to_json()
 
