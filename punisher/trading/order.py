@@ -6,8 +6,9 @@ from enum import Enum, unique
 
 from punisher.portfolio.asset import Asset
 from punisher.utils.dates import str_to_date, date_to_str
-from punisher.trading.coins import get_symbol
 from punisher.utils.encoders import EnumEncoder
+
+from .errors import OrderingError
 
 
 @unique
@@ -83,27 +84,27 @@ class Order():
         "id", "exchange_id", "exchange_order_id", "asset", "price",
         "quantity", "filled_quantity", "order_type", "status",
         "created_time", "opened_time", "filled_time", "canceled_time",
-        "fee", "retries", "trades"
+        "fee", "retries", "trades", "error"
     ]
 
-    def __init__(self, exchange_id, asset, price, quantity,
-                 order_type, order_id=None, exchange_order_id=None):
-        self.id = order_id
+    def __init__(self, exchange_id, asset, price, quantity, order_type):
+        self.id = self.make_id()
         self.exchange_id = exchange_id
-        self.exchange_order_id = exchange_order_id
+        self.exchange_order_id = None
         self.asset = asset
         self.price = price
-        self.quantity = quantity # e.g. # of bitcoins
+        self.quantity = quantity
         self.filled_quantity = 0.0
         self.order_type = self.set_order_type(order_type)
         self.status = OrderStatus.CREATED
-        self.created_time = None
+        self.created_time = datetime.utcnow()
         self.opened_time = None
         self.filled_time = None
         self.canceled_time = None
         self.fee = {}
         self.retries = 0
         self.trades = []
+        self.error = None
 
     def set_order_type(self, order_type):
         assert order_type in OrderType
@@ -123,6 +124,7 @@ class Order():
         dct['symbol'] = self.asset.symbol
         dct['status'] = self.status.name
         dct['order_type'] = self.order_type.name
+        dct['error'] = None if self.error is None else self.error.to_dict()
         dct['created_time'] = date_to_str(self.created_time)
         dct['opened_time'] = date_to_str(self.opened_time)
         dct['filled_time'] = date_to_str(self.filled_time)
@@ -138,16 +140,17 @@ class Order():
             quantity=d['quantity'],
             order_type=OrderType[d['order_type']],
         )
-        order.id = d.get('id', order.id)
-        order.exchange_order_id = d.get('exchange_order_id')
-        order.filled_quantity = d.get('filled_quantity', 0)
-        order.status = OrderStatus[d.get('status', OrderStatus.CREATED.name)]
-        order.created_time = str_to_date(d.get('created_time'))
-        order.opened_time = str_to_date(d.get('opened_time'))
-        order.filled_time = str_to_date(d.get('filled_time'))
-        order.canceled_time = str_to_date(d.get('canceled_time'))
-        order.retries = d.get('retries', 0)
-        order.fee = d.get('fee', {})
+        order.id = d['id']
+        order.exchange_order_id = d['exchange_order_id']
+        order.filled_quantity = d['filled_quantity']
+        order.status = OrderStatus[d['status']]
+        order.created_time = str_to_date(d['created_time'])
+        order.opened_time = str_to_date(d['opened_time'])
+        order.filled_time = str_to_date(d['filled_time'])
+        order.canceled_time = str_to_date(d['canceled_time'])
+        order.retries = d['retries']
+        order.fee = d['fee']
+        order.error = OrderingError.from_dict(d['error'])
         return order
 
     def to_json(self):
@@ -159,8 +162,7 @@ class Order():
         dct = json.loads(json_str)
         return self.from_dict(dct)
 
-    @staticmethod
-    def make_id():
+    def make_id(self):
         return uuid.uuid4().hex
 
     def __repr__(self):

@@ -25,6 +25,7 @@ class Balance():
         }
 
     def update_by_order(self, asset, quantity, price, order_type):
+        self._ensure_asset_in_balance(asset)
         if order_type.is_buy():
             self.update(
                 currency=asset.quote,

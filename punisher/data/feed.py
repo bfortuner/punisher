@@ -55,6 +55,7 @@ class CSVDataFeed(DataFeed):
     def __init__(self, fpath, start=None, end=None):
         super().__init__(start, end)
         self.fpath = fpath
+        self.initialize()
 
     def initialize(self):
         super().initialize()
@@ -72,6 +73,7 @@ class ExchangeDataFeed(DataFeed):
         self.exchange = exchange
         self.assets = assets
         self.period = timeframe.id
+        self.initialize()
 
     def initialize(self):
         super().initialize()

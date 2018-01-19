@@ -1,60 +1,51 @@
 import datetime
 from copy import deepcopy
 
+import ccxt
+
 from punisher.portfolio.asset import Asset
 from punisher.portfolio.balance import BalanceType
 
+from .errors import handle_ordering_exception
 from .order import Order
 from .order import OrderType, OrderStatus
 
 
 def build_limit_buy_order(exchange, asset, quantity, price):
-    order = Order(
+    return Order(
         exchange_id=exchange.id,
         asset=asset,
         price=price,
         quantity=quantity,
         order_type=OrderType.LIMIT_BUY,
     )
-    order.id = Order.make_id()
-    order.created_time = datetime.datetime.utcnow()
-    return order
 
 def build_limit_sell_order(exchange, asset, quantity, price):
-    order = Order(
+    return Order(
         exchange_id=exchange.id,
         asset=asset,
         price=price,
         quantity=quantity,
         order_type=OrderType.LIMIT_SELL,
     )
-    order.id = Order.make_id()
-    order.created_time = datetime.datetime.utcnow()
-    return order
 
 def build_market_buy_order(exchange, asset, quantity):
-    order = Order(
+    return Order(
         exchange_id=exchange.id,
         asset=asset,
         price=None,
         quantity=quantity,
         order_type=OrderType.MARKET_BUY,
     )
-    order.id = Order.make_id()
-    order.created_time = datetime.datetime.utcnow()
-    return order
 
 def build_market_sell_order(exchange, asset, quantity):
-    order = Order(
+    return Order(
         exchange_id=exchange.id,
         asset=asset,
         price=None,
         quantity=quantity,
         order_type=OrderType.MARKET_SELL,
     )
-    order.id = Order.make_id()
-    order.created_time = datetime.datetime.utcnow()
-    return order
 
 def get_order(exchange, ex_order_id, asset):
     return exchange.fetch_order(ex_order_id, asset)
@@ -71,7 +62,7 @@ def get_orders(exchange, ex_order_ids, assets):
 
 def process_orders(exchange, orders):
     filled_orders = []
-    
+
     # sync OPEN orders (to check if FILLED)
     open_orders = get_open_orders(orders)
     for oo in open_orders:
@@ -101,27 +92,32 @@ def assert_no_duplicates(orders):
         keys.add(o.id)
 
 def place_order(exchange, order):
-    """Places order with exchange.
-       Updates local copy of order IN-PLACE"""
-    print("Placing Order", order)
-    if order.order_type == OrderType.LIMIT_BUY:
-        ex_order = exchange.create_limit_buy_order(
-            order.asset, order.quantity, order.price)
-    elif order.order_type == OrderType.LIMIT_SELL:
-        ex_order = exchange.create_limit_sell_order(
-            order.asset, order.quantity, order.price)
-    elif order.order_type == OrderType.MARKET_BUY:
-        ex_order = exchange.create_market_buy_order(
-            order.asset, order.quantity)
-    elif order.order_type == OrderType.MARKET_SELL:
-        ex_order = exchange.create_market_sell_order(
-            order.asset, order.quantity)
-    else:
-        raise Exception("Order type {:s} not supported".format(
-            order.order_type.name))
-    print("Exchange Response", ex_order)
-    sync_order_with_exchange(order, ex_order)
-    print("Updated order", order)
+    """Submits order to exchange"""
+    try:
+        if order.order_type == OrderType.LIMIT_BUY:
+            ex_order = exchange.create_limit_buy_order(
+                order.asset, order.quantity, order.price)
+        elif order.order_type == OrderType.LIMIT_SELL:
+            ex_order = exchange.create_limit_sell_order(
+                order.asset, order.quantity, order.price)
+        elif order.order_type == OrderType.MARKET_BUY:
+            ex_order = exchange.create_market_buy_order(
+                order.asset, order.quantity)
+        elif order.order_type == OrderType.MARKET_SELL:
+            ex_order = exchange.create_market_sell_order(
+                order.asset, order.quantity)
+        else:
+            raise Exception("Order type {:s} not supported".format(
+                order.order_type.name))
+        sync_order_with_exchange(order, ex_order)
+
+    # TODO: Create Parent Exception Class and Catch a bunch of errors
+    except ccxt.errors.InsufficientFunds as ex:
+        error = handle_ordering_exception(ex)
+        order.error = error
+        order.status = OrderStatus.FAILED
+        print("Order Failed", order)
+
     return order
 
 def sync_order_with_exchange(order, ex_order):

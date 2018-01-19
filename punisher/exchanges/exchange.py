@@ -4,6 +4,8 @@ import uuid
 from datetime import datetime
 from copy import deepcopy
 
+import ccxt
+
 import punisher.constants as c
 import punisher.config as cfg
 from punisher.portfolio.asset import Asset
@@ -372,19 +374,24 @@ class PaperExchange(Exchange):
             'status': OrderStatus.OPEN.name,
             'datetime': datetime.utcnow().isoformat()
         })
+
         if not self.balance.is_balance_sufficient(
             asset=asset,
             quantity=quantity,
             price=price,
             order_type=order_type):
-            raise Exception((
+
+            # TODO: Implement our own InsufficientFunds
+            raise ccxt.errors.InsufficientFunds((
                 'Insufficient funds to place order for asset {:s} of' +
                 ' cost: {:.5f} Available {:s} balance is: {}').format(
                 asset.symbol, quantity*price, asset.quote,
                 self.balance.get(asset.quote)[BalanceType.FREE])
             )
+
         order = self._fill_order(order)
         self.orders.append(order)
+
         return order
 
     def _fill_order(self, order):

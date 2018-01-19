@@ -34,7 +34,7 @@ parser.add_argument('--tminus',
                     help='Trailing # of records to include in chart',
                     default=sys.maxsize, type=int)
 parser.add_argument('--refresh', help='How often to refresh the chart',
-                    default=5, type=int)
+                    default=60, type=int)
 
 args = parser.parse_args()
 experiment_name = args.name

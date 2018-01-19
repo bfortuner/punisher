@@ -24,7 +24,7 @@ def get_latest_prices(positions, row):
 
 def backtest(name, exchange, balance, portfolio, feed, strategy):
     '''
-    name = name of your current experiment run
+    :name = name of your current experiment run
     '''
     # Where we will save the record
     root = os.path.join(cfg.DATA_DIR, name)
@@ -42,12 +42,12 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         balance=balance,
         store=store
     )
+    record.save()
     ctx = Context(
         exchange=exchange,
         feed=feed,
         record=record
     )
-    feed.initialize()
 
     row = feed.next()
     while row is not None:
@@ -87,7 +87,7 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
 
 def simulate(name, exchange, balance, portfolio, feed, strategy):
     '''
-    exp_name = name of your current experiment (multiple runs per strategy)
+    :name = name of your current experiment run
     '''
     # Where we will save the record
     root = os.path.join(cfg.DATA_DIR, name)
@@ -105,19 +105,19 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
         balance=balance,
         store=store
     )
+    record.save()
     ctx = Context(
         exchange=exchange,
         feed=feed,
         record=record
     )
-    feed.initialize()
 
     while True:
         row = feed.next()
 
         if row is not None:
             orders = strategy.process(row, ctx)
-            print("ORDERS", orders)
+
             # Record needs to know about all new orders
             for order in orders['orders']:
                 record.orders[order.id] = order
@@ -146,16 +146,17 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
 
             record.save()
 
-        time.sleep(60)
+        time.sleep(30)
 
     return record
 
 
 def live(name, exchange, balance, portfolio, feed, strategy):
-    print("LIVE TRADING DUDE!!!!")
     '''
-    exp_name = name of your current experiment (multiple runs per strategy)
+    :name = name of your current experiment run
     '''
+    print("LIVE TRADING! My, man!")
+
     # Where we will save the record
     root = os.path.join(cfg.DATA_DIR, name)
 
@@ -172,12 +173,12 @@ def live(name, exchange, balance, portfolio, feed, strategy):
         balance=balance,
         store=store
     )
+    record.save()
     ctx = Context(
         exchange=exchange,
         feed=feed,
         record=record
     )
-    feed.initialize()
 
     while True:
         row = feed.next()
@@ -213,6 +214,6 @@ def live(name, exchange, balance, portfolio, feed, strategy):
 
             record.save()
 
-        time.sleep(60)
+        time.sleep(30)
 
     return record
