@@ -5,10 +5,16 @@
 ## Quickstart
 
 **Users**
-* Run the ```demo.ipynb``` jupyter notebook
+
+Run the ```demo.ipynb``` jupyter notebook
+
+or
+
+```$ python -m punisher.strategies.simple -ohlcv .data/paper_ETH_BTC_30m.csv -t 30m -m backtest -a ETH/BTC```
 
 **Developers**
-* Run ```developers.ipynb``` to see how various components interact
+
+Run ```developers.ipynb``` to see how various components interact
 
 ## Install
 
@@ -21,7 +27,7 @@ source activate punisher
 ```
 3. Add your API keys to ```dotenv_example``` and rename ```.env```.
 
-**No API keys?** 
+**No API keys?**
 You can still download data with the Exchange APIs, just empty the dictionary we pass in as a config in exchange.py
 
 4. Initialize [submodules](https://chrisjean.com/git-submodules-adding-using-removing-and-updating/)
@@ -30,13 +36,23 @@ git submodule init
 git submodule update
 ```
 
-**Optional:**
+5. Install Extras (Optional)
 ```
 conda install ipywidgets
 jupyter nbextension enable --py --sys-prefix widgetsnbextension
 conda install -c tim_shawver/label/dev qgrid==1.0.0b10
 conda install -c conda-forge python.app
 conda install pytorch torchvision -c pytorch
+```
+
+## Running Tests
+```
+python -m pytest tests/ (all tests)
+python -m pytest -k filenamekeyword (tests matching keyword)
+python -m pytest tests/utils/test_sample.py (single test file)
+python -m pytest tests/utils/test_sample.py::test_answer_correct (single test method)
+python -m pytest --resultlog=testlog.log tests/ (log output to file)
+python -m pytest -s tests/ (print output to console)
 ```
 
 ## Resources

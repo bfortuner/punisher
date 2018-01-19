@@ -1,7 +1,9 @@
 import pytest
+
 from punisher import constants as c
+from punisher.exchanges.exchange import load_exchange
+
 
 @pytest.fixture(scope="module")
 def ccxtexchange():
-    from punisher.exchanges.exchange import load_exchange
-    return load_exchange(c.Binance)
+    return load_exchange(c.BINANCE)

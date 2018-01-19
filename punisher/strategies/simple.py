@@ -5,8 +5,8 @@ import argparse
 
 import punisher.config as cfg
 import punisher.constants as c
-from punisher.data.feed import CSVDataFeed
-from punisher.data.feed import ExchangeDataFeed
+from punisher.feeds import OHLCVFileFeed
+from punisher.feeds import OHLCVExchangeFeed
 from punisher.exchanges.exchange import load_exchange
 from punisher.exchanges.exchange import load_feed_based_paper_exchange
 from punisher.exchanges.exchange import load_ccxt_based_paper_exchange
@@ -54,16 +54,15 @@ class SimpleStrategy(Strategy):
 
     def handle_data(self, data, ctx):
         orders = []
-        price = data['close']
+        price = data.get('close')
 
         if random.random() > 0.5:
             order = order_manager.build_limit_buy_order(
                 ctx.exchange, self.asset, self.quantity, price)
-            orders.append(order)
         else:
             order = order_manager.build_market_sell_order(
                 ctx.exchange, self.asset, self.quantity)
-            orders.append(order)
+        orders.append(order)
 
         # Optionally cancel pending orders (LIVE trading)
         #pending_orders = ctx.exchange.fetch_open_orders(asset)
@@ -74,7 +73,7 @@ class SimpleStrategy(Strategy):
         self.update_metric('RSI', 10.0, ctx)
         self.update_ohlcv(data, ctx)
 
-        self.log_all(orders, data, ctx, data['time_utc'])
+        self.log_all(orders, data, ctx, data.get('time_utc'))
         return {
             'orders': orders,
             'cancel_ids': cancel_ids
@@ -126,7 +125,7 @@ if __name__ == "__main__":
     )
 
     if trade_mode is TradeMode.BACKTEST:
-        feed = CSVDataFeed(
+        feed = OHLCVFileFeed(
             fpath=ohlcv_fpath,
             start=None, # Usually None for backtest, but its possible to filter the csv
             end=None
@@ -137,7 +136,7 @@ if __name__ == "__main__":
 
     elif trade_mode is TradeMode.SIMULATE:
         exchange = load_ccxt_based_paper_exchange(balance, exchange_id)
-        feed = ExchangeDataFeed(
+        feed = OHLCVExchangeFeed(
             exchange=exchange,
             assets=[asset],
             timeframe=timeframe,
@@ -149,7 +148,7 @@ if __name__ == "__main__":
 
     elif trade_mode is TradeMode.LIVE:
         exchange = load_exchange(exchange_id)
-        feed = ExchangeDataFeed(
+        feed = OHLCVExchangeFeed(
             exchange=exchange,
             assets=[asset],
             timeframe=timeframe,

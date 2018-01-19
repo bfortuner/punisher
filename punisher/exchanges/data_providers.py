@@ -1,8 +1,6 @@
 import abc
 import numpy as np
-from enum import Enum
 
-from punisher.data import ohlcv
 from punisher.utils.dates import utc_to_epoch
 
 supported_timeframes = { '1m': 1, '5m': 5, '30m': 30 }
@@ -81,7 +79,8 @@ class FeedExchangeDataProvider(ExchangeDataProvider):
         return trades
 
     def fetch_ticker(self, asset):
-        latest = self.feed.peek()
+        latest = self.feed.history().row(-1)
+        print(latest['time_utc'])
         return {
             'symbol': asset.symbol,
             'info': {},

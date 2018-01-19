@@ -24,7 +24,7 @@ def get_latest_prices(positions, row):
     # TODO: refactor this to work for multiple assets
     latest_prices = {}
     for pos in positions:
-        latest_prices[pos.asset.symbol] = row['close']
+        latest_prices[pos.asset.symbol] = row.get('close')
     return latest_prices
 
 
