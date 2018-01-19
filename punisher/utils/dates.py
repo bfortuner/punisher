@@ -26,6 +26,12 @@ class Timeframe(Enum):
     def delta(self):
         return self.value['delta']
 
+    @classmethod
+    def from_id(self, id_):
+        '''1m, 5m, 30m'''
+        id_map = {e.id:e for e in Timeframe}
+        return id_map[id_]
+
 
 def is_str_digit(string):
     if 'numpy' in type(string).__module__:

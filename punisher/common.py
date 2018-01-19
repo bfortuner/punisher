@@ -52,7 +52,7 @@ import punisher.utils.encoders
 
 # Trading
 from punisher.trading.context import Context
-from punisher.trading.context import TradingMode
+from punisher.trading.runner import TradeMode
 from punisher.trading.context import get_default_backtest_config
 from punisher.trading.order import Order
 from punisher.trading.order import OrderStatus, OrderType

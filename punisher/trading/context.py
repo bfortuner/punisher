@@ -8,30 +8,20 @@ from copy import deepcopy
 
 import punisher.config as cfg
 import punisher.constants as c
-
 from punisher.data.store import DATA_STORES, FILE_STORE
 from punisher.data.feed import EXCHANGE_FEED, CSV_FEED
 from punisher.data.feed import load_feed
 from punisher.utils.dates import Timeframe
-
 from punisher.portfolio.portfolio import Portfolio
 from punisher.portfolio.asset import Asset
 from punisher.portfolio.balance import Balance, BalanceType
 from punisher.portfolio.performance import PerformanceTracker
-
-from punisher.trading import order_manager
-from punisher.trading.record import Record
-
 from punisher.exchanges.exchange import load_exchange, CCXTExchange
-
 from punisher.utils.dates import str_to_date
 from punisher.utils.logger import get_logger
 
-
-class TradingMode(Enum):
-    BACKTEST = 'backtest'
-    SIMULATION = 'simulation'
-    LIVE = 'live'
+from . import order_manager
+from .record import Record
 
 
 class Context():

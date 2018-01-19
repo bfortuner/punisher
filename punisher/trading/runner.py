@@ -1,17 +1,23 @@
 import os
 import time
+from enum import Enum, unique
 
 import punisher.config as cfg
 import punisher.constants as c
-
 from punisher.data.store import DATA_STORES
 from punisher.portfolio.portfolio import Portfolio
 from punisher.trading import order_manager
 from punisher.exchanges.exchange import load_exchange
 
 from .context import Context
-from .context import TradingMode
 from .record import Record
+
+
+@unique
+class TradeMode(Enum):
+    BACKTEST = 'historical data, fake orders'
+    SIMULATE = 'live data, fake orders'
+    LIVE = 'live data, live orders'
 
 
 def get_latest_prices(positions, row):
