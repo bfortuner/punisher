@@ -59,13 +59,10 @@ class SimpleStrategy(Strategy):
             order = order_manager.build_limit_buy_order(
                 ctx.exchange, asset, quantity, price)
             orders.append(order)
-        elif (len(ctx.record.portfolio.positions) > 0
-              and ctx.record.balance.get(c.ETH)[BalanceType.FREE] > 0.0):
+        else:
             order = order_manager.build_market_sell_order(
                 ctx.exchange, asset, quantity)
             orders.append(order)
-        else:
-            print("Attempted to sell, but insufficient balance")
 
         # Optionally cancel pending orders (LIVE trading)
         #pending_orders = ctx.exchange.fetch_open_orders(asset)
