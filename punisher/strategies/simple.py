@@ -9,6 +9,7 @@ from punisher.data.feed import CSVDataFeed
 from punisher.data.feed import ExchangeDataFeed
 from punisher.exchanges.exchange import load_exchange
 from punisher.exchanges.exchange import load_feed_based_paper_exchange
+from punisher.exchanges.exchange import load_ccxt_based_paper_exchange
 from punisher.portfolio.asset import Asset
 from punisher.portfolio.balance import Balance, BalanceType
 from punisher.portfolio.portfolio import Portfolio
@@ -95,15 +96,19 @@ if __name__ == "__main__":
     ohlcv_fpath = args.ohlcv_fpath
     exchange_id = args.exchange_id
 
-    print(("Experiment: {:s}\n"
+    print(("\nExperiment \n----------------------\n"
+         + "Name: {:s}\n"
          + "TradeMode: {:s}\n"
          + "Timeframe: {:s}\n"
          + "Asset: {:s}\n"
          + "StartingCash: {:4f}\n"
          + "OHLCV: {:s}\n"
-         + "Exchange: {:s}").format(
+         + "Exchange: {:s}\n"
+         + "----------------------\n").format(
          experiment_name, trade_mode.name, timeframe.id,
          asset.symbol, starting_cash, ohlcv_fpath, exchange_id))
+
+    print(("To visualize, run: `python -m punisher.charts.dash_charts.dash_record --name {:s}`\n").format(experiment_name))
 
     strategy = SimpleStrategy()
     balance = Balance(
@@ -127,7 +132,22 @@ if __name__ == "__main__":
             end=None
         )
         exchange = load_feed_based_paper_exchange(balance, feed)
-    else:
+        runner.backtest(experiment_name, exchange, balance,
+                        portfolio, feed, strategy)
+
+    elif trade_mode is TradeMode.SIMULATE:
+        exchange = load_ccxt_based_paper_exchange(balance, exchange_id)
+        feed = ExchangeDataFeed(
+            exchange=exchange,
+            assets=[asset],
+            timeframe=timeframe,
+            start=datetime.datetime.utcnow(),
+            end=None
+        )
+        runner.simulate(experiment_name, exchange, balance,
+                        portfolio, feed, strategy)
+
+    elif trade_mode is TradeMode.LIVE:
         exchange = load_exchange(exchange_id)
         feed = ExchangeDataFeed(
             exchange=exchange,
@@ -136,15 +156,5 @@ if __name__ == "__main__":
             start=datetime.datetime.utcnow(),
             end=None
         )
-
-    if trade_mode is TradeMode.BACKTEST:
-        runner.backtest(experiment_name, exchange, balance,
-                        portfolio, feed, strategy)
-    elif trade_mode is TradeMode.SIMULATE:
-        runner.simulate(experiment_name, exchange, balance,
-                        portfolio, feed, strategy)
-    elif trade_mode is TradeMode.LIVE:
         runner.live(experiment_name, exchange, balance,
                         portfolio, feed, strategy)
-    else:
-        print("TradeMode not supported", trade_mode)
