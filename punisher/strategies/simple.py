@@ -2,7 +2,6 @@ import os
 import datetime
 import random
 import argparse
-from copy import deepcopy
 
 import punisher.config as cfg
 import punisher.constants as c

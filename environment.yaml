@@ -24,6 +24,7 @@ dependencies:
   - lxml=4.1.1
   - markupsafe=1.0
   - mistune=0.8.3
+  - mock=2.0.0
   - nbconvert=5.3.1
   - notebook=5.2.2
   - pandoc=2.1
@@ -33,6 +34,8 @@ dependencies:
   - prompt_toolkit=1.0.15
   - ptyprocess=0.5.2
   - pygments=2.2.0
+  - pytest=3.3.2
+  - pytest-mock=1.6.3
   - pyyaml=3.12
   - pyzmq=16.0.2
   - simplegeneric=0.8.1
