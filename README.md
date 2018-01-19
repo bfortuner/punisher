@@ -5,10 +5,16 @@
 ## Quickstart
 
 **Users**
-* Run the ```demo.ipynb``` jupyter notebook
+
+Run the ```demo.ipynb``` jupyter notebook
+
+or 
+
+```$ python -m punisher.strategies.simple -ohlcv .data/paper_ETH_BTC_30m.csv -t 30m -m backtest -a ETH/BTC```
 
 **Developers**
-* Run ```developers.ipynb``` to see how various components interact
+
+Run ```developers.ipynb``` to see how various components interact
 
 ## Install
 
