@@ -66,6 +66,7 @@
 * Plot balance by coin bar chart
 * Plot chart of Buy/Sell orders per time period
 * Plot "benchmark" PnL/Returns (provided by user)
+* Create a multi-page Dash app where we can view multiple strategies running (stop/start/pause them)
 
 ### Indicators / Metrics
 
