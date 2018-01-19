@@ -440,10 +440,12 @@ EXCHANGE_CONFIGS = {
 }
 
 def load_feed_based_paper_exchange(balance, feed):
+    balance = deepcopy(balance)
     data_provider = FeedExchangeDataProvider(feed)
     return PaperExchange(c.PAPER, balance, data_provider)
 
 def load_ccxt_based_paper_exchange(balance, exchange_id):
+    balance = deepcopy(balance)
     exchange = load_exchange(exchange_id)
     data_provider = CCXTExchangeDataProvider(exchange)
     return PaperExchange(c.PAPER, balance, data_provider)

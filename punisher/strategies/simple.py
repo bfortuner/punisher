@@ -2,6 +2,7 @@ import os
 import datetime
 import random
 import argparse
+from copy import deepcopy
 
 import punisher.config as cfg
 import punisher.constants as c
@@ -59,11 +60,10 @@ class SimpleStrategy(Strategy):
         if random.random() > 0.5:
             order = order_manager.build_limit_buy_order(
                 ctx.exchange, self.asset, self.quantity, price)
-            orders.append(order)
         else:
             order = order_manager.build_market_sell_order(
                 ctx.exchange, self.asset, self.quantity)
-            orders.append(order)
+        orders.append(order)
 
         # Optionally cancel pending orders (LIVE trading)
         #pending_orders = ctx.exchange.fetch_open_orders(asset)
