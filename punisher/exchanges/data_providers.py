@@ -32,9 +32,10 @@ class ExchangeDataProvider(metaclass=abc.ABCMeta):
 
 
 class FeedExchangeDataProvider(ExchangeDataProvider):
-    def __init__(self, feed, start=None, end=None):
+    def __init__(self, feed, ex_id, start=None, end=None):
         super().__init__()
         self.feed = feed
+        self.ex_id = ex_id
         self.start = None
         self.end = None
 
@@ -79,26 +80,31 @@ class FeedExchangeDataProvider(ExchangeDataProvider):
         return trades
 
     def fetch_ticker(self, asset):
-        latest = self.feed.history().row(-1)
-        print(latest['time_utc'])
+        history = self.feed.history(t_minus=1)
+        open_ = history.get('open', asset.symbol, self.ex_id, idx=-1)
+        close = history.get('close', asset.symbol, self.ex_id, idx=-1)
+        low = history.get('low', asset.symbol, self.ex_id, idx=-1)
+        high = history.get('high', asset.symbol, self.ex_id, idx=-1)
+        volume = history.get('volume', asset.symbol, self.ex_id, idx=-1)
+        utc = history.get('utc')
         return {
             'symbol': asset.symbol,
             'info': {},
-            'timestamp': utc_to_epoch(latest['time_utc']),
-            'datetime': latest['time_utc'],
-            'high': latest['open'],
-            'low': latest['low'],
-            'bid': latest['close'], # faking with close
-            'ask': latest['close'], # faking with close
+            'timestamp': utc_to_epoch(utc),
+            'datetime': utc,
+            'high': open_,
+            'low': low,
+            'bid': close, # faking with close
+            'ask': close, # faking with close
             'vwap': None, #volumn weighted price
-            'open': latest['open'],
-            'first': latest['open'],
-            'last': latest['close'],
+            'open': open_,
+            'first': open_,
+            'last': close,
             'change': None, #(percentage change),
-            'average': np.mean([latest['open'], latest['close']]), #TODO: No idea what this means
-            'baseVolume': latest['volume'], #(volume of base currency),
+            'average': np.mean([open_, close]), #TODO: No idea what this means
+            'baseVolume': volume, #(volume of base currency),
             #TODO: should be based on weighted average price
-            'quoteVolume': latest['volume'] * np.mean([latest['open'], latest['close']]),
+            'quoteVolume': volume * np.mean([open_, close]),
         }
 
     @property

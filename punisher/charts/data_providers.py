@@ -45,7 +45,7 @@ class RecordChartDataProvider():
         self.thread.start()
 
     def get_timeline(self):
-        return self.get_ohlcv()['time_utc']
+        return self.get_ohlcv()['utc']
 
     def get_symbols(self):
         return self.record.portfolio.symbols
@@ -60,7 +60,7 @@ class RecordChartDataProvider():
              'high': 0.0773,
              'low': 0.0771,
              'open': 0.0772,
-             'time_utc': Timestamp('2018-01-08 22:22:00'),
+             'utc': Timestamp('2018-01-08 22:22:00'),
              'volume': 222.514}
         """
         if abs(self.t_minus) >= len(self.record.ohlcv):
@@ -83,13 +83,13 @@ class RecordChartDataProvider():
         periods = self.record.portfolio.perf.periods
         return pd.DataFrame([
             [p['end_time'], p['pnl']] for p in periods
-        ], columns=['time_utc','pnl'])
+        ], columns=['utc','pnl'])
 
     def get_returns(self):
         periods = self.record.portfolio.perf.periods
         return pd.DataFrame([
             [p['end_time'], p['returns']] for p in periods
-        ], columns=['time_utc','returns'])
+        ], columns=['utc','returns'])
 
     def get_balance(self):
         columns = ['coin', 'free', 'used', 'total']
@@ -172,7 +172,7 @@ class OHLCVChartDataProvider(ChartDataProvider):
              'high': 0.0773,
              'low': 0.0771,
              'open': 0.0772,
-             'time_utc': Timestamp('2018-01-08 22:22:00'),
+             'utc': Timestamp('2018-01-08 22:22:00'),
              'volume': 222.514}
         """
         return self.feed.next().to_dict()

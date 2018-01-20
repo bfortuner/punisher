@@ -18,7 +18,7 @@ import dash_table_experiments as dt
 import punisher.config as cfg
 import punisher.constants as c
 from punisher.portfolio.asset import Asset
-from punisher.feeds.ohlcv_feed import get_price_data_fpath
+from punisher.feeds.ohlcv_feed import get_ohlcv_fpath
 from punisher.charts.dash_viz import generate_table
 from punisher.utils.dates import Timeframe, date_to_str
 
@@ -157,7 +157,7 @@ def plot_olhc(n):
     global data
     ohlcv = data.get_ohlcv()
     return {
-        'data': [go.Ohlc(x=ohlcv['time_utc'],
+        'data': [go.Ohlc(x=ohlcv['utc'],
                          open=ohlcv['open'],
                          high=ohlcv['high'],
                          low=ohlcv['low'],
@@ -172,7 +172,7 @@ def plot_v(n):
     global data
     ohlcv = data.get_ohlcv()
     return {
-        'data': [go.Bar(x=ohlcv['time_utc'],
+        'data': [go.Bar(x=ohlcv['utc'],
                         y=ohlcv['volume'])],
         'layout': dict(title="Volume")
     }
@@ -183,7 +183,7 @@ def plot_pnl(n):
     global data
     pnl = data.get_pnl()
     return {
-        'data': [go.Scatter(x=pnl['time_utc'],
+        'data': [go.Scatter(x=pnl['utc'],
                         y=pnl['pnl'], mode='lines')],
         'layout': dict(title="PnL")
     }
@@ -194,7 +194,7 @@ def plot_returns(n):
     global data
     returns = data.get_returns()
     return {
-        'data': [go.Scatter(x=returns['time_utc'],
+        'data': [go.Scatter(x=returns['utc'],
                         y=returns['returns'], mode='lines')],
         'layout': dict(title="Returns")
     }

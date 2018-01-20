@@ -86,6 +86,6 @@
 ### Known Issues / Bugs
 
 * Feed waits 1 full period before trigging an action in the Strategy. This is annoying.
-* Fix date conversion issues -Epoch to utc (or remove the time_epoch)
+* Fix date conversion issues -Epoch to utc (or remove the epoch)
 * Fetching historical data using 1m period only goes back 1 day and may cause bugs when using start/end
 * We don't support multiple assets yet, need to figure out what to load into df(s) for each feed type
