@@ -11,10 +11,10 @@ class Strategy():
         if self.logger is not None:
             self.logger.info(msg)
 
-    def log_epoch_time(self, time_utc):
+    def log_epoch_time(self, utc):
         self.log("---------------------------------------")
         self.log("Epoch {:d} - Timestep: {:s}".format(
-            self.epoch, time_utc.isoformat()
+            self.epoch, utc.isoformat()
         ))
         self.log("---------------------------------------")
 
@@ -22,7 +22,7 @@ class Strategy():
         self.log("OHLCV")
         self.log("    O: {:.4f} | C: {:.4f} | V: {:.1f} | T: {:s}".format(
             data.get('open'), data.get('close'), data.get('volume'),
-            data.get('time_utc').isoformat()))
+            data.get('utc').isoformat()))
 
     def log_performance(self, cxt):
         self.log("PERFORMANCE")

@@ -34,7 +34,7 @@ class FileStore(DataStore):
 
     def df_to_csv(self, df, name):
         fpath = self.get_fpath(name, c.CSV)
-        df.to_csv(fpath, index=False)
+        df.to_csv(fpath, index=True)
 
     def csv_to_df(self, name, index):
         fpath = self.get_fpath(name, c.CSV)

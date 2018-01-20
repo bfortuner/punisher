@@ -36,7 +36,7 @@ PERFORMANCE_FNAME = 'performance'
 METRICS_FNAME = 'metrics'
 BALANCE_FNAME = 'balance'
 
-OHLCV_COLS = ['time_epoch', 'open', 'high', 'low', 'close', 'volume', 'time_utc']
+OHLCV_COLS = ['epoch', 'open', 'high', 'low', 'close', 'volume', 'utc']
 
 class Record():
     def __init__(self, config, portfolio, balance, store):
@@ -72,7 +72,7 @@ class Record():
 
     def add_ohlcv(self, data):
         data = data.ohlcv_df.copy()
-        data['time_epoch'] = [utc_to_epoch(t) for t in data['time_utc']]
+        data['epoch'] = [utc_to_epoch(t) for t in data['utc']]
         self.ohlcv = self.ohlcv.append(data)
 
     @classmethod
@@ -89,7 +89,7 @@ class Record():
         orders = store.load_json(ORDERS_FNAME)
         orders = {o['id']: Order.from_dict(o) for o in orders.values()}
 
-        ohlcv = store.csv_to_df(OHLCV_FNAME, index='time_epoch')
+        ohlcv = store.csv_to_df(OHLCV_FNAME, index='epoch')
         metrics = store.load_json(METRICS_FNAME)
 
         record = Record(

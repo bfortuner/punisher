@@ -46,7 +46,7 @@ ETH_USD = 'ETH-USD'
 LTC_USD = 'LTC-USD'
 
 # Metadata
-OHLCV_COLUMNS = ['time_epoch', 'open', 'high', 'low', 'close', 'volume']
+OHLCV_COLUMNS = ['epoch', 'open', 'high', 'low', 'close', 'volume']
 
 # Record
 ORDERS_FNAME = 'orders.csv'
@@ -66,8 +66,8 @@ DEFAULT_BALANCE = {
 }
 
 # Feed
-DEFAULT_1M_FEED_CSV_FILENAME = 'paper_ETH_BTC_1m.csv'
-DEFAULT_30M_FEED_CSV_FILENAME = 'paper_ETH_BTC_30m.csv'
+DEFAULT_1M_FEED_CSV_FILENAME = 'binance_ETH_BTC_1m.csv'
+DEFAULT_30M_FEED_CSV_FILENAME = 'binance_ETH_BTC_30m.csv'
 
 # Min Asset quantities for live exchange orders
 MIN_BTC=.001

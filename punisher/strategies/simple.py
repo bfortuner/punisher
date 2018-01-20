@@ -41,10 +41,10 @@ class SimpleStrategy(Strategy):
         self.asset = asset
         self.quantity = quantity
 
-    def log_all(self, orders, data, ctx, time_utc):
+    def log_all(self, orders, data, ctx, utc):
         self.logger = ctx.logger
         if self.logger is not None:
-            self.log_epoch_time(time_utc)
+            self.log_epoch_time(utc)
             self.log_ohlcv(data)
             self.log_orders(orders)
             self.log_performance(ctx)
@@ -73,7 +73,7 @@ class SimpleStrategy(Strategy):
         self.update_metric('RSI', 10.0, ctx)
         self.update_ohlcv(data, ctx)
 
-        self.log_all(orders, data, ctx, data.get('time_utc'))
+        self.log_all(orders, data, ctx, data.get('utc'))
         return {
             'orders': orders,
             'cancel_ids': cancel_ids

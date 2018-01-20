@@ -80,12 +80,11 @@ class FeedExchangeDataProvider(ExchangeDataProvider):
 
     def fetch_ticker(self, asset):
         latest = self.feed.history().row(-1)
-        print(latest['time_utc'])
         return {
             'symbol': asset.symbol,
             'info': {},
-            'timestamp': utc_to_epoch(latest['time_utc']),
-            'datetime': latest['time_utc'],
+            'timestamp': utc_to_epoch(latest['utc']),
+            'datetime': latest['utc'],
             'high': latest['open'],
             'low': latest['low'],
             'bid': latest['close'], # faking with close
