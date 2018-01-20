@@ -22,7 +22,11 @@ class Strategy():
         self.log("OHLCV")
         self.log("    O: {:.4f} | C: {:.4f} | V: {:.1f} | T: {:s}".format(
             data.get('open'), data.get('close'), data.get('volume'),
+<<<<<<< HEAD
             data.get('utc').isoformat()))
+=======
+            data.get('time_utc').isoformat()))
+>>>>>>> 96979db3aba45d2da2ef08c0fb04906c632381dc
 
     def log_performance(self, cxt):
         self.log("PERFORMANCE")

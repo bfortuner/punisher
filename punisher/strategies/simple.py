@@ -73,7 +73,11 @@ class SimpleStrategy(Strategy):
         self.update_metric('RSI', 10.0, ctx)
         self.update_ohlcv(data, ctx)
 
+<<<<<<< HEAD
         self.log_all(orders, data, ctx, data.get('utc'))
+=======
+        self.log_all(orders, data, ctx, data.get('time_utc'))
+>>>>>>> 96979db3aba45d2da2ef08c0fb04906c632381dc
         return {
             'orders': orders,
             'cancel_ids': cancel_ids
