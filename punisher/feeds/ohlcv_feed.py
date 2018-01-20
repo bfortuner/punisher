@@ -116,16 +116,10 @@ class OHLCVExchangeFeed(OHLCVFeed):
 
     def update(self):
         self._download(self.prior_time, self.end)
-        if len(self.assets) > 1 or len(self.exchanges) > 1:
-            ex_ids = [ex.id for ex in self.exchanges]
-            self.ohlcv_df = load_multiple_assets(
-                ex_ids, self.assets, self.period,
-                self.start, self.end)
-        else:
-            fpath = get_ohlcv_fpath(
-                self.assets[0], self.exchanges[0].id, self.period)
-            self.ohlcv_df = load_asset(
-                fpath, self.start, self.end)
+        ex_ids = [ex.id for ex in self.exchanges]
+        self.ohlcv_df = load_multiple_assets(
+            ex_ids, self.assets, self.period,
+            self.start, self.end)
 
     def _download(self, start, end):
         for exchange in self.exchanges:
