@@ -18,11 +18,11 @@ class Strategy():
         ))
         self.log("---------------------------------------")
 
-    def log_ohlcv(self, data):
+    def log_ohlcv(self, data, symbol, ex_id):
         self.log("OHLCV")
         self.log("    O: {:.4f} | C: {:.4f} | V: {:.1f} | T: {:s}".format(
-            data.get('open'), data.get('close'), data.get('volume'),
-            data.get('utc').isoformat()))
+            data.get('open', symbol, ex_id), data.get('close', symbol, ex_id),
+            data.get('volume', symbol, ex_id), data.get('utc').isoformat()))
 
     def log_performance(self, cxt):
         self.log("PERFORMANCE")

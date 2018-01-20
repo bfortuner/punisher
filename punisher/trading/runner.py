@@ -20,11 +20,13 @@ class TradeMode(Enum):
     LIVE = 'live data, live orders'
 
 
-def get_latest_prices(positions, row):
+def get_latest_prices(positions, row, ex_id):
     # TODO: refactor this to work for multiple assets
     latest_prices = {}
     for pos in positions:
-        latest_prices[pos.asset.symbol] = row.get('close')
+        # position should know about the exchange ....
+        symbol = pos.asset.symbol
+        latest_prices[symbol] = row.get('close', symbol, ex_id)
     return latest_prices
 
 
@@ -76,7 +78,8 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         portfolio.update(newly_filled_orders)
 
         # Update latest prices of positions
-        latest_prices = get_latest_prices(portfolio.positions, row)
+        latest_prices = get_latest_prices(
+            portfolio.positions, row, exchange.id)
         portfolio.update_position_prices(latest_prices)
 
         # Update Virtual Balance (exchange balance left alone)

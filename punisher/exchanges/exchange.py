@@ -439,9 +439,9 @@ EXCHANGE_CONFIGS = {
     }
 }
 
-def load_feed_based_paper_exchange(balance, feed):
+def load_feed_based_paper_exchange(balance, feed, feed_ex_id=c.PAPER):
     balance = deepcopy(balance)
-    data_provider = FeedExchangeDataProvider(feed)
+    data_provider = FeedExchangeDataProvider(feed, feed_ex_id)
     return PaperExchange(c.PAPER, balance, data_provider)
 
 def load_ccxt_based_paper_exchange(balance, exchange_id):

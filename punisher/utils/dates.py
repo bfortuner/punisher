@@ -14,8 +14,10 @@ PANDAS_ITERABLE_TYPES = [pd.Series, np.ndarray, pd.DataFrame]
 class Timeframe(Enum):
     ONE_MIN = {'id': '1m', 'delta': datetime.timedelta(minutes=1)}
     FIVE_MIN = {'id': '5m', 'delta': datetime.timedelta(minutes=5)}
+    FIFTEEN_MIN = {'id': '15m', 'delta': datetime.timedelta(minutes=15)}
     THIRTY_MIN = {'id': '30m', 'delta': datetime.timedelta(minutes=30)}
     ONE_HOUR = {'id': '1h', 'delta': datetime.timedelta(hours=1)}
+    TWO_HOUR = {'id': '2h', 'delta': datetime.timedelta(hours=2)}
     ONE_DAY = {'id': '1d', 'delta': datetime.timedelta(days=1)}
 
     @property
