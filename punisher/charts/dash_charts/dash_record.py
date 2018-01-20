@@ -18,11 +18,7 @@ import dash_table_experiments as dt
 import punisher.config as cfg
 import punisher.constants as c
 from punisher.portfolio.asset import Asset
-<<<<<<< HEAD
 from punisher.feeds.ohlcv_feed import get_ohlcv_fpath
-=======
-from punisher.feeds.ohlcv_feed import get_price_data_fpath
->>>>>>> 96979db3aba45d2da2ef08c0fb04906c632381dc
 from punisher.charts.dash_viz import generate_table
 from punisher.utils.dates import Timeframe, date_to_str
 

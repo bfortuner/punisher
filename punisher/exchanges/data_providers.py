@@ -80,10 +80,6 @@ class FeedExchangeDataProvider(ExchangeDataProvider):
 
     def fetch_ticker(self, asset):
         latest = self.feed.history().row(-1)
-<<<<<<< HEAD
-=======
-        print(latest['time_utc'])
->>>>>>> 96979db3aba45d2da2ef08c0fb04906c632381dc
         return {
             'symbol': asset.symbol,
             'info': {},
