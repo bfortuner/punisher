@@ -1,3 +1,5 @@
+from pytest_mock import mocker
+
 def inc(x):
     return x + 1
 

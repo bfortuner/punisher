@@ -7,3 +7,7 @@ from punisher.exchanges.exchange import load_exchange
 @pytest.fixture(scope="module")
 def ccxtexchange():
     return load_exchange(c.BINANCE)
+
+@pytest.fixture(scope="module")
+def paperexchange():
+    return load_exchange(c.PAPER)
