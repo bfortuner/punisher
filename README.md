@@ -10,7 +10,7 @@ Run the ```demo.ipynb``` jupyter notebook
 
 or
 
-```$ python -m punisher.strategies.simple -ohlcv .data/paper_ETH_BTC_30m.csv -t 30m -m backtest -a ETH/BTC```
+```$ python -m punisher.strategies.simple -ohlcv .data/binance_ETH_BTC_30m.csv -t 30m -m backtest -a ETH/BTC```
 
 **Developers**
 
