@@ -7,6 +7,8 @@ import numpy as np
 
 import punisher.config as cfg
 import punisher.constants as c
+from punisher.portfolio.asset import Asset
+from punisher.feeds.ohlcv_feed import OHLCVData
 from punisher.trading.record import Record
 from punisher.utils.dates import date_to_str
 
@@ -54,18 +56,29 @@ class RecordChartDataProvider():
         return self.record.config
 
     def get_ohlcv(self):
-        """
-        Returns dictionary:
-            {'close': 0.077,
-             'high': 0.0773,
-             'low': 0.0771,
-             'open': 0.0772,
-             'utc': Timestamp('2018-01-08 22:22:00'),
-             'volume': 222.514}
-        """
         if abs(self.t_minus) >= len(self.record.ohlcv):
-            return self.record.ohlcv
-        return self.record.ohlcv.iloc[-self.t_minus:]
+            data = OHLCVData(self.record.ohlcv)
+        else:
+            data = OHLCVData(self.record.ohlcv.iloc[-self.t_minus:])
+        return data
+
+    def get_assets(self):
+        cols = ([col for col in self.record.ohlcv.columns
+                 if col not in ['epoch', 'utc']])
+        symbols = set()
+        for col in cols:
+            field,symbol,ex_id = col.split('_')
+            symbols.add(symbol)
+        return [Asset.from_symbol(sym) for sym in symbols]
+
+    def get_exchange_ids(self):
+        cols = ([col for col in self.record.ohlcv.columns
+                 if col not in ['epoch', 'utc']])
+        ids = set()
+        for col in cols:
+            field,symbol,ex_id = col.split('_')
+            ids.add(ex_id)
+        return list(ids)
 
     def get_positions(self):
         positions = self.record.portfolio.positions

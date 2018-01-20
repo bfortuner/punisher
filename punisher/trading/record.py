@@ -46,7 +46,7 @@ class Record():
         self.store = store
         self.orders = {}
         self.metrics = {}
-        self.ohlcv = pd.DataFrame([], columns=OHLCV_COLS)
+        self.ohlcv = pd.DataFrame([], columns=['epoch'])
         self.other_data = None
 
     def save(self):
@@ -73,7 +73,11 @@ class Record():
     def add_ohlcv(self, data):
         data = data.ohlcv_df.copy()
         data['epoch'] = [utc_to_epoch(t) for t in data['utc']]
-        self.ohlcv = self.ohlcv.append(data)
+        data.set_index('epoch', inplace=True)
+        if len(self.ohlcv) == 0:
+            self.ohlcv = data
+        else:
+            self.ohlcv = self.ohlcv.append(data)
 
     @classmethod
     def load(self, root_dir):

@@ -99,7 +99,7 @@ class CCXTExchange(Exchange):
         assert self.client.hasFetchOHLCV
         return self.client.fetch_ohlcv(asset.symbol, timeframe)
 
-    def fetch_order_book(self, asset):
+    def fetch_order_book(self, asset, params=None):
         """
         https://github.com/ccxt/ccxt/wiki/Manual#order-book--mnrket-depth
         Most common level of aggregation where order volumes are grouped
@@ -109,7 +109,8 @@ class CCXTExchange(Exchange):
         The bids array is sorted by price in descending order.
         The asks array is sorted by price in ascending order.
         """
-        return self.client.fetch_l2_order_book(asset.symbol)
+        params = self.get_default_params_if_none(params)
+        return self.client.fetch_l2_order_book(asset.symbol, params)
 
     def fetch_public_trades(self, asset):
         """Returns list of most recent trades for a particular symbol"""
