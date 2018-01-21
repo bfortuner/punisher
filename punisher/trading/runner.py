@@ -24,7 +24,7 @@ def get_latest_prices(orders, row, ex_id):
     # TODO: ensure this works for multi exchange
     latest_prices = {}
     for order in orders:
-        symbol = pos.asset.symbol
+        symbol = order.asset.symbol
         latest_prices[symbol] = row.get('close', symbol, ex_id)
     return latest_prices
 
@@ -58,16 +58,18 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
 
     row = feed.next()
     while row is not None:
-        orders = strategy.process(row, ctx)
+        output = strategy.process(row, ctx)
+        orders = output['orders']
+        cancel_ids = output['cancel_ids']
 
         # Record needs to know about all new orders
-        for order in orders['orders']:
+        for order in orders:
             record.orders[order.id] = order
 
         # TODO: Cancelling orders
         # should we auto-cancel any outstanding orders
         # or should we leave this decision up to the Strategy?
-        # order_manager.cancel_orders(exchange, orders['cancel_ids'])
+        # order_manager.cancel_orders(exchange, cancel_ids)
 
         # Place new orders, retry failed orders, sync existing orders
         newly_filled_orders = order_manager.process_orders(
@@ -121,16 +123,18 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
         row = feed.next()
 
         if row is not None:
-            orders = strategy.process(row, ctx)
+            output = strategy.process(row, ctx)
+            orders = output['orders']
+            cancel_ids = output['cancel_ids']
 
             # Record needs to know about all new orders
-            for order in orders['orders']:
+            for order in orders:
                 record.orders[order.id] = order
 
             # TODO: Cancelling orders
             # should we auto-cancel any outstanding orders
             # or should we leave this decision up to the Strategy?
-            # order_manager.cancel_orders(exchange, orders['cancel_ids'])
+            # order_manager.cancel_orders(exchange, cancel_ids)
 
             # Place new orders, retry failed orders, sync existing orders
             newly_filled_orders = order_manager.process_orders(
@@ -187,16 +191,18 @@ def live(name, exchange, balance, portfolio, feed, strategy):
         row = feed.next()
 
         if row is not None:
-            orders = strategy.process(row, ctx)
+            output = strategy.process(row, ctx)
+            orders = output['orders']
+            cancel_ids = output['cancel_ids']
 
             # Record needs to know about all new orders
-            for order in orders['orders']:
+            for order in orders:
                 record.orders[order.id] = order
 
             # TODO: Cancelling orders
             # should we auto-cancel any outstanding orders
             # or should we leave this decision up to the Strategy?
-            # order_manager.cancel_orders(exchange, orders['cancel_ids'])
+            # order_manager.cancel_orders(exchange, cancel_ids)
 
             # Place new orders, retry failed orders, sync existing orders
             newly_filled_orders = order_manager.process_orders(
