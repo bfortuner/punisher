@@ -20,11 +20,10 @@ class TradeMode(Enum):
     LIVE = 'live data, live orders'
 
 
-def get_latest_prices(positions, row, ex_id):
-    # TODO: refactor this to work for multiple assets
+def get_latest_prices(orders, row, ex_id):
+    # TODO: ensure this works for multi exchange
     latest_prices = {}
-    for pos in positions:
-        # position should know about the exchange ....
+    for order in orders:
         symbol = pos.asset.symbol
         latest_prices[symbol] = row.get('close', symbol, ex_id)
     return latest_prices
@@ -74,13 +73,11 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         newly_filled_orders = order_manager.process_orders(
             exchange, record.orders.values())
 
-        # Portfolio needs to know about new filled orders
-        portfolio.update(newly_filled_orders)
 
         # Update latest prices of positions
-        latest_prices = get_latest_prices(
-            portfolio.positions, row, exchange.id)
-        portfolio.update_position_prices(latest_prices)
+        latest_prices = get_latest_prices(orders, row, exchange.id)
+        # Portfolio needs to know about new filled orders
+        portfolio.update(newly_filled_orders, latest_prices)
 
         # Update Virtual Balance (exchange balance left alone)
         for order in newly_filled_orders:
@@ -140,12 +137,10 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
             newly_filled_orders = order_manager.process_orders(
                 exchange, record.orders.values())
 
-            # Portfolio needs to know about new filled orders
-            portfolio.update(newly_filled_orders)
-
             # Update latest prices of positions
-            latest_prices = get_latest_prices(portfolio.positions, row)
-            portfolio.update_position_prices(latest_prices)
+            latest_prices = get_latest_prices(orders, row, exchange.id)
+            # Portfolio needs to know about new filled orders
+            portfolio.update(newly_filled_orders, latest_prices)
 
             # Update Virtual Balance (exchange balance left alone)
             for order in newly_filled_orders:
@@ -208,12 +203,10 @@ def live(name, exchange, balance, portfolio, feed, strategy):
             newly_filled_orders = order_manager.process_orders(
                 exchange, record.orders.values())
 
-            # Portfolio needs to know about new filled orders
-            portfolio.update(newly_filled_orders)
-
             # Update latest prices of positions
-            latest_prices = get_latest_prices(portfolio.positions, row)
-            portfolio.update_position_prices(latest_prices)
+            latest_prices = get_latest_prices(orders, row, exchange.id)
+            # Portfolio needs to know about new filled orders
+            portfolio.update(newly_filled_orders, latest_prices)
 
             # Update Virtual Balance (exchange balance left alone)
             for order in newly_filled_orders:
