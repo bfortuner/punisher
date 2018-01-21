@@ -161,10 +161,8 @@ def get_col_name(field, symbol=None, ex_id=None):
 
 def get_ohlcv_columns(asset, ex_id):
     cols = OHLCV_COLUMNS.copy()
-    print(cols)
     for i in range(1,len(cols)):
         cols[i] = get_col_name(cols[i], asset.symbol, ex_id)
-    print(cols)
     return cols
 
 def get_ohlcv_fpath(asset, exchange_id, period):

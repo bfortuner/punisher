@@ -1,5 +1,6 @@
 import math
 import pytest
+from datetime import datetime
 from punisher.trading.order_manager import (build_limit_buy_order,
                                             build_limit_sell_order)
 class TestSingleExchangePortfolio:
@@ -20,7 +21,7 @@ class TestSingleExchangePortfolio:
                         paperexchange, asset, quantity, price)
 
         latest_prices = { asset.symbol: 10000 }
-        portfolio.update([buy_order],latest_prices)
+        portfolio.update(datetime.utcnow(), [buy_order],latest_prices)
 
         assert portfolio.cash == 10000
         assert portfolio.positions[0].cost_price == 10000
@@ -30,7 +31,7 @@ class TestSingleExchangePortfolio:
     def test_price_increase(self, portfolio, paperexchange, asset):
         latest_prices = { asset.symbol: 11000 }
         print(portfolio.positions)
-        portfolio.update([], latest_prices)
+        portfolio.update(datetime.utcnow(), [], latest_prices)
 
         assert portfolio.positions[0].market_value == 11000
         assert portfolio.perf.pnl == 1000
@@ -42,7 +43,7 @@ class TestSingleExchangePortfolio:
                         paperexchange, asset, quantity, price)
 
         latest_prices = { asset.symbol: 9000 }
-        portfolio.update([buy_order],latest_prices)
+        portfolio.update(datetime.utcnow(), [buy_order],latest_prices)
 
         assert portfolio.cash == 1000
         assert portfolio.positions[0].cost_price == 9500

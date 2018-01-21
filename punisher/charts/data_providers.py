@@ -7,6 +7,9 @@ import numpy as np
 
 import punisher.config as cfg
 import punisher.constants as c
+from punisher.portfolio.asset import Asset
+from punisher.feeds.ohlcv_feed import OHLCVData
+from punisher.feeds.ohlcv_feed import get_col_name
 from punisher.trading.record import Record
 from punisher.utils.dates import date_to_str
 
@@ -19,7 +22,6 @@ class ChartDataProvider():
     def initialize(self):
         if self.refresh_sec is not None:
             self.thread = threading.Thread(target=self._update)
-            #self.thread.daemon = True
             self.thread.start()
 
     def update(self):
@@ -38,14 +40,13 @@ class RecordChartDataProvider():
         self.refresh_sec = refresh_sec
         self.t_minus = t_minus
         self.thread = threading.Thread(target=self.update)
-        #self.thread.daemon = True
         self.record = Record.load(self.root_dir)
 
     def initialize(self):
         self.thread.start()
 
-    def get_timeline(self):
-        return self.get_ohlcv()['utc']
+    def get_time(self):
+        return self.get_ohlcv().get('utc')
 
     def get_symbols(self):
         return self.record.portfolio.symbols
@@ -54,18 +55,27 @@ class RecordChartDataProvider():
         return self.record.config
 
     def get_ohlcv(self):
-        """
-        Returns dictionary:
-            {'close': 0.077,
-             'high': 0.0773,
-             'low': 0.0771,
-             'open': 0.0772,
-             'utc': Timestamp('2018-01-08 22:22:00'),
-             'volume': 222.514}
-        """
         if abs(self.t_minus) >= len(self.record.ohlcv):
-            return self.record.ohlcv
-        return self.record.ohlcv.iloc[-self.t_minus:]
+            return OHLCVData(self.record.ohlcv)
+        return OHLCVData(self.record.ohlcv.iloc[-self.t_minus:])
+
+    def get_assets(self):
+        cols = ([col for col in self.record.ohlcv.columns
+                 if col not in ['epoch', 'utc']])
+        symbols = set()
+        for col in cols:
+            field,symbol,ex_id = col.split('_')
+            symbols.add(symbol)
+        return [Asset.from_symbol(sym) for sym in symbols]
+
+    def get_exchange_ids(self):
+        cols = ([col for col in self.record.ohlcv.columns
+                 if col not in ['epoch', 'utc']])
+        ids = set()
+        for col in cols:
+            field,symbol,ex_id = col.split('_')
+            ids.add(ex_id)
+        return list(ids)
 
     def get_positions(self):
         positions = self.record.portfolio.positions
@@ -79,17 +89,38 @@ class RecordChartDataProvider():
     def get_performance(self):
         return self.record.portfolio.perf
 
-    def get_pnl(self):
+    def get_exchange_rates(self, base, quote, exchange_id):
+        asset = Asset(base, quote)
+        return self.get_ohlcv().col('close', asset.symbol, exchange_id)
+
+    def get_pnl(self, benchmark_currency, exchange_id):
         periods = self.record.portfolio.perf.periods
-        return pd.DataFrame([
+        if benchmark_currency == c.BTC:
+            ex_rates = np.array([1.0 for p in periods])
+        else:
+            ex_rates = self.get_exchange_rates(
+                c.BTC, benchmark_currency, exchange_id)
+        assert len(ex_rates) == len(periods)
+        df = pd.DataFrame([
             [p['end_time'], p['pnl']] for p in periods
         ], columns=['utc','pnl'])
+        df['pnl'] *= ex_rates
+        return df
 
-    def get_returns(self):
+    def get_returns(self, benchmark_currency, exchange_id):
         periods = self.record.portfolio.perf.periods
-        return pd.DataFrame([
-            [p['end_time'], p['returns']] for p in periods
-        ], columns=['utc','returns'])
+        if benchmark_currency == c.BTC:
+            ex_rates = np.array([1.0 for p in periods])
+        else:
+            ex_rates = self.get_exchange_rates(
+                c.BTC, benchmark_currency, exchange_id)
+        assert len(ex_rates) == len(periods)
+        start_cash = self.record.portfolio.starting_cash * ex_rates[0]
+        df = pd.DataFrame([
+            [p['end_time'], p['pnl']] for p in periods],
+                columns=['utc','returns'])
+        df['returns'] *= ex_rates / start_cash
+        return df
 
     def get_balance(self):
         columns = ['coin', 'free', 'used', 'total']

@@ -101,6 +101,7 @@ dependencies:
     - cchardet==2.1.1
     - ccxt==1.10.544
     - click==6.7
+    - colorlover==0.2.1
     - dash==0.19.0
     - dash-core-components==0.15.5
     - dash-html-components==0.8.0

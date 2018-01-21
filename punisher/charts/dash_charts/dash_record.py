@@ -14,6 +14,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State, Event
 import dash_table_experiments as dt
+import colorlover as cl
 
 import punisher.config as cfg
 import punisher.constants as c
@@ -50,64 +51,99 @@ print("Refresh Sec: ", refresh_sec)
 data = RecordChartDataProvider(root_dir, refresh_sec, tminus)
 data.initialize()
 
-selected_dropdown_value = ['ETH/BTC']
-
 app = dash.Dash()
 
+app.scripts.config.serve_locally = False
+dcc._js_dist[0]['external_url'] = 'https://cdn.plot.ly/plotly-finance-1.28.0.min.js'
+colorscale = cl.scales['9']['qual']['Paired']
+
+assets = data.get_assets()
+exchange_ids = ['All'] + data.get_exchange_ids()
+benchmark_currencies = [c.BTC, c.USD, c.USDT]
+
 app.layout = html.Div([
+    html.H1(experiment_name),
     html.Div([
-        html.H1(experiment_name, id='h1_title'),
+        # html.Div(
+        #     [
+        #         html.H5(
+        #             'dddd',
+        #             id='well_text',
+        #             className='two columns'
+        #         ),
+        #         html.H5(
+        #             'dddddddd',
+        #             id='production_text',
+        #             className='eight columns',
+        #             style={'text-align': 'center'}
+        #         ),
+        #         html.H5(
+        #             'ddddddddddd',
+        #             id='year_text',
+        #             className='two columns',
+        #             style={'text-align': 'right'}
+        #         ),
+        #     ],
+        #     className='row'
+        # ),
+        html.Label('Cash Asset'),
+        dcc.Dropdown(
+            id='benchmark-currency-input',
+            options=[{'label': cur, 'value': cur}
+                     for cur in benchmark_currencies],
+            value=c.BTC,
+            multi=False
+        ),
+        html.H1("OHLCV", style={
+            'font-weight': 'bolder',
+            'font-family': 'Product Sans',
+            'color': "rgba(117, 117, 117, 0.95)",
+        }),
+        dcc.Dropdown(
+            id='asset-ohlcv-input',
+            options=[{'label': a.symbol, 'value': a.symbol} for a in assets],
+            value=[assets[0].symbol],
+            multi=True
+        ),
+        html.Div(id='graphs'),
+        html.H1("Performance", style={
+            'font-weight': 'bolder',
+            'font-family': 'Product Sans',
+            'color': "rgba(117, 117, 117, 0.95)",
+        }),
+        dcc.RadioItems(
+            id='returns-pnl-input',
+            options=[
+                {'label': 'Return', 'value': 'returns'},
+                {'label': 'Profit', 'value': 'pnl'},
+            ],
+            value='returns'
+        ),
         html.Div([
             dcc.Graph(
-                id='ohlc',
+                id='returns-pnl',
                 config={
                     'displayModeBar': False
                 }
             ),
         ]),
-        html.Div([
-            dcc.Graph(
-                id='v',
-                config={
-                    'displayModeBar': False
-                }
-            ),
-        ]),
-        html.Div([
-            dcc.Graph(
-                id='pnl',
-                config={
-                    'displayModeBar': False
-                }
-            ),
-        ]),
-        html.Div([
-            dcc.Graph(
-                id='returns',
-                config={
-                    'displayModeBar': False
-                }
-            ),
-        ]),
-        # html.Div([
-        #     html.Div([
-        #         html.H3(children='Positions'),
-        #         html.Div(id='positions-table'),
-        #     ]),
-        #     html.Div([
-        #         html.H3(children='Balance'),
-        #         html.Div(id='balance-table'),
-        #     ])
-        # ]),
-        # html.Div([
-        #     dcc.Graph(
-        #         id='weights',
-        #         config={
-        #             'displayModeBar': False
-        #         }
-        #     ),
-        # ], className="row"),
-        html.H3("Balance", id='balance_dt_title'),
+        html.H1("Holdings", style={
+            'font-weight': 'bolder',
+            'font-family': 'Product Sans',
+            'color': "rgba(117, 117, 117, 0.95)",
+        }),
+        dcc.Dropdown(
+            id='holdings-input',
+            options=[{'label': ex_id, 'value': ex_id}
+                     for ex_id in exchange_ids],
+            value='All',
+            multi=False
+        ),
+        html.H2("Balance", id='balance_dt_title', style={
+            'font-weight': 'bolder',
+            'font-family': 'Product Sans',
+            'color': "rgba(117, 117, 117, 0.95)",
+        }),
         html.Div([
             dt.DataTable(
                 rows=[{}], # initialise the rows
@@ -118,7 +154,11 @@ app.layout = html.Div([
                 id='balance-datatable'
             ),
         ]),
-        html.H3("Positions", id='positions_dt_title'),
+        html.H2("Positions", id='positions_dt_title', style={
+            'font-weight': 'bolder',
+            'font-family': 'Product Sans',
+            'color': "rgba(117, 117, 117, 0.95)",
+        }),
         html.Div([
             dt.DataTable(
                 rows=[{}], # initialise the rows
@@ -129,7 +169,11 @@ app.layout = html.Div([
                 id='positions-datatable'
             ),
         ]),
-        html.H3("Orders", id='orders_dt_title'),
+        html.H2("Orders", id='orders_dt_title', style={
+            'font-weight': 'bolder',
+            'font-family': 'Product Sans',
+            'color': "rgba(117, 117, 117, 0.95)",
+        }),
         html.Div([
             dt.DataTable(
                 rows=[{}], # initialise the rows
@@ -145,73 +189,94 @@ app.layout = html.Div([
             interval=refresh_sec*1000,
             n_intervals=0
         )
-    ])
+    ], className="container")
 ])
-app.css.append_css({
-    'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'
-})
 
-@app.callback(Output('ohlc', 'figure'),
-              [Input('interval-component', 'n_intervals')])
-def plot_olhc(n):
+external_css = ["https://fonts.googleapis.com/css?family=Product+Sans:400,400i,700,700i",
+                "https://cdn.rawgit.com/plotly/dash-app-stylesheets/2cc54b8c03f4126569a3440aae611bbef1d7a5dd/stylesheet.css"]
+
+for css in external_css:
+    app.css.append_css({"external_url": css})
+
+                # style={
+                # 'display': 'inline',
+                # 'float': 'left',
+                # 'font-size': '2.65em',
+                # 'margin-left': '7px',
+                # 'font-weight': 'bolder',
+                # 'font-family': 'Product Sans',
+                # 'color': "rgba(117, 117, 117, 0.95)",
+                # 'margin-top': '20px',
+                # 'margin-bottom': '0'
+                # }),
+def bbands(price, window_size=10, num_of_std=5):
+    price = pd.Series(price)
+    rolling_mean = price.rolling(window=window_size).mean()
+    rolling_std  = price.rolling(window=window_size).std()
+    upper_band = rolling_mean + (rolling_std*num_of_std)
+    lower_band = rolling_mean - (rolling_std*num_of_std)
+    return rolling_mean, upper_band, lower_band
+
+@app.callback(
+    dash.dependencies.Output('graphs','children'),
+    [Input('asset-ohlcv-input', 'value'),
+     Input('interval-component', 'n_intervals')])
+def update_graph(symbols, n):
+    graphs = []
+    for i, symbol in enumerate(symbols):
+        df = data.get_ohlcv()
+        ex_id = c.PAPER
+        candlestick = {
+            'x': df.col('utc'),
+            'open': df.col('open', symbol, ex_id),
+            'high': df.col('high', symbol, ex_id),
+            'low': df.col('low', symbol, ex_id),
+            'close': df.col('close', symbol, ex_id),
+            'type': 'candlestick',
+            'name': symbol,
+            'legendgroup': symbol,
+            'increasing': {'line': {'color': colorscale[0]}},
+            'decreasing': {'line': {'color': colorscale[1]}}
+        }
+        bb_bands = bbands(df.col('close', symbol, ex_id))
+        bollinger_traces = [{
+            'x': df.col('utc'), 'y': y,
+            'type': 'scatter', 'mode': 'lines',
+            'line': {'width': 1, 'color': colorscale[(i*2) % len(colorscale)]},
+            'hoverinfo': 'none',
+            'legendgroup': symbol,
+            'showlegend': True if i == 0 else False,
+            'name': '{} - bollinger bands'.format(symbol)
+        } for i, y in enumerate(bb_bands)]
+        graphs.append(dcc.Graph(
+            id=symbol,
+            figure={
+                'data': [candlestick] + bollinger_traces,
+                'layout': {
+                    'margin': {'b': 0, 'r': 10, 'l': 60, 't': 0},
+                    'legend': {'x': 0}
+                }
+            }
+        ))
+
+    return graphs
+
+
+@app.callback(Output('returns-pnl', 'figure'),
+              [Input('benchmark-currency-input', 'value'),
+              Input('returns-pnl-input', 'value'),
+              Input('interval-component', 'n_intervals')])
+def plot_pnl_returns(benchmark_currency, option, n):
     global data
-    ohlcv = data.get_ohlcv()
+    if option == 'returns':
+        vals = data.get_returns(benchmark_currency, exchange_ids[1])
+    else:
+        vals = data.get_pnl(benchmark_currency, exchange_ids[1])
     return {
-        'data': [go.Ohlc(x=ohlcv['utc'],
-                         open=ohlcv['open'],
-                         high=ohlcv['high'],
-                         low=ohlcv['low'],
-                         close=ohlcv['close'],
-                         showlegend=False)],
-        'layout': dict(title="OHLC")
+        'data': [go.Scatter(x=vals['utc'],
+                        y=vals[option], mode='lines')],
+        'layout': dict(title=option.capitalize())
     }
-
-@app.callback(Output('v', 'figure'),
-              [Input('interval-component', 'n_intervals')])
-def plot_v(n):
-    global data
-    ohlcv = data.get_ohlcv()
-    return {
-        'data': [go.Bar(x=ohlcv['utc'],
-                        y=ohlcv['volume'])],
-        'layout': dict(title="Volume")
-    }
-
-@app.callback(Output('pnl', 'figure'),
-              [Input('interval-component', 'n_intervals')])
-def plot_pnl(n):
-    global data
-    pnl = data.get_pnl()
-    return {
-        'data': [go.Scatter(x=pnl['utc'],
-                        y=pnl['pnl'], mode='lines')],
-        'layout': dict(title="PnL")
-    }
-
-@app.callback(Output('returns', 'figure'),
-              [Input('interval-component', 'n_intervals')])
-def plot_returns(n):
-    global data
-    returns = data.get_returns()
-    return {
-        'data': [go.Scatter(x=returns['utc'],
-                        y=returns['returns'], mode='lines')],
-        'layout': dict(title="Returns")
-    }
-
-# @app.callback(Output('positions-table', 'children'),
-#               [Input('interval-component', 'n_intervals')])
-def plot_positions(n):
-    global data
-    df = data.get_positions()
-    return generate_table(df)
-
-# @app.callback(Output('balance-table', 'children'),
-#               [Input('interval-component', 'n_intervals')])
-def plot_balance(n):
-    global data
-    df = data.get_balance()
-    return generate_table(df)
 
 #https://github.com/plotly/dash-table-experiments
 @app.callback(Output('balance-datatable', 'rows'),

@@ -73,11 +73,10 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         newly_filled_orders = order_manager.process_orders(
             exchange, record.orders.values())
 
-
         # Update latest prices of positions
         latest_prices = get_latest_prices(orders, row, exchange.id)
         # Portfolio needs to know about new filled orders
-        portfolio.update(newly_filled_orders, latest_prices)
+        portfolio.update(row.get('utc'), newly_filled_orders, latest_prices)
 
         # Update Virtual Balance (exchange balance left alone)
         for order in newly_filled_orders:
@@ -140,7 +139,7 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
             # Update latest prices of positions
             latest_prices = get_latest_prices(orders, row, exchange.id)
             # Portfolio needs to know about new filled orders
-            portfolio.update(newly_filled_orders, latest_prices)
+            portfolio.update(row.get('utc'), newly_filled_orders, latest_prices)
 
             # Update Virtual Balance (exchange balance left alone)
             for order in newly_filled_orders:
@@ -206,7 +205,7 @@ def live(name, exchange, balance, portfolio, feed, strategy):
             # Update latest prices of positions
             latest_prices = get_latest_prices(orders, row, exchange.id)
             # Portfolio needs to know about new filled orders
-            portfolio.update(newly_filled_orders, latest_prices)
+            portfolio.update(row.get('utc'), newly_filled_orders, latest_prices)
 
             # Update Virtual Balance (exchange balance left alone)
             for order in newly_filled_orders:
