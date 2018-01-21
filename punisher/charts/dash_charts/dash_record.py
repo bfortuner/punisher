@@ -59,91 +59,79 @@ colorscale = cl.scales['9']['qual']['Paired']
 
 assets = data.get_assets()
 exchange_ids = ['All'] + data.get_exchange_ids()
-benchmark_currencies = [c.BTC, c.USD]
+benchmark_currencies = [c.BTC, c.USD, c.USDT]
 
 app.layout = html.Div([
     html.H1(experiment_name),
     html.Div([
-    html.Div([
-        html.H2("OHLCV",
-        style={'display': 'inline',
-               'float': 'left',
-               'font-size': '2.65em',
-               'margin-left': '7px',
-               'font-weight': 'bolder',
-               'font-family': 'Product Sans',
-               'color': "rgba(117, 117, 117, 0.95)",
-               'margin-top': '20px',
-               'margin-bottom': '0'
-        }),
-    ]),
-    dcc.Dropdown(
-        id='asset-ohlcv-input',
-        options=[{'label': a.symbol, 'value': a.symbol} for a in assets],
-        value=[assets[0].symbol],
-        multi=True
-    ),
-    html.Div(id='graphs'),
-    html.Div([
-        html.Div([
-            html.H2("Performance",
-                style={
-                'display': 'inline',
-                'float': 'left',
-                'font-size': '2.65em',
-                'margin-left': '7px',
-                'font-weight': 'bolder',
-                'font-family': 'Product Sans',
-                'color': "rgba(117, 117, 117, 0.95)",
-                'margin-top': '20px',
-                'margin-bottom': '0'
-                }),
-        ]),
+        # html.Div(
+        #     [
+        #         html.H5(
+        #             'dddd',
+        #             id='well_text',
+        #             className='two columns'
+        #         ),
+        #         html.H5(
+        #             'dddddddd',
+        #             id='production_text',
+        #             className='eight columns',
+        #             style={'text-align': 'center'}
+        #         ),
+        #         html.H5(
+        #             'ddddddddddd',
+        #             id='year_text',
+        #             className='two columns',
+        #             style={'text-align': 'right'}
+        #         ),
+        #     ],
+        #     className='row'
+        # ),
+        html.Label('Cash Asset'),
         dcc.Dropdown(
-            id='performance-input',
+            id='benchmark-currency-input',
             options=[{'label': cur, 'value': cur}
                      for cur in benchmark_currencies],
             value=c.BTC,
             multi=False
         ),
+        html.H1("OHLCV", style={
+            'font-weight': 'bolder',
+            'font-family': 'Product Sans',
+            'color': "rgba(117, 117, 117, 0.95)",
+        }),
+        dcc.Dropdown(
+            id='asset-ohlcv-input',
+            options=[{'label': a.symbol, 'value': a.symbol} for a in assets],
+            value=[assets[0].symbol],
+            multi=True
+        ),
+        html.Div(id='graphs'),
+        html.H1("Performance", style={
+            'font-weight': 'bolder',
+            'font-family': 'Product Sans',
+            'color': "rgba(117, 117, 117, 0.95)",
+        }),
+        dcc.RadioItems(
+            id='returns-pnl-input',
+            options=[
+                {'label': 'Return', 'value': 'returns'},
+                {'label': 'Profit', 'value': 'pnl'},
+            ],
+            value='returns'
+        ),
         html.Div([
             dcc.Graph(
-                id='pnl',
+                id='returns-pnl',
                 config={
                     'displayModeBar': False
                 }
             ),
         ]),
-        html.Div([
-            dcc.Graph(
-                id='returns',
-                config={
-                    'displayModeBar': False
-                }
-            ),
-        ]),
-        # html.Div([
-        #     dcc.Graph(
-        #         id='weights',
-        #         config={
-        #             'displayModeBar': False
-        #         }
-        #     ),
-        # ]),
-        html.Div([
-            html.H2("Holdings",
-                style={
-                'display': 'inline',
-                'float': 'left',
-                'font-size': '2.65em',
-                'margin-left': '7px',
-                'font-weight': 'bolder',
-                'font-family': 'Product Sans',
-                'color': "rgba(117, 117, 117, 0.95)",
-                'margin-top': '20px',
-                'margin-bottom': '0'
-                }),
-        ]),
+        html.H1("Holdings", style={
+            'font-weight': 'bolder',
+            'font-family': 'Product Sans',
+            'color': "rgba(117, 117, 117, 0.95)",
+        }),
         dcc.Dropdown(
             id='holdings-input',
             options=[{'label': ex_id, 'value': ex_id}
@@ -151,7 +139,11 @@ app.layout = html.Div([
             value='All',
             multi=False
         ),
-        html.H3("Balance", id='balance_dt_title'),
+        html.H2("Balance", id='balance_dt_title', style={
+            'font-weight': 'bolder',
+            'font-family': 'Product Sans',
+            'color': "rgba(117, 117, 117, 0.95)",
+        }),
         html.Div([
             dt.DataTable(
                 rows=[{}], # initialise the rows
@@ -162,7 +154,11 @@ app.layout = html.Div([
                 id='balance-datatable'
             ),
         ]),
-        html.H3("Positions", id='positions_dt_title'),
+        html.H2("Positions", id='positions_dt_title', style={
+            'font-weight': 'bolder',
+            'font-family': 'Product Sans',
+            'color': "rgba(117, 117, 117, 0.95)",
+        }),
         html.Div([
             dt.DataTable(
                 rows=[{}], # initialise the rows
@@ -173,7 +169,11 @@ app.layout = html.Div([
                 id='positions-datatable'
             ),
         ]),
-        html.H3("Orders", id='orders_dt_title'),
+        html.H2("Orders", id='orders_dt_title', style={
+            'font-weight': 'bolder',
+            'font-family': 'Product Sans',
+            'color': "rgba(117, 117, 117, 0.95)",
+        }),
         html.Div([
             dt.DataTable(
                 rows=[{}], # initialise the rows
@@ -189,19 +189,26 @@ app.layout = html.Div([
             interval=refresh_sec*1000,
             n_intervals=0
         )
-    ])
-], className="container")
+    ], className="container")
 ])
-# app.css.append_css({
-#     'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'
-# })
+
 external_css = ["https://fonts.googleapis.com/css?family=Product+Sans:400,400i,700,700i",
                 "https://cdn.rawgit.com/plotly/dash-app-stylesheets/2cc54b8c03f4126569a3440aae611bbef1d7a5dd/stylesheet.css"]
 
 for css in external_css:
     app.css.append_css({"external_url": css})
 
-
+                # style={
+                # 'display': 'inline',
+                # 'float': 'left',
+                # 'font-size': '2.65em',
+                # 'margin-left': '7px',
+                # 'font-weight': 'bolder',
+                # 'font-family': 'Product Sans',
+                # 'color': "rgba(117, 117, 117, 0.95)",
+                # 'margin-top': '20px',
+                # 'margin-bottom': '0'
+                # }),
 def bbands(price, window_size=10, num_of_std=5):
     price = pd.Series(price)
     rolling_mean = price.rolling(window=window_size).mean()
@@ -212,9 +219,9 @@ def bbands(price, window_size=10, num_of_std=5):
 
 @app.callback(
     dash.dependencies.Output('graphs','children'),
-    [dash.dependencies.Input('asset-ohlcv-input', 'value'),
+    [Input('asset-ohlcv-input', 'value'),
      Input('interval-component', 'n_intervals')])
-def update_graph(symbols, n_intervals):
+def update_graph(symbols, n):
     graphs = []
     for i, symbol in enumerate(symbols):
         df = data.get_ohlcv()
@@ -255,26 +262,20 @@ def update_graph(symbols, n_intervals):
     return graphs
 
 
-@app.callback(Output('pnl', 'figure'),
-              [Input('interval-component', 'n_intervals')])
-def plot_pnl(n):
+@app.callback(Output('returns-pnl', 'figure'),
+              [Input('benchmark-currency-input', 'value'),
+              Input('returns-pnl-input', 'value'),
+              Input('interval-component', 'n_intervals')])
+def plot_pnl_returns(benchmark_currency, option, n):
     global data
-    pnl = data.get_pnl()
+    if option == 'returns':
+        vals = data.get_returns(benchmark_currency, exchange_ids[1])
+    else:
+        vals = data.get_pnl(benchmark_currency, exchange_ids[1])
     return {
-        'data': [go.Scatter(x=pnl['utc'],
-                        y=pnl['pnl'], mode='lines')],
-        'layout': dict(title="PnL")
-    }
-
-@app.callback(Output('returns', 'figure'),
-              [Input('interval-component', 'n_intervals')])
-def plot_returns(n):
-    global data
-    returns = data.get_returns()
-    return {
-        'data': [go.Scatter(x=returns['utc'],
-                        y=returns['returns'], mode='lines')],
-        'layout': dict(title="Returns")
+        'data': [go.Scatter(x=vals['utc'],
+                        y=vals[option], mode='lines')],
+        'layout': dict(title=option.capitalize())
     }
 
 #https://github.com/plotly/dash-table-experiments
