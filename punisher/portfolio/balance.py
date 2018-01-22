@@ -1,14 +1,13 @@
 import json
 from enum import Enum, unique
 
-import punisher.constants as c
-import punisher.config as cfg
+from punisher.trading import coins
 
 from .asset import get_symbol
 
 
 class Balance():
-    def __init__(self, cash_currency=c.BTC, starting_cash=1.0):
+    def __init__(self, cash_currency=coins.BTC, starting_cash=1.0):
         self.free = {cash_currency: starting_cash}
         self.used = {cash_currency: 0.0}
         self.total = {cash_currency: 0.0}
@@ -93,7 +92,7 @@ class Balance():
     @classmethod
     def from_dict(self, dct):
         bal = Balance(
-            cash_currency=c.BTC,
+            cash_currency=coins.BTC,
             starting_cash=0.0
         )
         bal.free = dct[BalanceType.FREE.value]

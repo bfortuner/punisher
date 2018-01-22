@@ -18,12 +18,12 @@ import colorlover as cl
 
 import punisher.config as cfg
 import punisher.constants as c
-from punisher.portfolio.asset import Asset
-from punisher.feeds.ohlcv_feed import get_ohlcv_fpath
 from punisher.charts.dash_viz import generate_table
-from punisher.utils.dates import Timeframe, date_to_str
-
 from punisher.charts.data_providers import RecordChartDataProvider
+from punisher.feeds.ohlcv_feed import get_ohlcv_fpath
+from punisher.portfolio.asset import Asset
+from punisher.trading import coins
+from punisher.utils.dates import Timeframe, date_to_str
 
 
 ## Load Args
@@ -91,7 +91,7 @@ app.layout = html.Div([
             id='quote-currency',
             options=[{'label': cur, 'value': cur}
                      for cur in benchmark_currencies],
-            value=c.BTC,
+            value=coins.BTC,
             multi=False
         ),
         html.H1("OHLCV", style={

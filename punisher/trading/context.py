@@ -9,14 +9,17 @@ from copy import deepcopy
 import punisher.config as cfg
 import punisher.constants as c
 from punisher.data.store import DATA_STORES, FILE_STORE
+from punisher.exchanges import load_exchange
+from punisher.exchanges import CCXTExchange
+from punisher.exchanges import PaperExchange
 from punisher.feeds.ohlcv_feed import EXCHANGE_FEED, CSV_FEED
 from punisher.feeds.ohlcv_feed import load_feed
-from punisher.utils.dates import Timeframe
 from punisher.portfolio.portfolio import Portfolio
 from punisher.portfolio.asset import Asset
 from punisher.portfolio.balance import Balance, BalanceType
 from punisher.portfolio.performance import PerformanceTracker
-from punisher.exchanges.exchange import load_exchange, CCXTExchange
+from punisher.trading import coins
+from punisher.utils.dates import Timeframe
 from punisher.utils.dates import str_to_date
 from punisher.utils.logger import get_logger
 
@@ -86,7 +89,7 @@ def get_default_backtest_config(name, symbols):
     root = os.path.join(cfg.DATA_DIR, name)
     return {
         'experiment': name,
-        'cash_asset': c.BTC,
+        'cash_asset': coins.BTC,
         'starting_cash': 1.0,
         'store': cfg.DATA_STORE,
         'feed': CSV_FEED,
@@ -100,7 +103,7 @@ def get_default_backtest_config(name, symbols):
             'fpath': None
         },
         'exchange': {
-            'id': c.PAPER
+            'id': ex_cfg.PAPER
         }
     }
 
@@ -109,7 +112,7 @@ def get_default_simulation_config(name, symbols):
     root = os.path.join(cfg.DATA_DIR, name)
     return {
         'experiment': name,
-        'cash_asset': c.BTC,
+        'cash_asset': coins.BTC,
         'starting_cash': 1.0,
         'store': cfg.DATA_STORE,
         'feed': EXCHANGE_FEED,
@@ -123,7 +126,7 @@ def get_default_simulation_config(name, symbols):
             'fpath': None
         },
         'exchange': {
-            'id': c.PAPER,
+            'id': ex_cfg.PAPER,
         }
     }
 

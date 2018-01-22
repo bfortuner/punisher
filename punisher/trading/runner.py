@@ -5,9 +5,9 @@ from enum import Enum, unique
 import punisher.config as cfg
 import punisher.constants as c
 from punisher.data.store import DATA_STORES
+from punisher.exchanges import load_exchange
 from punisher.portfolio.portfolio import Portfolio
 from punisher.trading import order_manager
-from punisher.exchanges.exchange import load_exchange
 
 from .context import Context
 from .record import Record

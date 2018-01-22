@@ -8,7 +8,7 @@ from punisher.utils import files
 from punisher.portfolio.asset import Asset
 import punisher.constants as c
 
-exchange_names = [c.BINANCE]
+exchange_names = [ex_cfg.BINANCE]
 symbols = ['ETH/BTC', 'XRP/BTC', 'TRX/BTC']
 
 data_name_base = 'order_book'

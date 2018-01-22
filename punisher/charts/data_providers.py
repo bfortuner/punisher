@@ -10,6 +10,7 @@ import punisher.constants as c
 from punisher.portfolio.asset import Asset
 from punisher.feeds.ohlcv_feed import OHLCVData
 from punisher.feeds.ohlcv_feed import get_col_name
+from punisher.trading import coins
 from punisher.trading.record import Record
 from punisher.utils.dates import date_to_str
 
@@ -89,10 +90,10 @@ class RecordChartDataProvider():
     def get_middleman_asset(self, asset, ex_id, new_quote):
         middleman_asset = Asset(asset.quote, new_quote)
         if middleman_asset not in self.get_assets(ex_id):
-            if new_quote == c.USD:
-                middleman_asset = Asset(asset.quote, c.USDT)
-            elif new_quote == c.USDT:
-                middleman_asset = Asset(asset.quote, c.USD)
+            if new_quote == coins.USD:
+                middleman_asset = Asset(asset.quote, coins.USDT)
+            elif new_quote == coins.USDT:
+                middleman_asset = Asset(asset.quote, coins.USD)
             if middleman_asset not in self.get_assets(ex_id):
                 raise Exception(("No matching quote currency to compute" +
                                  "rate: {:s}, {:s}, {:s}").format(asset.symbol,
@@ -149,11 +150,11 @@ class RecordChartDataProvider():
 
     def get_pnl(self, quote_currency, exchange_id):
         periods = self.record.portfolio.perf.periods
-        if quote_currency == c.BTC:
+        if quote_currency == coins.BTC:
             ex_rates = np.array([1.0 for p in periods])
         else:
             ex_rates = self.get_exchange_rates(
-                c.BTC, quote_currency, exchange_id)
+                coins.BTC, quote_currency, exchange_id)
         assert len(ex_rates) == len(periods)
         df = pd.DataFrame([
             [p['end_time'], p['pnl']] for p in periods
@@ -163,11 +164,11 @@ class RecordChartDataProvider():
 
     def get_returns(self, quote_currency, exchange_id):
         periods = self.record.portfolio.perf.periods
-        if quote_currency == c.BTC:
+        if quote_currency == coins.BTC:
             ex_rates = np.array([1.0 for p in periods])
         else:
             ex_rates = self.get_exchange_rates(
-                c.BTC, quote_currency, exchange_id)
+                coins.BTC, quote_currency, exchange_id)
         assert len(ex_rates) == len(periods)
         start_cash = self.record.portfolio.starting_cash * ex_rates[0]
         df = pd.DataFrame([

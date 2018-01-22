@@ -32,10 +32,7 @@ AWS_ACCOUNT_ID = 'account_id'
 AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY_ID', 'password')
 AWS_SECRET_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', 'password')
 
-
 ### Exchanges ###
-
-DEFAULT_EXCHANGE_ID = c.BINANCE
 
 # GDAX
 GDAX_ACCOUNT_ID = os.environ.get('GDAX_ACCOUNT_ID')

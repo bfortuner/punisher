@@ -40,6 +40,16 @@ import punisher.constants as c
 from punisher.data.store import FileStore
 from punisher.data.store import DATA_STORES, FILE_STORE
 
+# Exchanges
+from punisher.exchanges import ex_cfg
+from punisher.exchanges import load_exchange
+from punisher.exchanges import CCXTExchange
+from punisher.exchanges import PaperExchange
+from punisher.exchanges import load_feed_based_paper_exchange
+from punisher.exchanges import load_ccxt_based_paper_exchange
+from punisher.exchanges import FeedExchangeDataProvider
+from punisher.exchanges import CCXTExchangeDataProvider
+
 # Feeds
 from punisher.feeds import ohlcv_feed
 from punisher.feeds import OHLCVFileFeed
@@ -62,16 +72,8 @@ from punisher.trading.order import OrderStatus, OrderType
 from punisher.trading import order_manager
 from punisher.trading.record import Record
 from punisher.trading import runner
-import punisher.trading.coins
+from punisher.trading import coins
 
-# Exchanges
-from punisher.exchanges.exchange import load_exchange
-from punisher.exchanges.exchange import CCXTExchange
-from punisher.exchanges.exchange import PaperExchange
-from punisher.exchanges.exchange import load_feed_based_paper_exchange
-from punisher.exchanges.exchange import load_ccxt_based_paper_exchange
-from punisher.exchanges.data_providers import FeedExchangeDataProvider
-from punisher.exchanges.data_providers import CCXTExchangeDataProvider
 
 # Portfolio
 from punisher.portfolio.asset import Asset

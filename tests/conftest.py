@@ -7,16 +7,17 @@ from punisher.portfolio.performance import PerformanceTracker
 from punisher.portfolio.balance import Balance
 from punisher.portfolio.position import Position
 from punisher.portfolio.asset import Asset
+from punisher.trading import coins
 from punisher.utils.dates import Timeframe
 
 
 @pytest.fixture(scope="class")
 def ccxtexchange():
-   return load_exchange(c.BINANCE)
+   return load_exchange(ex_cfg.BINANCE)
 
 @pytest.fixture(scope="class")
 def paperexchange():
-    return load_exchange(c.PAPER)
+    return load_exchange(ex_cfg.PAPER)
 
 @pytest.fixture(scope="class")
 def perf_tracker():
@@ -36,7 +37,7 @@ def portfolio(perf_tracker):
 @pytest.fixture(scope="class")
 def balance():
     return Balance(
-        cash_currency=c.BTC,
+        cash_currency=coins.BTC,
         starting_cash=0.0
     )
 

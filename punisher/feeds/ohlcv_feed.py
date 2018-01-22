@@ -5,6 +5,7 @@ import pandas as pd
 import punisher.config as cfg
 import punisher.constants as c
 from punisher.portfolio.asset import Asset
+from punisher.trading import coins
 from punisher.utils.dates import get_time_range
 from punisher.utils.dates import epoch_to_utc, utc_to_epoch
 from punisher.utils.dates import str_to_date
@@ -115,6 +116,7 @@ class OHLCVExchangeFeed(OHLCVFeed):
     def initialize(self):
         super().initialize()
         self.init_benchmarks()
+        self._download(self.start, self.end, update=False)
         self.update()
 
     def init_benchmarks(self):
@@ -127,17 +129,18 @@ class OHLCVExchangeFeed(OHLCVFeed):
         return super().next(refresh)
 
     def update(self):
-        self._download(self.prior_time, self.end)
+        self._download(self.prior_time, self.end, update=True)
         ex_ids = [ex.id for ex in self.exchanges]
         self.ohlcv_df = load_multiple_assets(
             ex_ids, self.assets, self.timeframe,
             self.start, self.end)
 
-    def _download(self, start, end):
+    def _download(self, start, end, update=True):
         for ex in self.exchanges:
             for asset in self.assets:
                 if is_asset_supported(ex, asset):
-                    download_ohlcv([ex], [asset], self.timeframe, start, end)
+                    download_ohlcv(
+                        [ex], [asset], self.timeframe, start, end, update)
 
 # Helpers
 
@@ -146,8 +149,8 @@ def is_asset_supported(exchange, asset):
     return asset.symbol in markets
 
 def get_benchmark_asset(exchange):
-    BTC_USD = Asset(c.BTC, c.USD)
-    BTC_USDT = Asset(c.BTC, c.USDT)
+    BTC_USD = Asset(coins.BTC, coins.USD)
+    BTC_USDT = Asset(coins.BTC, coins.USDT)
     markets = exchange.get_markets()
     if BTC_USD.symbol in markets:
         return BTC_USD
@@ -204,10 +207,13 @@ def update_local_asset_cache(exchange, asset, timeframe, start, end=None):
         df = fetch_and_save_asset(exchange, asset, timeframe, start, end)
     return df
 
-def download_ohlcv(exchanges, assets, timeframe, start, end=None):
+def download_ohlcv(exchanges, assets, timeframe, start, end=None, update=False):
     for ex in exchanges:
         for asset in assets:
-            update_local_asset_cache(ex, asset, timeframe, start, end)
+            if update:
+                _ = update_local_asset_cache(ex, asset, timeframe, start, end)
+            else:
+                _ = fetch_and_save_asset(ex, asset, timeframe, start, end)
 
 def load_asset(fpath, start=None, end=None):
     df = pd.read_csv(

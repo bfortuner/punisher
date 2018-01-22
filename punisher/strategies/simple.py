@@ -7,9 +7,9 @@ import punisher.config as cfg
 import punisher.constants as c
 from punisher.feeds import OHLCVFileFeed
 from punisher.feeds import OHLCVExchangeFeed
-from punisher.exchanges.exchange import load_exchange
-from punisher.exchanges.exchange import load_feed_based_paper_exchange
-from punisher.exchanges.exchange import load_ccxt_based_paper_exchange
+from punisher.exchanges import load_exchange
+from punisher.exchanges import load_feed_based_paper_exchange
+from punisher.exchanges import load_ccxt_based_paper_exchange
 from punisher.portfolio.asset import Asset
 from punisher.portfolio.balance import Balance, BalanceType
 from punisher.portfolio.portfolio import Portfolio
