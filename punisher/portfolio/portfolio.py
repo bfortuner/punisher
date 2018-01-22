@@ -5,6 +5,7 @@ import copy
 from punisher.utils.encoders import EnumEncoder
 from punisher.utils.dates import Timeframe
 
+from punisher.trading.trade import TradeSide
 from .performance import PerformanceTracker
 from .position import Position
 
@@ -26,25 +27,30 @@ class Portfolio():
         self.perf = perf_tracker
         self.positions = [] if positions is None else positions
 
-    def update(self, current_time, filled_orders, latest_prices):
-        self.update_positions(filled_orders)
+    def update(self, current_time, new_trades, latest_prices):
+        self.update_positions(new_trades)
         self.update_position_prices(latest_prices)
         self.perf.add_period(current_time, self.cash, self.positions)
 
-    def update_positions(self, filled_orders):
-        for order in filled_orders:
-            pos = self.get_position(order.asset)
+    def update_positions(self, new_trades):
+        for trade in new_trades:
+            pos = self.get_position(trade.asset)
             if pos is None:
-                pos = Position(order.asset, order.quantity, order.price)
+                pos = Position(
+                        asset=trade.asset,
+                        quantity=trade.quantity,
+                        cost_price=trade.price,
+                        fee=trade.fee
+                    )
                 self.positions.append(pos)
-                quantity = order.quantity
+                quantity = trade.quantity
             else:
-                if order.order_type.is_sell():
-                    quantity = -order.quantity
+                if trade.side == TradeSide.SELL:
+                    quantity = -trade.quantity
                 else:
-                    quantity = order.quantity
-                pos.update(quantity, order.price)
-            self.cash -= quantity * order.price
+                    quantity = trade.quantity
+                pos.update(quantity, trade.price, trade.fee)
+            self.cash -= (quantity * trade.price) - trade.fee
 
     def update_position_prices(self, latest_prices):
         """

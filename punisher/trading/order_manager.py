@@ -130,6 +130,7 @@ def sync_order_with_exchange(order, ex_order):
     order.filled_quantity = ex_order.filled_quantity
     order.price = ex_order.price
     order.fee = ex_order.fee
+    order.trades = ex_order.trades
 
 def place_orders(exchange, orders):
     placed = []

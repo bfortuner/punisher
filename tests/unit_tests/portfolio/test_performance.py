@@ -10,7 +10,7 @@ class TestSingleExchangePerformance:
 
 
     def test_add_first_period_long_pos(self, perf_tracker, position):
-        position.update(1.0, 10000)
+        position.update(1.0, 10000, 0.0)
         position.latest_price = 10000
         assert position.quantity == 1.0
         assert position.cost_price == 10000
@@ -24,7 +24,7 @@ class TestSingleExchangePerformance:
 
 
     def test_add_second_period_reverse_position(self, perf_tracker, position):
-        position.update(-2.0, 11000)
+        position.update(-2.0, 11000, 0.0)
         position.latest_price = 11000
         assert position.quantity == -1.0
         assert position.cost_price == 11000

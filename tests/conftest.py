@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime
 
 from punisher import constants as c
 from punisher.exchanges.exchange import load_exchange
@@ -7,6 +8,7 @@ from punisher.portfolio.performance import PerformanceTracker
 from punisher.portfolio.balance import Balance
 from punisher.portfolio.position import Position
 from punisher.portfolio.asset import Asset
+from punisher.trading.trade import Trade
 from punisher.utils.dates import Timeframe
 
 
@@ -49,5 +51,20 @@ def position(asset):
     return Position(
         asset=asset,
         quantity=0.0,
-        cost_price=0.0
+        cost_price=0.0,
+        fee=0.0
+    )
+
+@pytest.fixture(scope="class")
+def trade(asset):
+    return Trade(
+        trade_id=None,
+        exchange_id=None,
+        exchange_order_id=159025,
+        asset=asset,
+        price=0.0,
+        quantity=0.0,
+        trade_time=datetime.utcnow(),
+        side="buy",
+        fee=0.0
     )
