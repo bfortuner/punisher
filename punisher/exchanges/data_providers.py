@@ -63,7 +63,8 @@ class FeedExchangeDataProvider(ExchangeDataProvider):
         markets.append(market)
         return markets
 
-    def fetch_ohlcv(self, asset, timeframe):
+    def fetch_ohlcv(self, asset, timeframe, start_utc):
+        #TODO: Currently ignores start time
         return self.feed.history()
 
     def fetch_order_book(self, asset):
@@ -121,8 +122,8 @@ class CCXTExchangeDataProvider(ExchangeDataProvider):
     def get_markets(self):
         return self.exchange.get_markets()
 
-    def fetch_ohlcv(self, asset, timeframe):
-        return self.exchange.fetch_ohlcv(asset, timeframe)
+    def fetch_ohlcv(self, asset, timeframe, start_utc):
+        return self.exchange.fetch_ohlcv(asset, timeframe, start_utc)
 
     def fetch_order_book(self, asset):
         return self.exchange.fetch_order_book(asset)

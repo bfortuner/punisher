@@ -59,7 +59,7 @@ colorscale = cl.scales['9']['qual']['Paired']
 
 assets = data.get_assets()
 exchange_ids = ['All'] + data.get_exchange_ids()
-benchmark_currencies = [c.BTC, c.USD, c.USDT]
+benchmark_currencies = data.get_quote_currencies()
 
 app.layout = html.Div([
     html.H1(experiment_name),
@@ -86,9 +86,9 @@ app.layout = html.Div([
         #     ],
         #     className='row'
         # ),
-        html.Label('Cash Asset'),
+        html.Label('Quote Currency'),
         dcc.Dropdown(
-            id='benchmark-currency-input',
+            id='quote-currency',
             options=[{'label': cur, 'value': cur}
                      for cur in benchmark_currencies],
             value=c.BTC,
@@ -198,17 +198,6 @@ external_css = ["https://fonts.googleapis.com/css?family=Product+Sans:400,400i,7
 for css in external_css:
     app.css.append_css({"external_url": css})
 
-                # style={
-                # 'display': 'inline',
-                # 'float': 'left',
-                # 'font-size': '2.65em',
-                # 'margin-left': '7px',
-                # 'font-weight': 'bolder',
-                # 'font-family': 'Product Sans',
-                # 'color': "rgba(117, 117, 117, 0.95)",
-                # 'margin-top': '20px',
-                # 'margin-bottom': '0'
-                # }),
 def bbands(price, window_size=10, num_of_std=5):
     price = pd.Series(price)
     rolling_mean = price.rolling(window=window_size).mean()
@@ -219,13 +208,14 @@ def bbands(price, window_size=10, num_of_std=5):
 
 @app.callback(
     dash.dependencies.Output('graphs','children'),
-    [Input('asset-ohlcv-input', 'value'),
+    [Input('quote-currency', 'value'),
+     Input('asset-ohlcv-input', 'value'),
      Input('interval-component', 'n_intervals')])
-def update_graph(symbols, n):
+def update_graph(quote_currency, symbols, n):
     graphs = []
     for i, symbol in enumerate(symbols):
-        df = data.get_ohlcv()
-        ex_id = c.PAPER
+        df = data.get_ohlcv(quote_currency)
+        ex_id = exchange_ids[1]
         candlestick = {
             'x': df.col('utc'),
             'open': df.col('open', symbol, ex_id),
@@ -263,15 +253,15 @@ def update_graph(symbols, n):
 
 
 @app.callback(Output('returns-pnl', 'figure'),
-              [Input('benchmark-currency-input', 'value'),
+              [Input('quote-currency', 'value'),
               Input('returns-pnl-input', 'value'),
               Input('interval-component', 'n_intervals')])
-def plot_pnl_returns(benchmark_currency, option, n):
+def plot_pnl_returns(quote_currency, option, n):
     global data
     if option == 'returns':
-        vals = data.get_returns(benchmark_currency, exchange_ids[1])
+        vals = data.get_returns(quote_currency, exchange_ids[1])
     else:
-        vals = data.get_pnl(benchmark_currency, exchange_ids[1])
+        vals = data.get_pnl(quote_currency, exchange_ids[1])
     return {
         'data': [go.Scatter(x=vals['utc'],
                         y=vals[option], mode='lines')],

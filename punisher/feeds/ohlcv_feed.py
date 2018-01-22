@@ -28,7 +28,7 @@ class OHLCVData():
         return self.ohlcv_df.iloc[idx]
 
     def all(self):
-        return self.ohlcv_df.to_records()
+        return self.ohlcv_df.to_records() # TODO: return df instead
 
     def __len__(self):
         return len(self.ohlcv_df)
@@ -84,9 +84,12 @@ class OHLCVFeed():
 
 
 class OHLCVFileFeed(OHLCVFeed):
-    def __init__(self, fpath, start=None, end=None):
+    def __init__(self, exchange_ids, assets, timeframe,
+                 start=None, end=None):
         super().__init__(start, end)
-        self.fpath = fpath
+        self.exchange_ids = exchange_ids
+        self.timeframe = timeframe
+        self.assets = assets
         self.initialize()
 
     def initialize(self):
@@ -94,8 +97,9 @@ class OHLCVFileFeed(OHLCVFeed):
         self.update()
 
     def update(self):
-        self.ohlcv_df = load_asset(
-            self.fpath, self.prior_time, self.end)
+        self.ohlcv_df = load_multiple_assets(
+            self.exchange_ids, self.assets, self.timeframe,
+            self.start, self.end)
 
 
 class OHLCVExchangeFeed(OHLCVFeed):
@@ -104,7 +108,7 @@ class OHLCVExchangeFeed(OHLCVFeed):
         super().__init__(start, end)
         self.exchanges = exchanges
         self.assets = assets
-        self.period = timeframe.id
+        self.timeframe = timeframe
         self.benchmark = benchmark
         self.initialize()
 
@@ -126,14 +130,14 @@ class OHLCVExchangeFeed(OHLCVFeed):
         self._download(self.prior_time, self.end)
         ex_ids = [ex.id for ex in self.exchanges]
         self.ohlcv_df = load_multiple_assets(
-            ex_ids, self.assets, self.period,
+            ex_ids, self.assets, self.timeframe,
             self.start, self.end)
 
     def _download(self, start, end):
         for ex in self.exchanges:
             for asset in self.assets:
                 if is_asset_supported(ex, asset):
-                    download_ohlcv(ex, [asset], self.period, start, end)
+                    download_ohlcv([ex], [asset], self.timeframe, start, end)
 
 # Helpers
 
@@ -165,38 +169,45 @@ def get_ohlcv_columns(asset, ex_id):
         cols[i] = get_col_name(cols[i], asset.symbol, ex_id)
     return cols
 
-def get_ohlcv_fpath(asset, exchange_id, period):
+def get_ohlcv_fpath(asset, exchange_id, timeframe):
     fname = '{:s}_{:s}_{:s}.csv'.format(
-        exchange_id, asset.id, str(period))
+        exchange_id, asset.id, timeframe.id)
     return os.path.join(cfg.DATA_DIR, fname)
 
-def fetch_asset(exchange, asset, period, start, end=None):
+def fetch_asset(exchange, asset, timeframe, start, end=None):
+    ## TODO: Some exchanges adhere to limits. For instance BINANCE
+    # returns 500 rows, while POLONIEX returns all rows. Additionally
+    # exchanges offer different amounts of historical data. We need to
+    # update this method to:
+    #   1) Inform the user when requested dates are not available
+    #   2) Break up large date range into <500 so all exchanges work
     print("Downloading:", asset.symbol)
-    assert period in exchange.timeframes
+    assert timeframe.id in exchange.timeframes
     end = datetime.datetime.utcnow() if end is None else end
-    data = exchange.fetch_ohlcv(asset, period)
+    data = exchange.fetch_ohlcv(asset, timeframe, start)
     df = make_asset_df(data, asset, exchange.id, start, end)
     print("Downloaded rows:", len(df))
     return df
 
-def fetch_and_save_asset(exchange, asset, period, start, end=None):
-    df = fetch_asset(exchange, asset, period, start, end)
-    fpath = get_ohlcv_fpath(asset, exchange.id, period)
+def fetch_and_save_asset(exchange, asset, timeframe, start, end=None):
+    df = fetch_asset(exchange, asset, timeframe, start, end)
+    fpath = get_ohlcv_fpath(asset, exchange.id, timeframe)
     df.to_csv(fpath, index=True)
     return df
 
-def update_local_asset_cache(exchange, asset, period, start, end=None):
-    fpath = get_ohlcv_fpath(asset, exchange.id, period)
+def update_local_asset_cache(exchange, asset, timeframe, start, end=None):
+    fpath = get_ohlcv_fpath(asset, exchange.id, timeframe)
     if os.path.exists(fpath):
-        df = fetch_asset(exchange, asset, period, start, end)
+        df = fetch_asset(exchange, asset, timeframe, start, end)
         df = merge_asset_dfs(df, fpath)
     else:
-        df = fetch_and_save_asset(exchange, asset, period, start, end)
+        df = fetch_and_save_asset(exchange, asset, timeframe, start, end)
     return df
 
-def download_ohlcv(exchange, assets, period, start, end=None):
-    for asset in assets:
-        update_local_asset_cache(exchange, asset, period, start, end)
+def download_ohlcv(exchanges, assets, timeframe, start, end=None):
+    for ex in exchanges:
+        for asset in assets:
+            update_local_asset_cache(ex, asset, timeframe, start, end)
 
 def load_asset(fpath, start=None, end=None):
     df = pd.read_csv(
@@ -207,7 +218,7 @@ def load_asset(fpath, start=None, end=None):
     df = get_time_range(df, start, end)
     return df
 
-def load_multiple_assets(exchange_ids, assets, period, start, end=None):
+def load_multiple_assets(exchange_ids, assets, timeframe, start, end=None):
     """
     Returns OHLCV dataframe for multiple assets + exchanges
     The data is loaded from previously downloaded files
@@ -219,13 +230,13 @@ def load_multiple_assets(exchange_ids, assets, period, start, end=None):
     df = pd.DataFrame()
     for ex_id in exchange_ids:
         for asset in assets:
-            fpath = get_ohlcv_fpath(asset, ex_id, period)
+            fpath = get_ohlcv_fpath(asset, ex_id, timeframe)
             if os.path.exists(fpath):
                 data = load_asset(fpath, start, end)
                 for col in data.columns:
                     df[col] = data[col]
             else:
-                print("Fpath does not exist: {:s}. \nJust a heads up.")
+                print("Fpath does not exist: {:s}. \nJust a heads up.".format(fpath))
     # TODO: Is this okay? How to fill in missing values? How to handle them?
     # df.dropna(inplace=True)
     df['utc'] = [epoch_to_utc(t) for t in df.index]

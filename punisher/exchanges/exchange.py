@@ -14,6 +14,7 @@ from punisher.trading.order import Order, ExchangeOrder
 from punisher.trading.order import OrderType, OrderStatus
 from punisher.trading import order_manager
 from punisher.utils.dates import str_to_date
+from punisher.utils.dates import utc_to_epoch
 
 from .data_providers import CCXTExchangeDataProvider
 from .data_providers import FeedExchangeDataProvider
@@ -78,9 +79,7 @@ class Exchange(metaclass=abc.ABCMeta):
 
 class CCXTExchange(Exchange):
     def __init__(self, ex_id, config):
-        # Removing super here in favor of init because
-        # http://bit.ly/2qJ9RAP
-        Exchange.__init__(self, ex_id)
+        super().__init__(ex_id)
         self.config = config
         self.client = EXCHANGE_CLIENTS[ex_id](config)
 
@@ -89,7 +88,7 @@ class CCXTExchange(Exchange):
             return self.client.load_markets(reload=True)
         return self.client.markets
 
-    def fetch_ohlcv(self, asset, timeframe):
+    def fetch_ohlcv(self, asset, timeframe, start_utc):
         """
         Returns OHLCV for the symbol based on the time_period
         ex. fetch_ohlcv(btcusd, 1d)
@@ -97,7 +96,9 @@ class CCXTExchange(Exchange):
         when hasFetchTickers is True as well
         """
         assert self.client.hasFetchOHLCV
-        return self.client.fetch_ohlcv(asset.symbol, timeframe)
+        # CCXT expects milliseconds since epoch for 'since'
+        epoch_ms = utc_to_epoch(start_utc) * 1000
+        return self.client.fetch_ohlcv(asset.symbol, timeframe.id, since=epoch_ms)
 
     def fetch_order_book(self, asset, params=None):
         """
@@ -281,8 +282,8 @@ class PaperExchange(Exchange):
     def get_markets(self):
         return self.data_provider.get_markets()
 
-    def fetch_ohlcv(self, asset, timeframe):
-        return self.data_provider.fetch_ohlcv(asset, timeframe)
+    def fetch_ohlcv(self, asset, timeframe, start_utc):
+        return self.data_provider.fetch_ohlcv(asset, timeframe, start_utc)
 
     def fetch_order_book(self, asset):
         return self.data_provider.fetch_order_book(asset)
@@ -440,16 +441,16 @@ EXCHANGE_CONFIGS = {
     }
 }
 
-def load_feed_based_paper_exchange(balance, feed, feed_ex_id=c.PAPER):
+def load_feed_based_paper_exchange(balance, feed, feed_ex_id):
     balance = deepcopy(balance)
     data_provider = FeedExchangeDataProvider(feed, feed_ex_id)
-    return PaperExchange(c.PAPER, balance, data_provider)
+    return PaperExchange(feed_ex_id, balance, data_provider)
 
 def load_ccxt_based_paper_exchange(balance, exchange_id):
     balance = deepcopy(balance)
     exchange = load_exchange(exchange_id)
     data_provider = CCXTExchangeDataProvider(exchange)
-    return PaperExchange(c.PAPER, balance, data_provider)
+    return PaperExchange(exchange_id, balance, data_provider)
 
 def load_exchange(ex_id, config=None):
     if ex_id not in EXCHANGE_CONFIGS.keys():

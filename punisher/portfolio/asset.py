@@ -45,6 +45,8 @@ class Asset():
             quote = symbol[3:]
         return Asset(base, quote)
 
+    def __eq__(self, obj):
+        return obj.symbol == self.symbol
 
 
 # Helpers
