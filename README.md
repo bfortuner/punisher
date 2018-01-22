@@ -55,6 +55,36 @@ python -m pytest --resultlog=testlog.log tests/ (log output to file)
 python -m pytest -s tests/ (print output to console)
 ```
 
+## How to commit (cleanly)
+
+1. Before coding: 
+
+```
+git pull master
+git checkout -b feature
+```
+
+2. After coding, when you're ready to merge
+```
+# Pull latest changes from repo
+git checkout master
+git pull
+
+# Merge master into feature branch.
+git checkout feature
+git merge master
+```
+
+3. Resolve conflicts
+
+4. Merge feature into master and squash all your commits
+```
+git checkout master
+git merge feature --squash
+git commit -m 'Detailed Commit message describing your changes'
+git push
+```
+
 ## Resources
 
 ### Data
