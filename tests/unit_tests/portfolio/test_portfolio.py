@@ -4,6 +4,7 @@ from datetime import datetime
 from punisher.trading.order_manager import (build_limit_buy_order,
                                             build_limit_sell_order)
 from punisher.trading.trade import TradeSide
+
 class TestSingleExchangePortfolio:
 
     def test_portfolio(self, portfolio):

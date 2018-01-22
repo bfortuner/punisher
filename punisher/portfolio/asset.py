@@ -28,6 +28,9 @@ class Asset():
     def reverse_symbol(self):
         return self.quote + '/' + self.base
 
+    def __eq__(self, other):
+        return (self.base == other.base and self.quote == other.quote)
+
     def to_dict(self):
         return {
             'id': self.id,

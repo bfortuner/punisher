@@ -315,7 +315,12 @@ class PaperExchange(Exchange):
 
     def fetch_my_trades(self, asset, since=None, limit=None, params=None):
         """Returns list of most recent trades for a particular symbol"""
-        return NotImplemented
+        # TODO: implement since and limit
+        trades = []
+        for order in orders:
+            if order.asset == asset:
+                trades.append(order.trades)
+        return trades
 
     def fetch_balance(self):
         """Returns dict in the format of sample-data/account_balance"""
@@ -373,7 +378,10 @@ class PaperExchange(Exchange):
         return NotImplemented
 
     def calculate_fee(self, asset, type, side, quantity,
-                      price, taker_or_maker='taker', params=None):
+                      price, taker_or_maker=None, params=None):
+        # TODO: Implement this
+        # taker = market order
+        # maker = limit order
         cost = abs(quantity) * price
         multiplier = self._get_fee_rate(asset, taker_or_maker)
         fee = cost * multiplier
@@ -396,7 +404,7 @@ class PaperExchange(Exchange):
             'status': OrderStatus.OPEN.name,
             'datetime': datetime.utcnow().isoformat()
         })
-
+        # TODO: Calculate fee here as well as in live exchange !!!
         if not self.balance.is_balance_sufficient(
             asset=asset,
             quantity=quantity,
@@ -427,12 +435,43 @@ class PaperExchange(Exchange):
         # but its "used" amount does
         self.balance.update_by_order(order.asset, order.quantity,
                                      order.price, order.order_type)
+
+        # TODO: only doing 1 trade for now
+        fee = self.calculate_fee(
+                        asset=order.asset,
+                        type=order.order_type,
+                        side=order.order_type.side,
+                        quantity=order.quantity,
+                        price=order.price,
+                        taker_or_maker=None
+                    )
+
+        trade = Trade(
+            trade_id=self._make_trade_id(),
+            exchange_id=self.id,
+            exchange_order_id=order.ex_order_id,
+            asset=order.asset,
+            price=order.price,
+            quantity=order.quantity,
+            trade_time=datetime.utcnow(),
+            side=order.order_type.side,
+            fee=fee
+        )
+
+        order.trades.append(trade)
         order.filled_quantity = order.quantity
         order.filled_time = datetime.utcnow()
         order.status = OrderStatus.FILLED
         return order
 
+    def _get_fee_rate(self, asset, taker_or_maker):
+        # TODO: do this crap
+        return 0.0
+
     def make_order_id(self):
+        return uuid.uuid4().hex
+
+    def _make_trade_id(self):
         return uuid.uuid4().hex
 
     def __repr__(self):
