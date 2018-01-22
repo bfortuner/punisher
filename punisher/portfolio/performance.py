@@ -29,8 +29,8 @@ class PerformanceTracker():
             start_cash = self.periods[-1]['end_cash']
             start_val = self.periods[-1]['end_value']
         end_val = positions_value + cash
-        pnl = self.calc_pnl(self.starting_cash, end_val)
-        returns = self.calc_returns(self.starting_cash, end_val)
+        pnl = self._calc_pnl(self.starting_cash, end_val)
+        returns = self._calc_returns(self.starting_cash, end_val)
         self.periods.append({
             'start_time': start,
             'end_time': start + self.timeframe.value['delta'],
@@ -49,13 +49,13 @@ class PerformanceTracker():
             self.pnl = self.periods[-1]['pnl']
             self.returns = self.periods[-1]['returns']
 
-    def calc_pnl(self, start_val, end_val):
+    def _calc_pnl(self, start_val, end_val):
         return end_val - start_val
 
-    def calc_returns(self, start_val, end_val):
+    def _calc_returns(self, start_val, end_val):
         if start_val == 0.0:
             return 0.0
-        pnl = self.calc_pnl(start_val, end_val)
+        pnl = self._calc_pnl(start_val, end_val)
         return pnl / start_val
 
     def get_positions_value(self, positions):
@@ -67,7 +67,7 @@ class PerformanceTracker():
         """
         total = 0.0
         for pos in positions:
-            total += pos.market_value
+            total += pos.market_value - pos.fee
         return total
 
     def make_positions_dict(self, positions):

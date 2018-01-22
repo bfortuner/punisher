@@ -61,28 +61,28 @@ def get_orders(exchange, ex_order_ids, assets):
     return ex_orders
 
 def process_orders(exchange, orders):
-    filled_orders = []
+    updated_orders = []
 
     # sync OPEN orders (to check if FILLED)
     open_orders = get_open_orders(orders)
     for oo in open_orders:
         ex_order = get_order(exchange, oo.exchange_order_id, oo.asset)
         sync_order_with_exchange(oo, ex_order)
-    filled_orders.extend(get_filled_orders(open_orders))
+    updated_orders.extend(open_orders)
 
     # retry FAILED orders (if attempts < RETRY_LIMIT)
     failed_orders = get_failed_orders(orders, retry_limit=3)
     retried_orders = place_orders(exchange, failed_orders)
-    filled_orders.extend(get_filled_orders(retried_orders))
+    updated_orders.extend(retried_orders)
 
     # place CREATED orders
     created_orders = get_created_orders(orders)
     placed_orders = place_orders(exchange, created_orders)
-    filled_orders.extend(get_filled_orders(placed_orders))
+    updated_orders.extend(placed_orders)
 
-    assert_no_duplicates(filled_orders)
+    assert_no_duplicates(updated_orders)
 
-    return filled_orders
+    return updated_orders
 
 def assert_no_duplicates(orders):
     keys = set()
@@ -130,6 +130,7 @@ def sync_order_with_exchange(order, ex_order):
     order.filled_quantity = ex_order.filled_quantity
     order.price = ex_order.price
     order.fee = ex_order.fee
+    order.trades = ex_order.trades
 
 def place_orders(exchange, orders):
     placed = []

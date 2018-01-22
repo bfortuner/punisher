@@ -12,6 +12,7 @@ from punisher.portfolio.asset import Asset
 from punisher.portfolio.balance import Balance, BalanceType
 from punisher.trading.order import Order, ExchangeOrder
 from punisher.trading.order import OrderType, OrderStatus
+from punisher.trading.trade import Trade
 from punisher.trading import order_manager
 from punisher.utils.dates import str_to_date
 from punisher.utils.dates import utc_to_epoch
@@ -115,18 +116,20 @@ class CCXTExchange(Exchange):
 
     def fetch_public_trades(self, asset):
         """Returns list of most recent trades for a particular symbol"""
-        return self.client.fetch_trades(asset.symbol)
+        response = self.client.fetch_trades(asset.symbol)
+        return self._build_trades(response)
 
     def fetch_my_trades(self, asset, since=None, limit=None, params=None):
         """Returns list of most recent trades for a particular symbol"""
         params = self.get_default_params_if_none(params)
-        return self.client.fetch_my_trades(asset.symbol, since, limit, params)
+        response = self.client.fetch_my_trades(asset.symbol, since, limit, params)
+        return self._build_trades(response)
 
     def fetch_order_trades(self, order_id, asset):
         trades = []
         all_trades = self.fetch_my_trades(asset)
         for trade in all_trades:
-            if trade['order'] == order_id:
+            if trade.exchange_order_id == order_id:
                 trades.append(trade)
         return trades
 
@@ -214,20 +217,30 @@ class CCXTExchange(Exchange):
     def calculate_order_price(self, total_quantity, trades):
         avg_price = 0.0
         for trade in trades:
-            trade_qty = trade['amount']
-            trade_cost = trade['cost']
-            trade_price = trade['price']
-            trade_feed = trade['fee']
-            avg_price += (trade_qty / total_quantity) * trade_price
+            avg_price += (trade.quantity / total_quantity) * trade.price
         return avg_price
 
     def calculate_filled_time(self, trades):
         max_time = None
         for trade in trades:
-            filled_time = str_to_date(trade['datetime'])
+            filled_time = trade.trade_time
             if max_time is None or filled_time > max_time:
                 max_time = filled_time
         return max_time
+
+    def _build_trades(self, trades_list):
+        trades = []
+        for trade in trades_list:
+            trades.append(self._build_trade(trade))
+        return trades
+
+    def _build_trade(self, trade_dct):
+        trade_dct['exchange_id'] = self.id
+        fee_cost = None
+        if trade_dct.get("fee"):
+            fee_cost = trade_dct.get("fee").get("cost")
+        trade_dct['fee'] = fee_cost
+        return Trade.from_dict(trade_dct)
 
     def _build_orders(self, orders_dct):
         orders = []
@@ -243,6 +256,8 @@ class CCXTExchange(Exchange):
         order = ExchangeOrder.from_dict(order_dct)
         order.trades = self.fetch_order_trades(
             order.ex_order_id, order.asset)
+
+        print("ORDER TRADES", order.trades)
 
         if order.status == OrderStatus.FILLED:
             order.filled_time = self.calculate_filled_time(order.trades)
@@ -301,7 +316,12 @@ class PaperExchange(Exchange):
 
     def fetch_my_trades(self, asset, since=None, limit=None, params=None):
         """Returns list of most recent trades for a particular symbol"""
-        return NotImplemented
+        # TODO: implement since and limit
+        trades = []
+        for order in orders:
+            if order.asset == asset:
+                trades.append(order.trades)
+        return trades
 
     def fetch_balance(self):
         """Returns dict in the format of sample-data/account_balance"""
@@ -357,8 +377,17 @@ class PaperExchange(Exchange):
         return NotImplemented
     def withdraw(self, asset, quantity, wallet):
         return NotImplemented
-    def calculate_fee(self):
-        return NotImplemented
+
+    def calculate_fee(self, asset, type, side, quantity,
+                      price, taker_or_maker=None, params=None):
+        # TODO: Implement this
+        # taker = market order
+        # maker = limit order
+        cost = abs(quantity) * price
+        multiplier = self._get_fee_rate(asset, taker_or_maker)
+        fee = cost * multiplier
+        return fee
+
     def order_on_margin(self, price):
         return NotImplemented
 
@@ -376,7 +405,7 @@ class PaperExchange(Exchange):
             'status': OrderStatus.OPEN.name,
             'datetime': datetime.utcnow().isoformat()
         })
-
+        # TODO: Calculate fee here as well as in live exchange !!!
         if not self.balance.is_balance_sufficient(
             asset=asset,
             quantity=quantity,
@@ -407,12 +436,43 @@ class PaperExchange(Exchange):
         # but its "used" amount does
         self.balance.update_by_order(order.asset, order.quantity,
                                      order.price, order.order_type)
+
+        # TODO: only doing 1 trade for now
+        fee = self.calculate_fee(
+                        asset=order.asset,
+                        type=order.order_type,
+                        side=order.order_type.side,
+                        quantity=order.quantity,
+                        price=order.price,
+                        taker_or_maker=None
+                    )
+
+        trade = Trade(
+            trade_id=self._make_trade_id(),
+            exchange_id=self.id,
+            exchange_order_id=order.ex_order_id,
+            asset=order.asset,
+            price=order.price,
+            quantity=order.quantity,
+            trade_time=datetime.utcnow(),
+            side=order.order_type.side,
+            fee=fee
+        )
+
+        order.trades.append(trade)
         order.filled_quantity = order.quantity
         order.filled_time = datetime.utcnow()
         order.status = OrderStatus.FILLED
         return order
 
+    def _get_fee_rate(self, asset, taker_or_maker):
+        # TODO: do this crap
+        return 0.0
+
     def make_order_id(self):
+        return uuid.uuid4().hex
+
+    def _make_trade_id(self):
         return uuid.uuid4().hex
 
     def __repr__(self):

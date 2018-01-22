@@ -14,18 +14,20 @@ class Position():
       - cost_price (float): average volume-weighted price of position (quote currency)
     """
 
-    def __init__(self, asset, quantity, cost_price):
+    def __init__(self, asset, quantity, cost_price, fee):
         self.asset = asset
         self.quantity = quantity
         self.cost_price = cost_price
         self.latest_price = cost_price
+        self.fee = fee
 
-    def update(self, txn_quantity, txn_price):
+    def update(self, txn_quantity, txn_price, txn_fee):
         """
-        txn_quantity: # of shares of transaction
+        - txn_quantity: # of shares of transaction
             positive = buy
             negative = sell
-        txn_price: price of transaction
+        - txn_price: price of transaction
+        - txn_fee: fee for the transaction
 
         Cost calculated with Average Cost Basis method
         https://www.investopedia.com/terms/a/averagecostbasismethod.asp
@@ -54,10 +56,11 @@ class Position():
                 self.cost_price = total_value / total_quantity
 
         self.quantity = total_quantity
+        self.fee += txn_fee
 
     @property
     def cost_value(self):
-        return self.quantity * self.cost_price
+        return (self.quantity * self.cost_price) - self.fee
 
     @property
     def market_value(self):
