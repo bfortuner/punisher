@@ -54,6 +54,9 @@ POLONIEX_API_SECRET_KEY = os.environ.get('POLONIEX_API_SECRET_KEY')
 BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
 BINANCE_API_SECRET_KEY = os.environ.get('BINANCE_API_SECRET_KEY')
 
+# Gemini
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+GEMINI_API_SECRET_KEY = os.environ.get('GEMINI_API_SECRET_KEY')
 
 ### External Data ###
 

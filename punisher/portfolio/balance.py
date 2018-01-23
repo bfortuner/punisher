@@ -3,8 +3,6 @@ from enum import Enum, unique
 
 from punisher.trading import coins
 
-from .asset import get_symbol
-
 
 class Balance():
     def __init__(self, cash_currency=coins.BTC, starting_cash=1.0):
@@ -124,7 +122,7 @@ class BalanceType(Enum):
 def get_total_value(balance, cash_currency, exchange_rates):
     cash_value = 0.0
     for currency in balance.currencies:
-        symbol = get_symbol(currency, cash_currency)
+        symbol = coins.get_symbol(currency, cash_currency)
         quantity = balance.get(currency)[BalanceType.TOTAL]
         rate = exchange_rates[symbol]
         cash_value += quantity * exchange_rate

@@ -8,8 +8,7 @@ import numpy as np
 import punisher.config as cfg
 import punisher.constants as c
 from punisher.portfolio.asset import Asset
-from punisher.feeds.ohlcv_feed import OHLCVData
-from punisher.feeds.ohlcv_feed import get_col_name
+from punisher.feeds import ohlcv_feed
 from punisher.trading import coins
 from punisher.trading.record import Record
 from punisher.utils.dates import date_to_str
@@ -55,50 +54,24 @@ class RecordChartDataProvider():
     def get_config(self):
         return self.record.config
 
-    def get_ohlcv(self, quote_currency):
+    def get_ohlcv(self, cash_coin=None):
         if abs(self.t_minus) >= len(self.record.ohlcv):
-            data = OHLCVData(self.record.ohlcv.copy())
+            data = ohlcv_feed.OHLCVData(self.record.ohlcv.copy())
         else:
-            data = OHLCVData(self.record.ohlcv.iloc[-self.t_minus:].copy())
+            data = ohlcv_feed.OHLCVData(
+                self.record.ohlcv.iloc[-self.t_minus:].copy())
+        if cash_coin is None or cash_coin == self.record.portfolio.cash_currency:
+            return data
         assets = self.get_assets()
         ex_ids = self.get_exchange_ids()
         for ex_id in ex_ids:
             for asset in assets:
-                if asset.quote != quote_currency:
-                    for col in ['open','high','low','close']:
-                        ex_rate = self.get_exchange_rate(
-                            col, data, asset, ex_id, quote_currency)
-                        col_name = get_col_name(col, asset.symbol, ex_id)
-                        data.ohlcv_df[col_name] *= ex_rate
+                for field in ['open','high','low','close']:
+                    col_name = ohlcv_feed.get_col_name(field, asset.symbol, ex_id)
+                    cash_value = ohlcv_feed.get_cash_value(
+                        data.ohlcv_df, field, asset, ex_id, cash_coin)
+                    data.ohlcv_df[col_name] = cash_value
         return data
-
-    def get_exchange_rate(self, col, data, asset, ex_id, new_quote):
-        # TODO: Refactor this. It's confusing and there is a better way
-        # The goal is to be able to view any currency in terms of any other
-        # 'quote' currency. Typically the cash currency is BTC, and everything
-        # is quoted as such ETH/BTC, LTC/BTC. But it's also useful to see things
-        # in terms of USD. Challenge is, not all exchanges support USD (some
-        # support USDT, others neither). So we need to try for both.. Ugh.
-        if asset.quote == new_quote:
-            return 1.0
-        if asset.base == new_quote:
-            return 1.0
-        middleman_asset = self.get_middleman_asset(asset, ex_id, new_quote)
-        middleman_price = data.col(col, middleman_asset.symbol, ex_id)
-        return middleman_price
-
-    def get_middleman_asset(self, asset, ex_id, new_quote):
-        middleman_asset = Asset(asset.quote, new_quote)
-        if middleman_asset not in self.get_assets(ex_id):
-            if new_quote == coins.USD:
-                middleman_asset = Asset(asset.quote, coins.USDT)
-            elif new_quote == coins.USDT:
-                middleman_asset = Asset(asset.quote, coins.USD)
-            if middleman_asset not in self.get_assets(ex_id):
-                raise Exception(("No matching quote currency to compute" +
-                                 "rate: {:s}, {:s}, {:s}").format(asset.symbol,
-                                 ex_id, new_quote))
-        return middleman_asset
 
     def get_assets(self, exchange_id=None):
         cols = ([col for col in self.record.ohlcv.columns
@@ -143,38 +116,29 @@ class RecordChartDataProvider():
     def get_performance(self):
         return self.record.portfolio.perf
 
-    def get_exchange_rates(self, base, quote, exchange_id):
-        asset = Asset(base, quote)
-        return self.get_ohlcv(quote).col(
-            'close', asset.symbol, exchange_id)
-
-    def get_pnl(self, quote_currency, exchange_id):
+    def get_pnl(self, quote_coin, ex_id):
         periods = self.record.portfolio.perf.periods
-        if quote_currency == coins.BTC:
-            ex_rates = np.array([1.0 for p in periods])
-        else:
-            ex_rates = self.get_exchange_rates(
-                coins.BTC, quote_currency, exchange_id)
+        cash_currency = self.record.portfolio.cash_currency
+        ex_rates = ohlcv_feed.get_exchange_rate(
+            self.get_ohlcv().df, cash_currency, quote_coin, ex_id)
         assert len(ex_rates) == len(periods)
         df = pd.DataFrame([
             [p['end_time'], p['pnl']] for p in periods
         ], columns=['utc','pnl'])
-        df['pnl'] *= ex_rates
+        df['pnl'] = df['pnl'] * ex_rates
         return df
 
-    def get_returns(self, quote_currency, exchange_id):
+    def get_returns(self, quote_coin, ex_id):
         periods = self.record.portfolio.perf.periods
-        if quote_currency == coins.BTC:
-            ex_rates = np.array([1.0 for p in periods])
-        else:
-            ex_rates = self.get_exchange_rates(
-                coins.BTC, quote_currency, exchange_id)
+        cash_currency = self.record.portfolio.cash_currency
+        ex_rates = ohlcv_feed.get_exchange_rate(
+            self.get_ohlcv().df, cash_currency, quote_coin, ex_id)
         assert len(ex_rates) == len(periods)
         start_cash = self.record.portfolio.starting_cash * ex_rates[0]
         df = pd.DataFrame([
             [p['end_time'], p['pnl']] for p in periods],
                 columns=['utc','returns'])
-        df['returns'] *= ex_rates / start_cash
+        df['returns'] = df['returns'] * ex_rates / start_cash
         return df
 
     def get_balance(self):

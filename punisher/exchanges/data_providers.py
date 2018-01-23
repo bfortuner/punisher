@@ -3,7 +3,7 @@ import numpy as np
 
 from punisher.utils.dates import utc_to_epoch
 
-supported_timeframes = { '1m': 1, '5m': 5, '30m': 30 }
+supported_timeframes = { '1m': 1, '5m': 5, '15m': 900, '30m': 1800 }
 
 
 class ExchangeDataProvider(metaclass=abc.ABCMeta):
@@ -28,6 +28,14 @@ class ExchangeDataProvider(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def fetch_ticker(self, asset):
+        pass
+
+    @abc.abstractmethod
+    def timeframes(self):
+        pass
+
+    @abc.abstractmethod
+    def cash_coins(self):
         pass
 
 
@@ -112,6 +120,9 @@ class FeedExchangeDataProvider(ExchangeDataProvider):
     def timeframes(self):
         return supported_timeframes
 
+    @property
+    def cash_coins(self):
+        return self.feed.cash_coins
 
 
 class CCXTExchangeDataProvider(ExchangeDataProvider):
@@ -137,3 +148,7 @@ class CCXTExchangeDataProvider(ExchangeDataProvider):
     @property
     def timeframes(self):
         return self.exchange.timeframes
+
+    @property
+    def cash_coins(self):
+        return self.exchange.cash_coins

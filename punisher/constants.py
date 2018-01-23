@@ -30,6 +30,8 @@ DEFAULT_BALANCE = {
     'free': {coins.BTC: 1.0},
     'used': {coins.BTC: 0.0},
     'total': {coins.BTC: 1.0},
+    'cash_currency': coins.BTC,
+    'starting_cash': 1.0,
 }
 
 # Feed

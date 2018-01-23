@@ -4,6 +4,7 @@ import pandas as pd
 
 import punisher.config as cfg
 import punisher.constants as c
+from punisher.exchanges import ex_cfg
 from punisher.portfolio.asset import Asset
 from punisher.trading import coins
 from punisher.utils.dates import get_time_range
@@ -12,6 +13,11 @@ from punisher.utils.dates import str_to_date
 
 
 OHLCV_COLUMNS = ['epoch', 'open', 'high', 'low', 'close', 'volume']
+# Open - Bid/Ask? at beginning of time period (quoted in cash)
+# High - Highest Bid/Ask? during time period (quoted in cash)
+# Low - Lowest Bid/Ask? during time period (quoted in cash)
+# Close - Bid/Ask? at end of time period (quoted in cash)
+# Volume - Quantity of base coin traded during time period (quoted in base)
 
 class OHLCVData():
     def __init__(self, ohlcv_df):
@@ -28,8 +34,26 @@ class OHLCVData():
     def row(self, idx):
         return self.ohlcv_df.iloc[idx]
 
-    def all(self):
-        return self.ohlcv_df.to_records() # TODO: return df instead
+    def cash_value(self, col, cash_currency):
+        pass
+
+
+    @property
+    def df(self):
+        return self.ohlcv_df
+
+    @property
+    def cash_coins(self):
+        cash = set()
+        columns = [c for c in self.ohlcv_df.columns if c not in ['utc', 'epoch']]
+        for col in columns:
+            field,symbol,ex_id = col.split('_')
+            asset = Asset.from_symbol(symbol)
+            if asset.quote in [coins.USD, coins.USDT]:
+                cash.add(coins.USD)
+            else:
+                cash.add(asset.quote)
+        return cash
 
     def __len__(self):
         return len(self.ohlcv_df)
@@ -108,6 +132,7 @@ class OHLCVExchangeFeed(OHLCVFeed):
                  start, end=None, benchmark=True):
         super().__init__(start, end)
         self.exchanges = exchanges
+        self.ex_ids = [ex.id for ex in exchanges]
         self.assets = assets
         self.timeframe = timeframe
         self.benchmark = benchmark
@@ -117,7 +142,9 @@ class OHLCVExchangeFeed(OHLCVFeed):
         super().initialize()
         self.init_benchmarks()
         self._download(self.start, self.end, update=False)
-        self.update()
+        self.ohlcv_df = load_multiple_assets(
+            self.ex_ids, self.assets, self.timeframe,
+            self.start, self.end)
 
     def init_benchmarks(self):
         if self.benchmark:
@@ -130,9 +157,8 @@ class OHLCVExchangeFeed(OHLCVFeed):
 
     def update(self):
         self._download(self.prior_time, self.end, update=True)
-        ex_ids = [ex.id for ex in self.exchanges]
         self.ohlcv_df = load_multiple_assets(
-            ex_ids, self.assets, self.timeframe,
+            self.ex_ids, self.assets, self.timeframe,
             self.start, self.end)
 
     def _download(self, start, end, update=True):
@@ -142,7 +168,53 @@ class OHLCVExchangeFeed(OHLCVFeed):
                     download_ohlcv(
                         [ex], [asset], self.timeframe, start, end, update)
 
+
 # Helpers
+
+def get_usd_coin(ex_id):
+    return ex_cfg.EXCHANGE_CONFIGS[ex_id]['usd_coin']
+
+def get_exchange_rate(df, quote_coin, new_cash_coin, ex_id):
+    assert coins.is_cash(new_cash_coin)
+
+    if coins.is_usd(new_cash_coin):
+        new_cash_coin = get_usd_coin(ex_id)
+    if coins.is_usd(quote_coin):
+        quote_coin = get_usd_coin(ex_id)
+    if quote_coin == new_cash_coin:
+        return pd.Series([1.0 for i in range(len(df))]).values
+
+    new_cash_symbol = coins.get_symbol(quote_coin, new_cash_coin)
+    cash_col_name = get_col_name('close', new_cash_symbol, ex_id)
+    if cash_col_name in df.columns:
+        return df[cash_col_name].values
+    else:
+        new_cash_symbol = coins.get_symbol(new_cash_coin, quote_coin)
+        cash_col_name = get_col_name('close', new_cash_symbol, ex_id)
+        return pd.Series(1.0 / df[cash_col_name]).values
+
+def get_cash_value(df, field, asset, ex_id, cash_coin):
+    assert coins.is_cash(cash_coin)
+    assert field in ['open', 'high', 'low', 'close']
+    #print("Cash value of", asset.symbol, "in", cash_coin, "on exchange", ex_id)
+
+    if coins.is_usd(cash_coin):
+        cash_coin = get_usd_coin(ex_id)
+    if coins.is_usd(asset.quote):
+        asset.quote = get_usd_coin(ex_id)
+    cash_symbol = coins.get_symbol(asset.quote, cash_coin)
+
+    col_name = get_col_name(field, asset.symbol, ex_id)
+    col = df[col_name]
+
+    if asset.quote == cash_coin:
+        return col.values
+    if asset.base == cash_coin:
+        return col.values
+
+    cash_col_name = get_col_name(field, cash_symbol, ex_id)
+    cash_col = df[cash_col_name]
+    return (col * cash_col).values
 
 def is_asset_supported(exchange, asset):
     markets = exchange.get_markets()

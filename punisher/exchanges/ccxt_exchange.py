@@ -138,10 +138,6 @@ class CCXTExchange(Exchange):
         params = self.get_default_params_if_none(params)
         return NotImplemented
 
-    @property
-    def timeframes(self):
-        return self.client.timeframes
-
     def calculate_fee(self, asset, type, side, quantity,
                       price, taker_or_maker='taker', params=None):
         params = self.get_default_params_if_none(params)
@@ -203,6 +199,18 @@ class CCXTExchange(Exchange):
         elif status == 'CANCELED':
             return OrderStatus.CANCELED.name
         raise Exception("Order status not found", status)
+
+    @property
+    def timeframes(self):
+        return self.client.timeframes
+
+    @property
+    def cash_coins(self):
+        return self.config['cash_coins']
+
+    @property
+    def usd_coin(self):
+        return self.config['usd_coin']
 
     def __repr__(self):
         return 'CCXTExchange({:s})'.format(self.id)

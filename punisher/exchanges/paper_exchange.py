@@ -42,6 +42,17 @@ class PaperExchange(Exchange):
     def timeframes(self):
         return self.data_provider.timeframes
 
+    @property
+    def cash_coins(self):
+        return self.data_provider.cash_coins
+
+    @property
+    def usd_coin(self):
+        # Since we control paper exchange, we'll handle the conversion
+        # of USDT --> USD where needed. This way for backtesting users
+        # don't need to care about USD/USDT.
+        return self.config['usd_coin']
+
     def fetch_public_trades(self, asset):
         """Returns list of most recent trades for a particular symbol"""
         return self.data_provider.fetch_public_trades(asset)

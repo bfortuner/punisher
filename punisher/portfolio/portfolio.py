@@ -20,7 +20,8 @@ class Portfolio():
     https://github.com/quantopian/zipline/blob/master/zipline/protocol.py#L143
     """
 
-    def __init__(self, starting_cash, perf_tracker, positions=None):
+    def __init__(self, cash_currency, starting_cash, perf_tracker, positions=None):
+        self.cash_currency = cash_currency
         self.starting_cash = starting_cash
         self.cash = starting_cash
         self.perf = perf_tracker
@@ -88,6 +89,7 @@ class Portfolio():
 
     def to_dict(self):
         return {
+            'cash_currency': self.cash_currency,
             'starting_cash': self.starting_cash,
             'cash': self.cash,
             'weights': self.weights,
@@ -102,6 +104,7 @@ class Portfolio():
     def from_dict(self, dct):
         dct = copy.deepcopy(dct)
         port = Portfolio(
+            cash_currency=dct['cash_currency'],
             starting_cash=dct['starting_cash'],
             perf_tracker=PerformanceTracker.from_dict(dct['performance'])
         )

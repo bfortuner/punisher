@@ -120,6 +120,7 @@ if __name__ == "__main__":
         timeframe=timeframe
     )
     portfolio = Portfolio(
+        cash_currency=cash_currency,
         starting_cash=starting_cash,
         perf_tracker=perf_tracker, # option to override, otherwise default
         positions=None # option to override with existing positions

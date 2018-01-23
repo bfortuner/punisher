@@ -29,6 +29,7 @@ def perf_tracker():
 @pytest.fixture(scope="class")
 def portfolio(perf_tracker):
     return Portfolio(
+        cash_currency=coins.BTC,
         starting_cash=0.0,
         perf_tracker=perf_tracker, # option to override, otherwise default
         positions=None # option to override with existing positions

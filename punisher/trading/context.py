@@ -62,7 +62,11 @@ class Context():
         )
         record = Record(
             config=cfg,
-            portfolio=Portfolio(config['starting_cash'], perf),
+            portfolio=Portfolio(
+                config['cash_currency'],
+                config['starting_cash'],
+                perf
+            ),
             balance=Balance.from_dict(config['balance']),
             store=store
         )

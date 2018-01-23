@@ -1,3 +1,4 @@
+from punisher.trading import coins
 
 
 class Asset():
@@ -14,16 +15,26 @@ class Asset():
     """
 
     def __init__(self, base, quote):
-        self.base = base
-        self.quote = quote
+        self.base = self.validate_base(base)
+        self.quote = self.validate_quote(quote)
+
+    def validate_base(self, base):
+        if base not in coins.COINS:
+            raise coins.CoinNotSupportedException(base)
+        return base
+
+    def validate_quote(self, quote):
+        if quote not in coins.CASH_COINS:
+            raise coins.CashNotSupportedException(quote)
+        return quote
 
     @property
     def id(self):
-        return get_id(self.base, self.quote)
+        return coins.get_id(self.base, self.quote)
 
     @property
     def symbol(self):
-        return get_symbol(self.base, self.quote)
+        return coins.get_symbol(self.base, self.quote)
 
     def reverse_symbol(self):
         return self.quote + '/' + self.base
@@ -47,12 +58,3 @@ class Asset():
 
     def __eq__(self, obj):
         return obj.symbol == self.symbol
-
-
-# Helpers
-
-def get_id(base, quote):
-    return base + '_' + quote
-
-def get_symbol(base, quote):
-    return base + '/' + quote

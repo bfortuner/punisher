@@ -44,6 +44,14 @@ class Exchange(metaclass=abc.ABCMeta):
     def calculate_fee(self):
         pass
 
+    @abc.abstractmethod
+    def cash_coins(self):
+        pass
+
+    @abc.abstractmethod
+    def usd_coin(self):
+        pass
+
     def is_balance_sufficient(self, asset, quantity, price, order_type):
         return self.fetch_balance().is_balance_sufficient(
             asset, quantity, price, order_type)
