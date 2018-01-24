@@ -4,6 +4,7 @@ import copy
 
 from punisher.utils.encoders import EnumEncoder
 from punisher.utils.dates import Timeframe
+from punisher.trading.trade import TradeSide
 
 from .performance import PerformanceTracker
 from .position import Position
@@ -25,27 +26,34 @@ class Portfolio():
         self.starting_cash = starting_cash
         self.cash = starting_cash
         self.perf = perf_tracker
-        self.positions = [] if positions is None else positions
+        self.positions = [] if positios is None else positions
 
-    def update(self, current_time, filled_orders, latest_prices):
-        self.update_positions(filled_orders)
+    def update(self, current_time, orders, latest_prices):
+        self.update_positions(orders)
         self.update_position_prices(latest_prices)
         self.perf.add_period(current_time, self.cash, self.positions)
 
-    def update_positions(self, filled_orders):
-        for order in filled_orders:
-            pos = self.get_position(order.asset)
-            if pos is None:
-                pos = Position(order.asset, order.quantity, order.price)
-                self.positions.append(pos)
-                quantity = order.quantity
-            else:
-                if order.order_type.is_sell():
-                    quantity = -order.quantity
+    def update_positions(self, orders):
+        for order in orders:
+            # TODO: implement_this method
+            for trade in order.get_new_trades(self.last_update_time):
+                pos = self.get_position(order.asset)
+                if pos is None:
+                    pos = Position(
+                            asset=order.asset,
+                            quantity=trade.quantity,
+                            cost_price=trade.price,
+                            fee=trade.fee
+                        )
+                    self.positions.append(pos)
+                    quantity = trade.quantity
                 else:
-                    quantity = order.quantity
-                pos.update(quantity, order.price)
-            self.cash -= quantity * order.price
+                    if order.order_type.is_sell():
+                        quantity = -trade.quantity
+                    else:
+                        quantity = trade.quantity
+                    pos.update(quantity, trade.price, trade.fee)
+                self.cash -= (quantity * trade.price) + trade.fee
 
     def update_position_prices(self, latest_prices):
         """

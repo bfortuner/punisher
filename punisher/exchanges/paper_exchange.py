@@ -59,7 +59,12 @@ class PaperExchange(Exchange):
 
     def fetch_my_trades(self, asset, since=None, limit=None, params=None):
         """Returns list of most recent trades for a particular symbol"""
-        return NotImplemented
+        # TODO: implement since and limit
+        trades = []
+        for order in orders:
+            if order.asset == asset:
+                trades.append(order.trades)
+        return trades
 
     def fetch_balance(self):
         """Returns dict in the format of sample-data/account_balance"""
@@ -115,8 +120,17 @@ class PaperExchange(Exchange):
         return NotImplemented
     def withdraw(self, asset, quantity, wallet):
         return NotImplemented
-    def calculate_fee(self):
-        return NotImplemented
+
+    def calculate_fee(self, asset, type, side, quantity,
+                      price, taker_or_maker=None, params=None):
+        # TODO: Implement this
+        # taker = market order
+        # maker = limit order
+        cost = abs(quantity) * price
+        multiplier = self._get_fee_rate(asset, taker_or_maker)
+        fee = cost * multiplier
+        return fee
+
     def order_on_margin(self, price):
         return NotImplemented
 
@@ -150,6 +164,9 @@ class PaperExchange(Exchange):
                 asset.base, self.balance.get(asset.base)[BalanceType.FREE])
             )
 
+        # TODO: update the balance here to simulate moving funds
+        #       from free -> used
+
         order = self._fill_order(order)
         self.orders.append(order)
 
@@ -163,12 +180,47 @@ class PaperExchange(Exchange):
         # For example, when I place a limit order that doesn't get filled
         # my Quote currency total value doesn't change,
         # but its "used" amount does
-        self.balance.update_by_order(order.asset, order.quantity,
-                                     order.price, order.order_type)
+
+
+        # TODO: only doing 1 trade for now
+        fee = self.calculate_fee(
+                asset=order.asset,
+                type=order.order_type,
+                side=order.order_type.side,
+                quantity=order.quantity,
+                price=order.price,
+                taker_or_maker=None
+            )
+
+        trade = Trade(
+            trade_id=None,
+            exchange_id=self.id,
+            exchange_order_id=order.ex_order_id,
+            asset=order.asset,
+            price=order.price,
+            quantity=order.quantity,
+            # TODO: FIX TRADE TIME
+            trade_time=None#datetime.utcnow(),
+            side=order.order_type.side,
+            fee=fee
+        )
+
+        # TODO: Update balance here to simulate trade occurance
+        #       Remove funds (trade. price * trade.quantity)from QUOTE
+        #       used if successful trade fills
+        #       Add quantity to Base funds
+        # self.balance.update_by_order(order.asset, order.quantity,
+        #                              order.price, order.order_type)
+
+        order.trades.append(trade)
         order.filled_quantity = order.quantity
-        order.filled_time = datetime.utcnow()
+        # TODO: order.filled_time = get time according to row data???
         order.status = OrderStatus.FILLED
         return order
+
+    def _get_fee_rate(self, asset, taker_or_maker):
+        # TODO: do this crap
+        return 0.0
 
     def make_order_id(self):
         return uuid.uuid4().hex

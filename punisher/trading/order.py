@@ -129,6 +129,7 @@ class Order():
         dct['opened_time'] = date_to_str(self.opened_time)
         dct['filled_time'] = date_to_str(self.filled_time)
         dct['canceled_time'] = date_to_str(self.canceled_time)
+        dct['trades'] = [trade.to_dict() for trade in self.trades]
         return dct
 
     @classmethod
@@ -214,6 +215,7 @@ class ExchangeOrder():
         dct['datetime'] = date_to_str(self.opened_time)
         dct['side'] = self.order_type.side
         dct['type'] = self.order_type.type
+        dct['trades'] = [trade.to_dict() for trade in self.trades]
 
         del dct['ex_order_id']
         del dct['quantity']

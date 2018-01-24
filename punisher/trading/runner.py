@@ -21,6 +21,12 @@ class TradeMode(Enum):
 
 
 def get_latest_prices(orders, row, ex_id):
+    """
+    Helper method to get latest prices for each order from the last data row.
+    - orders : all Order objects
+    - row : last data row
+    - ex_id: exchange id
+    """
     # TODO: ensure this works for multi exchange
     latest_prices = {}
     for order in orders:
@@ -43,20 +49,22 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         'experiment': name,
         'strategy': strategy.name,
     }
+
     record = Record(
         config=config,
         portfolio=portfolio,
         balance=balance,
         store=store
     )
-    record.save()
     ctx = Context(
         exchange=exchange,
         feed=feed,
         record=record
     )
-
     row = feed.next()
+    portfolio.last_update_timestamp = row.get('utc')
+    record.save()
+
     while row is not None:
         output = strategy.process(row, ctx)
         orders = output['orders']
@@ -72,25 +80,20 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         # order_manager.cancel_orders(exchange, cancel_ids)
 
         # Place new orders, retry failed orders, sync existing orders
-        newly_filled_orders = order_manager.process_orders(
+        # TODO: make order_manger update and return all orders
+        updated_orders = order_manager.process_orders(
             exchange, record.orders.values())
 
         # Update latest prices of positions
-        latest_prices = get_latest_prices(orders, row, exchange.id)
-        # Portfolio needs to know about new filled orders
-        portfolio.update(row.get('utc'), newly_filled_orders, latest_prices)
+        latest_prices = get_latest_prices(updated_orders, row, exchange.id)
 
-        # Update Virtual Balance (exchange balance left alone)
-        for order in newly_filled_orders:
-            balance.update_by_order(order.asset, order.quantity,
-                                    order.price, order.order_type)
-            print("Equal?", record.balance == exchange.fetch_balance())
+        # Portfolio needs to know about new trades and latest prices
+        portfolio.update(row.get('utc'), updated_orders, latest_prices)
 
         record.save()
         row = feed.next()
 
     return record
-
 
 def simulate(name, exchange, balance, portfolio, feed, strategy):
     '''
@@ -112,15 +115,23 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
         balance=balance,
         store=store
     )
-    record.save()
     ctx = Context(
         exchange=exchange,
         feed=feed,
         record=record
     )
+    row = feed.next()
+    portfolio.last_update_timestamp = row.get('utc')
+    orders = []
+    record.save()
+
+    # TODO:
+    # Order manager update orders every timestep
+    #   - ensure we are not losing orders when the strategy returns new orders
+    #        - like make sure that they are part of all existing orders
+
 
     while True:
-        row = feed.next()
 
         if row is not None:
             output = strategy.process(row, ctx)
@@ -137,26 +148,22 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
             # order_manager.cancel_orders(exchange, cancel_ids)
 
             # Place new orders, retry failed orders, sync existing orders
-            newly_filled_orders = order_manager.process_orders(
+            # TODO: DECIDE IF THIS SHOULD HAPPEN EVERY ROUND
+            updated_orders = order_manager.process_orders(
                 exchange, record.orders.values())
 
             # Update latest prices of positions
-            latest_prices = get_latest_prices(orders, row, exchange.id)
-            # Portfolio needs to know about new filled orders
-            portfolio.update(row.get('utc'), newly_filled_orders, latest_prices)
+            latest_prices = get_latest_prices(updated_orders, row, exchange.id)
 
-            # Update Virtual Balance (exchange balance left alone)
-            for order in newly_filled_orders:
-                balance.update_by_order(order.asset, order.quantity,
-                                        order.price, order.order_type)
-                print("Equal?", record.balance == exchange.fetch_balance())
+            # Portfolio needs to know about new trades and latest prices
+            portfolio.update(row.get('utc'), updated_orders, latest_prices)
 
             record.save()
 
+        row = feed.next()
         time.sleep(30)
 
     return record
-
 
 def live(name, exchange, balance, portfolio, feed, strategy):
     '''
@@ -180,15 +187,19 @@ def live(name, exchange, balance, portfolio, feed, strategy):
         balance=balance,
         store=store
     )
-    record.save()
     ctx = Context(
         exchange=exchange,
         feed=feed,
         record=record
     )
 
+    row = feed.next()
+    portfolio.last_update_timestamp = row.get('utc')
+    record.save()
+
+    # TODO: Same as above
+
     while True:
-        row = feed.next()
 
         if row is not None:
             output = strategy.process(row, ctx)
@@ -205,22 +216,18 @@ def live(name, exchange, balance, portfolio, feed, strategy):
             # order_manager.cancel_orders(exchange, cancel_ids)
 
             # Place new orders, retry failed orders, sync existing orders
-            newly_filled_orders = order_manager.process_orders(
+            updated_orders = order_manager.process_orders(
                 exchange, record.orders.values())
 
             # Update latest prices of positions
-            latest_prices = get_latest_prices(orders, row, exchange.id)
-            # Portfolio needs to know about new filled orders
-            portfolio.update(row.get('utc'), newly_filled_orders, latest_prices)
+            latest_prices = get_latest_prices(updated_orders, row, exchange.id)
 
-            # Update Virtual Balance (exchange balance left alone)
-            for order in newly_filled_orders:
-                balance.update_by_order(order.asset, order.quantity,
-                                        order.price, order.order_type)
-                print("Equal?", record.balance == exchange.fetch_balance())
+            # Portfolio needs to know about new trades and latest prices
+            portfolio.update(row.get('utc'), updated_orders, latest_prices)
 
             record.save()
 
+        row = feed.next()
         time.sleep(30)
 
     return record

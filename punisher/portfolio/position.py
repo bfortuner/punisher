@@ -19,13 +19,15 @@ class Position():
         self.quantity = quantity
         self.cost_price = cost_price
         self.latest_price = cost_price
+        self.fee = fee
 
-    def update(self, txn_quantity, txn_price):
+    def update(self, txn_quantity, txn_price, txn_fee):
         """
-        txn_quantity: # of shares of transaction
+        - txn_quantity: # of shares of transaction
             positive = buy
             negative = sell
-        txn_price: price of transaction
+        - txn_price: price of transaction
+        - txn_fee: fee for the transaction
 
         Cost calculated with Average Cost Basis method
         https://www.investopedia.com/terms/a/averagecostbasismethod.asp
@@ -54,10 +56,11 @@ class Position():
                 self.cost_price = total_value / total_quantity
 
         self.quantity = total_quantity
+        self.fee += txn_fee
 
     @property
     def cost_value(self):
-        return self.quantity * self.cost_price
+        return (self.quantity * self.cost_price) - self.fee
 
     @property
     def market_value(self):
@@ -68,7 +71,8 @@ class Position():
             'asset': self.asset.symbol,
             'quantity': self.quantity,
             'cost_price': self.cost_price,
-            'latest_price': self.latest_price
+            'latest_price': self.latest_price,
+            'fee': self.fee
         }
 
     @classmethod
@@ -77,6 +81,7 @@ class Position():
             asset=Asset.from_symbol(dct['asset']),
             quantity=dct['quantity'],
             cost_price=dct['cost_price'],
+            fee=dct.get("fee", 0.0)
         )
         pos.latest_price = dct['latest_price']
         return pos
