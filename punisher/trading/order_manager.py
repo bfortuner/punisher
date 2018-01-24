@@ -134,6 +134,8 @@ def sync_order_with_exchange(order, ex_order):
     order.price = ex_order.price
     order.fee = ex_order.fee
     order.trades = ex_order.trades
+    # TODO: change this time to the simulation run time...placeholder for now
+    order.last_updated_time = datetime.datetime.utcnow()
 
 def place_orders(exchange, orders):
     placed = []

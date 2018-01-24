@@ -9,6 +9,7 @@ from punisher.portfolio.balance import Balance, BalanceType
 from punisher.trading.order import Order, ExchangeOrder
 from punisher.trading.order import OrderType, OrderStatus
 from punisher.trading import order_manager
+from punisher.trading.trade import Trade
 from punisher.utils.dates import str_to_date
 from punisher.utils.dates import utc_to_epoch
 
@@ -166,6 +167,7 @@ class PaperExchange(Exchange):
 
         # TODO: update the balance here to simulate moving funds
         #       from free -> used
+        self.balance.update_by_order(order)
 
         order = self._fill_order(order)
         self.orders.append(order)
@@ -200,7 +202,7 @@ class PaperExchange(Exchange):
             price=order.price,
             quantity=order.quantity,
             # TODO: FIX TRADE TIME
-            trade_time=None#datetime.utcnow(),
+            trade_time=datetime.utcnow(),
             side=order.order_type.side,
             fee=fee
         )

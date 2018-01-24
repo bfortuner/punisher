@@ -61,6 +61,7 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         feed=feed,
         record=record
     )
+
     row = feed.next()
     portfolio.last_update_timestamp = row.get('utc')
     record.save()

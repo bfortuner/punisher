@@ -8,6 +8,7 @@ from punisher.portfolio.balance import Balance, BalanceType
 from punisher.trading.order import Order, ExchangeOrder
 from punisher.trading.order import OrderType, OrderStatus
 from punisher.trading import order_manager
+from punisher.trading.trade import Trade
 from punisher.utils.dates import str_to_date
 from punisher.utils.dates import utc_to_epoch
 

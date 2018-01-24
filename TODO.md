@@ -76,3 +76,4 @@
 ### Known Issues / Bugs
 
 * Fetching historical data using 1m period only goes back 1 day and may cause bugs when using start/end
+* Remove datetime.datetime.utcnow() from any code that gets used by backtest

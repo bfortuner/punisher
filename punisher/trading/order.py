@@ -84,7 +84,7 @@ class Order():
         "id", "exchange_id", "exchange_order_id", "asset", "price",
         "quantity", "filled_quantity", "order_type", "status",
         "created_time", "opened_time", "filled_time", "canceled_time",
-        "fee", "attempts", "trades", "error"
+        "last_updated_time", "fee", "attempts", "trades", "error"
     ]
 
     def __init__(self, exchange_id, asset, price, quantity, order_type):
@@ -101,6 +101,8 @@ class Order():
         self.opened_time = None
         self.filled_time = None
         self.canceled_time = None
+        # TODO: figure out how to actually pass in the right time here...
+        self.last_updated_time = datetime.utcnow()
         self.fee = {}
         self.attempts = 0
         self.trades = []
@@ -129,6 +131,7 @@ class Order():
         dct['opened_time'] = date_to_str(self.opened_time)
         dct['filled_time'] = date_to_str(self.filled_time)
         dct['canceled_time'] = date_to_str(self.canceled_time)
+        dct['last_updated_time'] = date_to_str(self.last_updated_time)
         dct['trades'] = [trade.to_dict() for trade in self.trades]
         return dct
 
@@ -149,6 +152,7 @@ class Order():
         order.opened_time = str_to_date(d['opened_time'])
         order.filled_time = str_to_date(d['filled_time'])
         order.canceled_time = str_to_date(d['canceled_time'])
+        order.last_updated_time = str_to_date(d["last_updated_time"])
         order.attempts = d['attempts']
         order.fee = d['fee']
         order.error = OrderingError.from_dict(d['error'])
