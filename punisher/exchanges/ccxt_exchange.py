@@ -169,7 +169,7 @@ class CCXTExchange(Exchange):
 
     def _build_trade(self, trade_dct):
         trade_dct['exchange_id'] = self.id
-        if "feed" in trade_dct:
+        if "fee" in trade_dct:
             trade_dct['fee'] = trade_dct['fee'].get("cost", None)
         trade_dct['fee'] = fee_cost
         return Trade.from_dict(trade_dct)

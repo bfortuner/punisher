@@ -63,36 +63,51 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
     )
 
     row = feed.next()
-    portfolio.last_update_timestamp = row.get('utc')
+    open_orders = []
+    new_orders = []
+    last_update_time = row.get('utc')
     record.save()
 
-    while row is not None:
-        output = strategy.process(row, ctx)
-        orders = output['orders']
-        cancel_ids = output['cancel_ids']
+    while True:
 
-        # Record needs to know about all new orders
-        for order in orders:
-            record.orders[order.id] = order
+        if row is not None:
+            output = strategy.process(row, ctx)
+            # Add any new orders from strategy output
+            new_orders = output['new_orders']
+            cancel_ids = output['cancel_ids']
+
+        open_orders.extend(new_orders)
 
         # TODO: Cancelling orders
         # should we auto-cancel any outstanding orders
         # or should we leave this decision up to the Strategy?
+        # How do we confirm the order has been cancelled by the exchange?
         # order_manager.cancel_orders(exchange, cancel_ids)
 
-        # Place new orders, retry failed orders, sync existing orders
-        # TODO: make order_manger update and return all orders
         updated_orders = order_manager.process_orders(
-            exchange, record.orders.values())
+                    exchange=exchange, orders=open_orders)
 
         # Update latest prices of positions
         latest_prices = get_latest_prices(updated_orders, row, exchange.id)
 
-        # Portfolio needs to know about new trades and latest prices
-        portfolio.update(row.get('utc'), updated_orders, latest_prices)
+        # Portfolio needs to kno about new trades and latest prices
+         portfolio.update(
+            last_update_time, updated_orders, latest_prices)
+
+        # Update record with updates to orders
+        for order in updated_orders:
+            record.orders[order.id] = order
+
+        # Reset open orders list to only track open/created orders
+        open_orders = []
+        open_orders.extend(order_manager.get_open_orders(updated_orders))
+        open_orders.extend(order_manager.get_created_orders(updated_orders))
 
         record.save()
         row = feed.next()
+        # This will be different every iteration b/c it's a backtest
+        assert row.get('utc') != last_update_time
+        last_update_time = row.get('utc')
 
     return record
 
@@ -122,7 +137,7 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
         record=record
     )
     row = feed.next()
-    portfolio.last_update_timestamp = row.get('utc')
+    last_update_timestamp = row.get('utc')
     orders = []
     record.save()
 
@@ -157,11 +172,12 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
             latest_prices = get_latest_prices(updated_orders, row, exchange.id)
 
             # Portfolio needs to know about new trades and latest prices
-            portfolio.update(row.get('utc'), updated_orders, latest_prices)
+            portfolio.update(last_update_timestamp, updated_orders, latest_prices)
 
             record.save()
 
         row = feed.next()
+        last_update_timestamp = datetime.utcnow()
         time.sleep(30)
 
     return record

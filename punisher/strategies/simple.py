@@ -53,17 +53,18 @@ class SimpleStrategy(Strategy):
             self.log_metrics(ctx)
 
     def handle_data(self, data, ctx):
-        orders = []
+        new_orders = []
         quantity = .05
         price = data.get('close', self.asset.symbol, ctx.exchange.id)
+        current_time = data.get('utc')
         if random.random() > 0.5:
             order = order_manager.build_limit_buy_order(
-                ctx.exchange, self.asset, quantity, price)
-            orders.append(order)
+                ctx.exchange, self.asset, quantity, price, current_time)
+            new_orders.append(order)
         else:
             order = order_manager.build_market_sell_order(
-                ctx.exchange, self.asset, quantity)
-            orders.append(order)
+                ctx.exchange, self.asset, quantity, current_time)
+            new_orders.append(order)
 
         # Optionally cancel pending orders (LIVE trading)
         #pending_orders = ctx.exchange.fetch_open_orders(asset)
@@ -73,10 +74,10 @@ class SimpleStrategy(Strategy):
         self.update_metric('SMA', 5.0, ctx)
         self.update_metric('RSI', 10.0, ctx)
         self.update_ohlcv(data, ctx)
-        print(data.get('utc'))
-        self.log_all(orders, data, ctx, data.get('utc'))
+        print(current_time)
+        self.log_all(orders, data, ctx, current_time)
         return {
-            'orders': orders,
+            'new_orders': orders,
             'cancel_ids': cancel_ids
         }
 

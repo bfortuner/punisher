@@ -10,7 +10,7 @@ from punisher.trading.order import Order, ExchangeOrder
 from punisher.trading.order import OrderType, OrderStatus
 from punisher.trading import order_manager
 from punisher.trading.trade import Trade
-from punisher.utils.dates import str_to_date
+from punisher.utils.dates import str_to_date, date_to_str
 from punisher.utils.dates import utc_to_epoch
 
 from .data_providers import CCXTExchangeDataProvider
@@ -128,8 +128,8 @@ class PaperExchange(Exchange):
         # taker = market order
         # maker = limit order
         cost = abs(quantity) * price
-        multiplier = self._get_fee_rate(asset, taker_or_maker)
-        fee = cost * multiplier
+        fee_rate = self._get_fee_rate(asset, taker_or_maker)
+        fee = cost * fee_rate
         return fee
 
     def order_on_margin(self, price):
@@ -137,6 +137,7 @@ class PaperExchange(Exchange):
 
     def _create_order(self, asset, quantity, price, order_type):
         assert quantity != 0 and price != 0
+        print("TIME", self.data_provider.get_time())
         order = ExchangeOrder.from_dict({
             'id': self.make_order_id(),
             'exchange_id': self.id,
@@ -147,7 +148,7 @@ class PaperExchange(Exchange):
             'side': order_type.side,
             'type': order_type.type,
             'status': OrderStatus.OPEN.name,
-            'datetime': datetime.utcnow().isoformat()
+            'datetime': date_to_str(self.data_provider.get_time())
         })
 
         if not self.balance.is_balance_sufficient(
@@ -165,9 +166,7 @@ class PaperExchange(Exchange):
                 asset.base, self.balance.get(asset.base)[BalanceType.FREE])
             )
 
-        # TODO: update the balance here to simulate moving funds
-        #       from free -> used
-        self.balance.update_by_order(order)
+        self.balance.update_with_created_order(order)
 
         order = self._fill_order(order)
         self.orders.append(order)
@@ -201,22 +200,16 @@ class PaperExchange(Exchange):
             asset=order.asset,
             price=order.price,
             quantity=order.quantity,
-            # TODO: FIX TRADE TIME
-            trade_time=datetime.utcnow(),
+            trade_time=self.data_provider.get_time(),
             side=order.order_type.side,
             fee=fee
         )
 
-        # TODO: Update balance here to simulate trade occurance
-        #       Remove funds (trade. price * trade.quantity)from QUOTE
-        #       used if successful trade fills
-        #       Add quantity to Base funds
-        # self.balance.update_by_order(order.asset, order.quantity,
-        #                              order.price, order.order_type)
+        self.balance.update_with_trade(trade)
 
         order.trades.append(trade)
-        order.filled_quantity = order.quantity
-        # TODO: order.filled_time = get time according to row data???
+        order.filled_quantity = trade.quantity
+        order.filled_time = self.data_provider.get_time()
         order.status = OrderStatus.FILLED
         return order
 

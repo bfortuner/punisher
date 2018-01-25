@@ -11,77 +11,93 @@ from .order import Order
 from .order import OrderType, OrderStatus
 
 
-def build_limit_buy_order(exchange, asset, quantity, price):
+def build_limit_buy_order(exchange, asset, quantity, price, current_time):
     return Order(
         exchange_id=exchange.id,
         asset=asset,
         price=price,
         quantity=quantity,
         order_type=OrderType.LIMIT_BUY,
+        created_time=current_time
     )
 
-def build_limit_sell_order(exchange, asset, quantity, price):
+def build_limit_sell_order(exchange, asset, quantity, price, current_time):
     return Order(
         exchange_id=exchange.id,
         asset=asset,
         price=price,
         quantity=quantity,
         order_type=OrderType.LIMIT_SELL,
+        created_time=current_time
     )
 
-def build_market_buy_order(exchange, asset, quantity):
+def build_market_buy_order(exchange, asset, quantity, current_time):
     return Order(
         exchange_id=exchange.id,
         asset=asset,
         price=None,
         quantity=quantity,
         order_type=OrderType.MARKET_BUY,
+        created_time=current_time
     )
 
-def build_market_sell_order(exchange, asset, quantity):
+def build_market_sell_order(exchange, asset, quantity, current_time):
     return Order(
         exchange_id=exchange.id,
         asset=asset,
         price=None,
         quantity=quantity,
         order_type=OrderType.MARKET_SELL,
+        created_time=current_time
     )
 
 def get_order(exchange, ex_order_id, asset):
     return exchange.fetch_order(ex_order_id, asset)
 
-def get_orders(exchange, ex_order_ids, assets):
-    ex_orders = []
-    if not isinstance(assets, list):
-        asset = deepcopy(assets)
-        assets = [asset for i in range(len(ex_order_ids))]
-    for ex_order_id, asset in zip(ex_order_ids, assets):
-        ex_order = get_order(exchange, ex_order_id, asset)
-        ex_orders.append(ex_order)
-    return ex_orders
+# TODO: implement / fix bugs
+# def get_orders(exchange, ex_order_ids, assets):
+#     ex_orders = []s
+#     if not isinstance(assets, list):
+#         asset = deepcopy(assets)
+#         assets = [asset for i in range(len(ex_order_ids))]
+#     for ex_order_id, asset in zip(ex_order_ids, assets):
+#         ex_order = get_order(exchange, ex_order_id, asset)
+#         ex_orders.append(ex_order)
+#     return ex_orders
 
 def process_orders(exchange, orders):
     """
-    Process orders takes orders from previous round
+    Process orders takes open_orders from previous round
+    Places newly created orders,
     """
     updated_orders = []
 
-    # sync OPEN orders (to check if FILLED)
+    # First place CREATED orders
+    # DO I NEED TO UPDATE THE BALANCE HERE? OR CAN I RELY ON PORTFOLIO TO DO IT
+    # FOR CREATED ORDERS
+    created_orders = get_created_orders(orders)
+    placed_orders = place_orders(exchange, created_orders)
+
     open_orders = get_open_orders(orders)
+    # Ensuring that we are not mising orders in our updates
+    assert (len(open_orders) + len(created_orders) == len(orders))
+
+    # Try to get updates for all the orders
     for oo in open_orders:
         ex_order = get_order(exchange, oo.exchange_order_id, oo.asset)
         sync_order_with_exchange(oo, ex_order)
-    updated_orders.extend(open_orders)
+
+    # Get orders still open after the update
+    open_orders = get_open_orders(orders)
 
     # retry FAILED orders (if attempts < RETRY_LIMIT)
-    failed_orders = get_failed_orders(orders, retry_limit=3)
-    retried_orders = place_orders(exchange, failed_orders)
-    updated_orders.extend(retried_orders)
+    failed_orders = get_failed_orders(orders, retry_limit=1)
+    # TODO: retry orders
+    # retried_orders = place_orders(exchange, failed_orders)
 
-    # place CREATED orders
-    created_orders = get_created_orders(orders)
-    placed_orders = place_orders(exchange, created_orders)
     updated_orders.extend(placed_orders)
+    updated_orders.extend(open_orders)
+    updated_orders.extend(failed_orders)
 
     assert_no_duplicates(updated_orders)
 
@@ -134,8 +150,6 @@ def sync_order_with_exchange(order, ex_order):
     order.price = ex_order.price
     order.fee = ex_order.fee
     order.trades = ex_order.trades
-    # TODO: change this time to the simulation run time...placeholder for now
-    order.last_updated_time = datetime.datetime.utcnow()
 
 def place_orders(exchange, orders):
     placed = []
@@ -169,11 +183,11 @@ def get_canceled_orders(orders):
     return get_orders_by_types(orders, [OrderStatus.CANCELED])
 
 def get_failed_orders(orders, retry_limit=0):
-    orders = get_orders_by_types(orders, [OrderStatus.FAILED])
-    failed_orders = []
-    for order in orders:
-        if order.attempts <= retry_limit:
-            failed_orders.append(order)
+    failed_orders = get_orders_by_types(orders, [OrderStatus.FAILED])
+    # failed_orders = []
+    # for order in orders:
+    #     if order.attempts < retry_limit:
+    #         failed_orders.append(order)
     return failed_orders
 
 def get_orders_by_types(orders, order_types):

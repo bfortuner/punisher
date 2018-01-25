@@ -21,6 +21,10 @@ class Balance():
             BalanceType.TOTAL: self.total[currency],
         }
 
+    def get_total_value(self, currency, exchange_rates):
+        # TODO: implement this once we know what exchange_rates looks like
+        return 10000.0
+
     def update_with_created_order(self, order):
         """
         Helper method to update with a newly created order
@@ -47,7 +51,7 @@ class Balance():
                 delta_used=-quantity
             )
 
-    def update_with_cancelled_order(self, order):
+    def update_with_failed_order(self, order):
         """
         Helper method to update with a recently cancelled order
         ASSUMES order does NOT have new trades
@@ -87,6 +91,7 @@ class Balance():
         asset = trade.asset
         price = trade.price
         quantity = trade.quantity
+        fee = trade.fee
 
         if side.is_buy():
             # Performing the buy... so we take the funds allocated for trading
@@ -95,7 +100,7 @@ class Balance():
             self.update(
                 currency=asset.quote,
                 delta_free=0.0,
-                delta_used=-(price * quantity)
+                delta_used=-((price * quantity) + fee)
             )
             self.update(
                 currency=asset.base,
@@ -110,7 +115,7 @@ class Balance():
             # being used for trading
             self.update(
                 currency=asset.quote,
-                delta_free=(price * quantity),
+                delta_free=((price * quantity) - fee),
                 delta_used=0.0
             )
             self.update(

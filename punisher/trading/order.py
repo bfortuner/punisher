@@ -87,7 +87,8 @@ class Order():
         "last_updated_time", "fee", "attempts", "trades", "error"
     ]
 
-    def __init__(self, exchange_id, asset, price, quantity, order_type):
+    def __init__(self, exchange_id, asset, price, quantity, order_type,
+                    created_time):
         self.id = self.make_id()
         self.exchange_id = exchange_id
         self.exchange_order_id = None
@@ -97,16 +98,22 @@ class Order():
         self.filled_quantity = 0.0
         self.order_type = self.set_order_type(order_type)
         self.status = OrderStatus.CREATED
-        self.created_time = datetime.utcnow()
+        self.created_time = created_time
         self.opened_time = None
         self.filled_time = None
         self.canceled_time = None
-        # TODO: figure out how to actually pass in the right time here...
-        self.last_updated_time = datetime.utcnow()
+        self.last_updated_time = created_time
         self.fee = {}
         self.attempts = 0
         self.trades = []
         self.error = None
+
+    def get_new_trades(self, last_update_time):
+        new_trades = []
+        for trade in trades:
+            if trade.trade_time > last_update_time:
+                new_trades.append(trade)
+        return new_trades
 
     def set_order_type(self, order_type):
         assert order_type in OrderType
@@ -152,7 +159,7 @@ class Order():
         order.opened_time = str_to_date(d['opened_time'])
         order.filled_time = str_to_date(d['filled_time'])
         order.canceled_time = str_to_date(d['canceled_time'])
-        order.last_updated_time = str_to_date(d["last_updated_time"])
+        order.last_updated_time = str_to_date(d['last_updated_time'])
         order.attempts = d['attempts']
         order.fee = d['fee']
         order.error = OrderingError.from_dict(d['error'])

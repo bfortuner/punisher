@@ -45,7 +45,7 @@ class Trade:
         self.cost = cost
 
     def set_trade_side(self, side):
-        self.side = side
+        self.side = TradeSide.from_side(side)
         return self.side
 
     def to_dict(self):
