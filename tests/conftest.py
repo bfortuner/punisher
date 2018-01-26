@@ -1,7 +1,8 @@
 import pytest
+from copy import copy, deepcopy
 
 from punisher import constants as c
-from punisher.exchanges.exchange import load_exchange
+from punisher.exchanges import load_exchange, ex_cfg
 from punisher.portfolio.portfolio import Portfolio
 from punisher.portfolio.performance import PerformanceTracker
 from punisher.portfolio.balance import Balance
@@ -16,8 +17,10 @@ def ccxtexchange():
    return load_exchange(ex_cfg.BINANCE)
 
 @pytest.fixture(scope="class")
-def paperexchange():
-    return load_exchange(ex_cfg.PAPER)
+def paperexchange(balance):
+    ex = load_exchange(ex_cfg.PAPER)
+    ex.balance = deepcopy(balance)
+    return ex
 
 @pytest.fixture(scope="class")
 def perf_tracker():
@@ -27,10 +30,10 @@ def perf_tracker():
     )
 
 @pytest.fixture(scope="class")
-def portfolio(perf_tracker):
+def portfolio(perf_tracker, balance):
     return Portfolio(
-        cash_currency=coins.BTC,
-        starting_cash=0.0,
+        cash_currency=coins.USD,
+        starting_balance=deepcopy(balance),
         perf_tracker=perf_tracker, # option to override, otherwise default
         positions=None # option to override with existing positions
     )
@@ -38,7 +41,7 @@ def portfolio(perf_tracker):
 @pytest.fixture(scope="class")
 def balance():
     return Balance(
-        cash_currency=coins.BTC,
+        cash_currency=coins.USD,
         starting_cash=0.0
     )
 

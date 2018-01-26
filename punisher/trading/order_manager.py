@@ -65,39 +65,33 @@ def get_order(exchange, ex_order_id, asset):
 #         ex_orders.append(ex_order)
 #     return ex_orders
 
-def process_orders(exchange, orders):
+def process_orders(exchange, balance, open_or_new_orders):
     """
     Process orders takes open_orders from previous round
     Places newly created orders,
     """
     updated_orders = []
 
-    # First place CREATED orders
-    # DO I NEED TO UPDATE THE BALANCE HERE? OR CAN I RELY ON PORTFOLIO TO DO IT
-    # FOR CREATED ORDERS
-    created_orders = get_created_orders(orders)
+    # Get the newly created orders
+    # and place them on the exchange
+    # update the portfolio balance
+    # add the failed orders to failed_orders
+    created_orders = get_created_orders(open_or_new_orders)
+    balance.update_with_created_orders(created_orders)
     placed_orders = place_orders(exchange, created_orders)
 
-    open_orders = get_open_orders(orders)
-    # Ensuring that we are not mising orders in our updates
-    assert (len(open_orders) + len(created_orders) == len(orders))
+    open_orders = get_open_orders(open_or_new_orders)
 
-    # Try to get updates for all the orders
-    for oo in open_orders:
-        ex_order = get_order(exchange, oo.exchange_order_id, oo.asset)
-        sync_order_with_exchange(oo, ex_order)
+    # We should only be passing in open or new orders
+    assert (len(open_orders) + len(placed_orders) == len(open_or_new_orders))
 
-    # Get orders still open after the update
-    open_orders = get_open_orders(orders)
-
-    # retry FAILED orders (if attempts < RETRY_LIMIT)
-    failed_orders = get_failed_orders(orders, retry_limit=1)
-    # TODO: retry orders
-    # retried_orders = place_orders(exchange, failed_orders)
+    # Get updates for new and existing open orders
+    for order in open_orders:
+        ex_order = get_order(exchange, order.exchange_order_id, order.asset)
+        sync_order_with_exchange(order, ex_order)
 
     updated_orders.extend(placed_orders)
     updated_orders.extend(open_orders)
-    updated_orders.extend(failed_orders)
 
     assert_no_duplicates(updated_orders)
 

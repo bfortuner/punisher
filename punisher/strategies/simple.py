@@ -77,7 +77,7 @@ class SimpleStrategy(Strategy):
         print(current_time)
         self.log_all(orders, data, ctx, current_time)
         return {
-            'new_orders': orders,
+            'new_orders': new_orders,
             'cancel_ids': cancel_ids
         }
 

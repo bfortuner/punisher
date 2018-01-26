@@ -1,10 +1,12 @@
 import json
 import datetime
-import copy
+from copy import copy, deepcopy
 
 from punisher.utils.encoders import EnumEncoder
 from punisher.utils.dates import Timeframe
 from punisher.trading.trade import TradeSide
+from punisher.portfolio.balance import BalanceType
+from punisher.trading.order import OrderStatus
 
 from .performance import PerformanceTracker
 from .position import Position
@@ -24,14 +26,14 @@ class Portfolio():
     def __init__(self, cash_currency, starting_balance, perf_tracker, positions=None):
         self.cash_currency = cash_currency
         self.starting_balance = starting_balance
-        self.balance = starting_balance
+        self.balance = deepcopy(starting_balance)
         self.perf = perf_tracker
         self.positions = [] if positions is None else positions
 
     def update(self, last_update_time, orders, latest_prices):
         self.update_positions(orders, last_update_time)
         self.update_position_prices(latest_prices)
-        self.perf.add_period(current_time, self.balance, self.positions)
+        self.perf.add_period(last_update_time, self.cash, self.positions)
 
     def update_positions(self, orders, last_update_time):
         for order in orders:
@@ -106,15 +108,18 @@ class Portfolio():
 
     @property
     def total_value(self):
-        # TODO: Create currency converter and create balance.total_value(currency)
-        return self.balance.get_total_value(
-            self.cash_currency, None) + self.positions_value
+        return self.cash + self.positions_value
+
+    @property
+    def cash(self):
+        return self.balance.get(self.cash_currency)[BalanceType.FREE]
 
     def to_dict(self):
         return {
             'cash_currency': self.cash_currency,
             'starting_balance': self.starting_balance.to_dict(),
             'balance': self.balance.to_dict(),
+            'cash': self.cash,
             'weights': self.weights,
             'pnl': self.perf.pnl,
             'returns': self.perf.returns,

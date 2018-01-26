@@ -63,20 +63,19 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
     )
 
     row = feed.next()
-    open_orders = []
-    new_orders = []
-    last_update_time = row.get('utc')
+    orders = []
     record.save()
 
-    while True:
+    while row is not None:
 
-        if row is not None:
-            output = strategy.process(row, ctx)
-            # Add any new orders from strategy output
-            new_orders = output['new_orders']
-            cancel_ids = output['cancel_ids']
+        last_update_time = row.get('utc')
 
-        open_orders.extend(new_orders)
+        output = strategy.process(row, ctx)
+        # Add any new orders from strategy output
+        new_orders = output['new_orders']
+        cancel_ids = output['cancel_ids']
+
+        orders.extend(new_orders)
 
         # TODO: Cancelling orders
         # should we auto-cancel any outstanding orders
@@ -85,13 +84,16 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         # order_manager.cancel_orders(exchange, cancel_ids)
 
         updated_orders = order_manager.process_orders(
-                    exchange=exchange, orders=open_orders)
+                            exchange=exchange,
+                            balance=portfolio.balance,
+                            orders=orders
+                        )
 
         # Update latest prices of positions
         latest_prices = get_latest_prices(updated_orders, row, exchange.id)
 
-        # Portfolio needs to kno about new trades and latest prices
-         portfolio.update(
+        # Portfolio needs to know about new trades and latest prices
+        portfolio.update(
             last_update_time, updated_orders, latest_prices)
 
         # Update record with updates to orders
@@ -99,15 +101,11 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
             record.orders[order.id] = order
 
         # Reset open orders list to only track open/created orders
-        open_orders = []
-        open_orders.extend(order_manager.get_open_orders(updated_orders))
-        open_orders.extend(order_manager.get_created_orders(updated_orders))
+        orders = order_manager.get_open_orders(updated_orders)
+        orders.extend(order_manager.get_created_orders(updated_orders))
 
         record.save()
         row = feed.next()
-        # This will be different every iteration b/c it's a backtest
-        assert row.get('utc') != last_update_time
-        last_update_time = row.get('utc')
 
     return record
 

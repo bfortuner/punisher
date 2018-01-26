@@ -14,14 +14,14 @@ class Position():
       - cost_price (float): average volume-weighted price of position (quote currency)
     """
 
-    def __init__(self, asset, quantity, cost_price):
+    def __init__(self, asset, quantity, cost_price, fee=0.0):
         self.asset = asset
         self.quantity = quantity
         self.cost_price = cost_price
         self.latest_price = cost_price
         self.fee = fee
 
-    def update(self, txn_quantity, txn_price, txn_fee):
+    def update(self, txn_quantity, txn_price, txn_fee=0.0):
         """
         - txn_quantity: # of shares of transaction
             positive = buy

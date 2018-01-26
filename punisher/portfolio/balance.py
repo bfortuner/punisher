@@ -4,6 +4,13 @@ from enum import Enum, unique
 from punisher.trading import coins
 
 
+@unique
+class BalanceType(Enum):
+    FREE = "free"
+    USED = "used"
+    TOTAL = "total"
+
+
 class Balance():
     def __init__(self, cash_currency=coins.BTC, starting_cash=1.0):
         self.free = {cash_currency: starting_cash}
@@ -15,15 +22,17 @@ class Balance():
         return list(self.total.keys())
 
     def get(self, currency):
+        if currency not in self.currencies:
+            self.add_currency(currency)
         return {
             BalanceType.FREE: self.free[currency],
             BalanceType.USED: self.used[currency],
             BalanceType.TOTAL: self.total[currency],
         }
 
-    def get_total_value(self, currency, exchange_rates):
-        # TODO: implement this once we know what exchange_rates looks like
-        return 10000.0
+    def update_with_created_orders(self, orders):
+        for order in orders:
+            self.update_with_created_order(order)
 
     def update_with_created_order(self, order):
         """
@@ -51,6 +60,10 @@ class Balance():
                 delta_used=-quantity
             )
 
+    def update_with_failed_orders(self, orders):
+        for order in orders:
+            self.update_with_failed_order(order)
+
     def update_with_failed_order(self, order):
         """
         Helper method to update with a recently cancelled order
@@ -68,8 +81,8 @@ class Balance():
             quote_not_used = (price * quantity) - trade_cost
             self.update(
                 currency=asset.quote,
-                delta_free=remaining_quote_not_used,
-                delta_used=-remaining_quote_not_used,
+                delta_free=quote_not_used,
+                delta_used=-quote_not_used,
             )
 
         elif order_type.is_sell():
@@ -79,7 +92,7 @@ class Balance():
             self.update(
                 currency=asset.base,
                 delta_free=base_unsold,
-                delta_used=-based_unsold
+                delta_used=-base_unsold
             )
 
     def update_with_trades(self, trades):
@@ -188,14 +201,6 @@ class Balance():
 
     def __repr__(self):
         return self.to_json()
-
-
-@unique
-class BalanceType(Enum):
-    FREE = "free"
-    USED = "used"
-    TOTAL = "total"
-
 
 
 ## Helpers
