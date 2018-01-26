@@ -125,7 +125,7 @@ class FeedExchangeDataProvider(ExchangeDataProvider):
     # If we get the time using fee.next, will we force a refresh/miss data
     # in the strategy?
     def get_time(self):
-        return self.feed.history(t_minus=1).get('utc')
+        return self.feed.history().get('utc')
 
     @property
     def timeframes(self):

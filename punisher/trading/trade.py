@@ -28,11 +28,11 @@ class TradeSide(Enum):
 class Trade:
     __slots__ = [
         "id", "exchange_id", "exchange_order_id", "asset", "price", "quantity",
-        "trade_time", "fee", "side", "cost",
+        "trade_time", "fee", "side"
     ]
 
     def __init__(self, trade_id, exchange_id, exchange_order_id,
-            asset, quantity, price, trade_time, side, fee, cost=None):
+            asset, quantity, price, trade_time, side, fee):
         self.id = trade_id if trade_id else Trade.make_id()
         self.exchange_id = exchange_id
         self.exchange_order_id = exchange_order_id
@@ -42,7 +42,6 @@ class Trade:
         self.trade_time = trade_time
         self.side = self.set_trade_side(side)
         self.fee = fee
-        self.cost = cost
 
     def set_trade_side(self, side):
         self.side = TradeSide.from_side(side)
@@ -69,8 +68,7 @@ class Trade:
             quantity=d['amount'],
             trade_time=str_to_date(d['datetime']),
             side=TradeSide.from_side(d['side']),
-            fee=d['fee'],
-            cost=d['cost']
+            fee=d['fee']
         )
 
     def to_json(self):

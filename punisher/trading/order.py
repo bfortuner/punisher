@@ -102,7 +102,7 @@ class Order():
         self.opened_time = None
         self.filled_time = None
         self.canceled_time = None
-        self.fee = {}
+        self.fee = 0.0
         self.attempts = 0
         self.trades = []
         self.error = None
@@ -110,6 +110,9 @@ class Order():
     def get_new_trades(self, last_update_time):
         new_trades = []
         for trade in self.trades:
+            print("Inspecting trade times...")
+            print("trade time", trade.trade_time)
+            print("last_update_time", last_update_time)
             if trade.trade_time > last_update_time:
                 new_trades.append(trade)
         return new_trades
@@ -148,12 +151,12 @@ class Order():
             price=d['price'],
             quantity=d['quantity'],
             order_type=OrderType[d['order_type']],
+            created_time=str_to_date(d['created_time'])
         )
         order.id = d['id']
         order.exchange_order_id = d['exchange_order_id']
         order.filled_quantity = d['filled_quantity']
         order.status = OrderStatus[d['status']]
-        order.created_time = str_to_date(d['created_time'])
         order.opened_time = str_to_date(d['opened_time'])
         order.filled_time = str_to_date(d['filled_time'])
         order.canceled_time = str_to_date(d['canceled_time'])

@@ -61,7 +61,7 @@ class SimpleStrategy(Strategy):
             order = order_manager.build_limit_buy_order(
                 ctx.exchange, self.asset, quantity, price, current_time)
             new_orders.append(order)
-        else:
+        elif ctx.record.balance.get(self.asset.base)[BalanceType.FREE] > quantity:
             order = order_manager.build_market_sell_order(
                 ctx.exchange, self.asset, quantity, current_time)
             new_orders.append(order)

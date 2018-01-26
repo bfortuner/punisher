@@ -22,6 +22,19 @@ class TestProcessOrders:
         updated_orders = process_orders(
                         paperexchange, balance, [buy_order])
 
+        print("updated orders: ", updated_orders)
+
+    def test_insufficient_balance(self, paperexchange, asset, balance):
+        quantity = 1.0
+        price = 11000.0
+        buy_order = build_limit_buy_order(
+                    paperexchange, asset, quantity, price, datetime.utcnow())
+
+        updated_orders = process_orders(
+                        paperexchange, balance, [buy_order])
+
+
+
         # print("updated orders: ", updated_orders)
         # print("exchange balance: ", paperexchange.balance)
         # print("local balance: ", balance)

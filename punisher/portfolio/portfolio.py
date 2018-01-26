@@ -5,7 +5,7 @@ from copy import copy, deepcopy
 from punisher.utils.encoders import EnumEncoder
 from punisher.utils.dates import Timeframe
 from punisher.trading.trade import TradeSide
-from punisher.portfolio.balance import BalanceType
+from punisher.portfolio.balance import Balance, BalanceType
 from punisher.trading.order import OrderStatus
 
 from .performance import PerformanceTracker
@@ -47,6 +47,7 @@ class Portfolio():
                             cost_price=trade.price,
                             fee=trade.fee
                         )
+                    print('wut')
                     self.positions.append(pos)
                     quantity = trade.quantity
                 else:
@@ -67,6 +68,8 @@ class Portfolio():
             # Updating balance with any failed orders
 
             if order.status == OrderStatus.FAILED:
+                print("portfolio failed order:")
+                print(order)
                 self.balance.update_with_failed_order(order)
 
     def update_position_prices(self, latest_prices):
@@ -114,6 +117,10 @@ class Portfolio():
     def cash(self):
         return self.balance.get(self.cash_currency)[BalanceType.FREE]
 
+    @property
+    def starting_cash(self):
+        return self.starting_balance.get(self.cash_currency)[BalanceType.FREE]
+
     def to_dict(self):
         return {
             'cash_currency': self.cash_currency,
@@ -130,7 +137,7 @@ class Portfolio():
 
     @classmethod
     def from_dict(self, dct):
-        dct = copy.deepcopy(dct)
+        dct = deepcopy(dct)
         port = Portfolio(
             cash_currency=dct['cash_currency'],
             starting_balance=Balance.from_dict(dct['starting_balance']),
@@ -140,7 +147,7 @@ class Portfolio():
         for idx,pos in enumerate(dct['positions']):
             positions.append(Position.from_dict(pos))
         port.positions = positions
-        port.balance = Balance.from_dct(
+        port.balance = Balance.from_dict(
                 dct.get('balance', dct['starting_balance']))
         port.pnl = dct['pnl']
         port.returns = dct['returns']

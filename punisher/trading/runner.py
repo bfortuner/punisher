@@ -1,6 +1,7 @@
 import os
 import time
 from enum import Enum, unique
+from datetime import timedelta
 
 import punisher.config as cfg
 import punisher.constants as c
@@ -53,7 +54,7 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
     record = Record(
         config=config,
         portfolio=portfolio,
-        balance=balance,
+        balance=portfolio.balance,
         store=store
     )
     ctx = Context(
@@ -63,12 +64,11 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
     )
 
     row = feed.next()
+    last_update_time = row.get('utc') - timedelta(minutes=30)
     orders = []
     record.save()
 
     while row is not None:
-
-        last_update_time = row.get('utc')
 
         output = strategy.process(row, ctx)
         # Add any new orders from strategy output
@@ -86,7 +86,7 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         updated_orders = order_manager.process_orders(
                             exchange=exchange,
                             balance=portfolio.balance,
-                            orders=orders
+                            open_or_new_orders=orders
                         )
 
         # Update latest prices of positions
@@ -105,6 +105,7 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         orders.extend(order_manager.get_created_orders(updated_orders))
 
         record.save()
+        last_update_time = row.get('utc')
         row = feed.next()
 
     return record
