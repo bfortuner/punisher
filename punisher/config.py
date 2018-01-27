@@ -27,10 +27,10 @@ APP_LOG_LEVEL = logging.INFO
 MAIL_LOG_LEVEL = logging.ERROR
 
 # AWS
-AWS_REGION = 'us-west-2'
-AWS_ACCOUNT_ID = 'account_id'
-AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY_ID', 'password')
-AWS_SECRET_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', 'password')
+AWS_REGION = 'us-west-1'
+S3_BUCKET = 'myman'
+AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY', 'password')
+AWS_SECRET_KEY = os.environ.get('AWS_SECRET_KEY', 'password')
 
 ### Exchanges ###
 

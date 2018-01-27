@@ -10,7 +10,8 @@ APP_NAME = 'PUNISHER'
 DATA_DIR = '.data/'
 
 # AWS
-
+AWS_ACCESS_KEY=''
+AWS_SECRET_KEY=''
 
 # GDAX
 GDAX_ACCOUNT_ID=''
@@ -21,10 +22,6 @@ GDAX_ENDPOINT='https://api.gdax.com'
 GDAX_WEBSOCKET='wss://ws-feed.gdax.com'
 # Requires different API keys
 # https://api-public.sandbox.gdax.com'
-GDAX_BTC_ACCOUNT=''
-GDAX_ETH_ACCOUNT=''
-GDAX_LTC_ACCOUNT=''
-GDAX_USD_ACCOUNT=''
 
 # GEMINI
 GEMINI_API_KEY=''
