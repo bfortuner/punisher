@@ -71,7 +71,6 @@ def process_orders(exchange, balance, open_or_new_orders):
     Places newly created orders,
     """
     updated_orders = []
-
     # Get the newly created orders
     # and place them on the exchange
     # update the portfolio balance
@@ -79,7 +78,6 @@ def process_orders(exchange, balance, open_or_new_orders):
     created_orders = get_created_orders(open_or_new_orders)
     balance.update_with_created_orders(created_orders)
     placed_orders = place_orders(exchange, created_orders)
-
     open_orders = get_open_orders(open_or_new_orders)
 
     # We should only be passing in open or new orders

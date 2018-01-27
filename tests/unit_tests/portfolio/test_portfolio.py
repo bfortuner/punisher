@@ -24,7 +24,6 @@ class TestSingleExchangePortfolio:
         start_time = datetime.utcnow()
         buy_order = build_limit_buy_order(
                     paperexchange, asset, quantity, price, start_time)
-
         updated_orders = process_orders(
                         paperexchange, portfolio.balance, [buy_order])
 

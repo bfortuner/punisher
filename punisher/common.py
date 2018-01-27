@@ -6,6 +6,7 @@ import datetime
 import random
 from glob import glob
 from pprint import pprint
+from copy import deepcopy
 import operator
 import copy
 import traceback

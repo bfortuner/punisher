@@ -2,6 +2,7 @@ import os
 import datetime
 import random
 import argparse
+from copy import deepcopy
 
 import punisher.config as cfg
 import punisher.constants as c
@@ -75,7 +76,7 @@ class SimpleStrategy(Strategy):
         self.update_metric('RSI', 10.0, ctx)
         self.update_ohlcv(data, ctx)
         print(current_time)
-        self.log_all(orders, data, ctx, current_time)
+        self.log_all(new_orders, data, ctx, current_time)
         return {
             'new_orders': new_orders,
             'cancel_ids': cancel_ids
@@ -122,23 +123,27 @@ if __name__ == "__main__":
     )
     portfolio = Portfolio(
         cash_currency=cash_currency,
-        starting_cash=starting_cash,
+        starting_balance=deepcopy(balance),
         perf_tracker=perf_tracker, # option to override, otherwise default
         positions=None # option to override with existing positions
     )
 
     if trade_mode is TradeMode.BACKTEST:
         feed = OHLCVFileFeed(
-            fpath=ohlcv_fpath,
+            exchange_ids=[exchange_id],
+            assets=[asset],
+            timeframe=timeframe,
             start=None, # Usually None for backtest, but its possible to filter the csv
             end=None
         )
-        exchange = load_feed_based_paper_exchange(balance, feed)
-        runner.backtest(experiment_name, exchange, balance,
+        exchange = load_feed_based_paper_exchange(
+            deepcopy(balance), feed, exchange_id)
+        runner.backtest(experiment_name, exchange, portfolio.balance,
                         portfolio, feed, strategy)
 
     elif trade_mode is TradeMode.SIMULATE:
-        exchange = load_ccxt_based_paper_exchange(balance, exchange_id)
+        exchange = load_ccxt_based_paper_exchange(
+            deepcopy(balance), feedexchange_id)
         feed = OHLCVExchangeFeed(
             exchange=exchange,
             assets=[asset],

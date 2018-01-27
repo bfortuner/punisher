@@ -2,7 +2,7 @@ import json
 from enum import Enum, unique
 
 from punisher.trading import coins
-
+from punisher.trading.order import OrderStatus
 
 @unique
 class BalanceType(Enum):
@@ -38,6 +38,7 @@ class Balance():
         """
         Helper method to update with a newly created order
         """
+        assert order.status == OrderStatus.CREATED
         order_type = order.order_type
         asset = order.asset
         price = order.price
@@ -56,8 +57,8 @@ class Balance():
             # Moving some of our base into Used as we are trying to sell it
             self.update(
                 currency=asset.base,
-                delta_free=0.0,
-                delta_used=-quantity
+                delta_free=-quantity,
+                delta_used=quantity
             )
 
     def update_with_failed_orders(self, orders):
@@ -69,6 +70,7 @@ class Balance():
         Helper method to update with a recently cancelled order
         ASSUMES order does NOT have new trades
         """
+        assert order.status == OrderStatus.FAILED
         order_type = order.order_type
         asset = order.asset
         price = order.price

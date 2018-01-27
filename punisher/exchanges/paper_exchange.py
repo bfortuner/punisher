@@ -147,7 +147,7 @@ class PaperExchange(Exchange):
             'filled': 0.0,
             'side': order_type.side,
             'type': order_type.type,
-            'status': OrderStatus.OPEN.name,
+            'status': OrderStatus.CREATED.name,
             'datetime': date_to_str(self.data_provider.get_time())
         })
 
@@ -167,7 +167,9 @@ class PaperExchange(Exchange):
             )
 
         self.balance.update_with_created_order(order)
-
+        # Now that we have created the order, update it's status to open
+        # since it is in the exchange
+        order.status = OrderStatus.OPEN
         order = self._fill_order(order)
         self.orders.append(order)
 

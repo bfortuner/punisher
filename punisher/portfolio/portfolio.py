@@ -47,7 +47,6 @@ class Portfolio():
                             cost_price=trade.price,
                             fee=trade.fee
                         )
-                    print('wut')
                     self.positions.append(pos)
                     quantity = trade.quantity
                 else:
@@ -59,11 +58,6 @@ class Portfolio():
 
                 # update balance with new trade info
                 self.balance.update_with_trade(trade)
-
-            # Updating balance with any created orders
-
-            if order.status == OrderStatus.CREATED:
-                self.balance.update_with_created_order(order)
 
             # Updating balance with any failed orders
 
