@@ -22,7 +22,6 @@ from punisher.utils.dates import Timeframe
 from .strategy import Strategy
 
 
-
 parser = argparse.ArgumentParser(description='Punisher Dash Vizualizer')
 parser.add_argument('-n', '--name', help='name of your experiment', default='default', type=str)
 parser.add_argument('-p', '--plot', help='include Dash visualizations?', action="store_true")

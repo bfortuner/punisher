@@ -1,6 +1,7 @@
 import os
 import datetime
 import pandas as pd
+from pathlib import Path
 
 import punisher.config as cfg
 import punisher.constants as c
@@ -247,7 +248,7 @@ def get_ohlcv_columns(asset, ex_id):
 def get_ohlcv_fpath(asset, exchange_id, timeframe):
     fname = '{:s}_{:s}_{:s}.csv'.format(
         exchange_id, asset.id, timeframe.id)
-    return os.path.join(cfg.DATA_DIR, fname)
+    return Path(cfg.DATA_DIR, fname)
 
 def fetch_asset(exchange, asset, timeframe, start, end=None):
     ## TODO: Some exchanges adhere to limits. For instance BINANCE

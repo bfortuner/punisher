@@ -1,49 +1,84 @@
-import concurrent.futures
+import datetime
 import json
 import os
 import time
-from punisher.exchanges.exchange import load_exchange
+
+import argparse
+from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+from tenacity import retry
+from tenacity import wait_exponential
+from tenacity import stop_after_attempt
+
+from punisher.clients import s3_client
+from punisher.exchanges import load_exchange
 from punisher.data.store import FileStore
-from punisher.utils import files
+from punisher import utils
 from punisher.portfolio.asset import Asset
 import punisher.constants as c
+import punisher.config as cfg
 
-exchange_names = [ex_cfg.BINANCE]
-symbols = ['ETH/BTC', 'XRP/BTC', 'TRX/BTC']
+# also cool to check out
+# https://github.com/google/python-fire
 
-data_name_base = 'order_book'
-fname = 'multiasset'
-store = FileStore(os.path.join("./order_book_data", data_name_base))
-store.initialize()
+parser = argparse.ArgumentParser(description='Order Book Fetcher')
+parser.add_argument('-ex', '--exchanges', help='exchange ids', nargs='+', type=str)
+parser.add_argument('-sym', '--symbols', help='asset symbols', nargs='+', type=str)
+parser.add_argument('-d', '--depth', help='# of bids/asks', default=None, type=int)
+parser.add_argument('-r', '--refresh', help='fetch new data (seconds)', default=60, type=int)
+parser.add_argument('--upload', help='upload to s3', action='store_true')
 
-exchanges = []
+ORDER_BOOK = 'order_book'
+ORDER_BOOK_DIR = Path(cfg.DATA_DIR, ORDER_BOOK)
+ORDER_BOOK_DIR.mkdir(exist_ok=True)
+S3_FOLDER = None
 
-for ex in exchange_names:
-    exchanges.append(load_exchange(ex))
+def get_order_book_fname(ex_id, asset):
+    cur_time = datetime.datetime.utcnow()
+    fname = '{:s}_{:s}_{:d}_{:d}_{:d}.json'.format(
+        ex_id, asset.id, cur_time.year,
+        cur_time.month, cur_time.day
+    )
+    return fname
 
-assets = []
-for symbol in symbols:
-    assets.append(Asset.from_symbol(symbol))
+def get_s3_path(ex_id, asset):
+    fname = get_order_book_fname(ex_id, asset)
+    return ORDER_BOOK + '/' + fname
 
-# create the asset files
-for ex in exchanges:
-    for asset in assets:
-        store.save_json(ex.id + "-" + asset.id, [])
+# https://github.com/jd/tenacity
+@retry(
+    wait=wait_exponential(multiplier=1, max=10),
+    stop=stop_after_attempt(5))
+def download_and_save_order_book_data(exchange_id, asset, depth):
+    exchange = load_exchange(exchange_id)
+    depth = {} if depth is None else {'depth': depth}
+    data = exchange.fetch_order_book(asset, depth)
+    fname = get_order_book_fname(exchange_id, asset)
+    fpath = Path(ORDER_BOOK_DIR, fname)
+    utils.files.save_dct(fpath, data, mode='a+')
+    return fpath
 
-def download_and_save_order_book_data(ex, assets=assets):
-    for asset in assets:
-        data = ex.fetch_order_book(asset)
-        jsn = store.load_json(ex.id + "-" + asset.id)
-        # If previous data is older than new data
-        if not jsn:
-            jsn.append(data)
-            store.save_json(ex.id + "-" + asset.id, jsn)
-        elif jsn[-1]['timestamp'] < data['timestamp']:
-            jsn.append(data)
-            store.save_json(ex.id + "-" + asset.id, jsn)
+def run(exchange_ids, assets, depth, upload):
+    for ex_id in exchanges:
+        for asset in assets:
+            print('Downloading', ex_id, asset.symbol)
+            fpath = download_and_save_order_book_data(ex_id, asset, depth)
+            if upload:
+                s3_path = get_s3_path(ex_id, asset)
+                print('Uploading to s3:' ,s3_path)
+                s3_client.upload_file(str(fpath), s3_path)
 
-while True:
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-        for res in executor.map(download_and_save_order_book_data, exchanges):
-            print("fetching data...")
-    time.sleep(1)
+
+if __name__ == "__main__":
+    args = parser.parse_args()
+    exchanges = args.exchanges
+    assets = [Asset.from_symbol(s) for s in args.symbols]
+    depth = args.depth
+    refresh = args.refresh
+    upload = args.upload
+    print('Downloading order book for: ', args.exchanges,
+           'Assets:', args.symbols, 'refresh sec:', refresh)
+
+    while True:
+        run(exchanges, assets, depth, upload)
+        time.sleep(refresh)

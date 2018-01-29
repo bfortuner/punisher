@@ -121,5 +121,6 @@ dependencies:
     - pycares==2.3.0
     - pymongo==3.6.0
     - python-dotenv==0.7.1
+    - tenacity==4.8.0
     - werkzeug==0.14.1
     - yarl==0.18.0

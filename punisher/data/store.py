@@ -81,6 +81,12 @@ class FileStore(DataStore):
             df[col] = [str_to_date(s) for s in df[col]]
         return df
 
+    def s3_upload(self):
+        pass
+
+    def s3_download(self):
+        pass
+
 
 class SQLStore(DataStore):
     def __init__(self, endpoint, user, password):
