@@ -167,7 +167,9 @@ class OHLCVExchangeFeed(OHLCVFeed):
             for asset in self.assets:
                 if is_asset_supported(ex, asset):
                     download_ohlcv(
-                        [ex], [asset], self.timeframe, start, end, update)
+                        [ex], [asset], self.timeframe,
+                        start, end, update
+                    )
 
 
 # Helpers
@@ -245,9 +247,13 @@ def get_ohlcv_columns(asset, ex_id):
         cols[i] = get_col_name(cols[i], asset.symbol, ex_id)
     return cols
 
-def get_ohlcv_fpath(asset, exchange_id, timeframe):
+def get_ohlcv_fname(asset, exchange_id, timeframe):
     fname = '{:s}_{:s}_{:s}.csv'.format(
         exchange_id, asset.id, timeframe.id)
+    return fname
+
+def get_ohlcv_fpath(asset, exchange_id, timeframe):
+    fname = get_ohlcv_fname(asset, exchange_id, timeframe)
     return Path(cfg.DATA_DIR, fname)
 
 def fetch_asset(exchange, asset, timeframe, start, end=None):
