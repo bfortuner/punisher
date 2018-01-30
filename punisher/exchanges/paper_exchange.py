@@ -9,7 +9,8 @@ from punisher.portfolio.balance import Balance, BalanceType
 from punisher.trading.order import Order, ExchangeOrder
 from punisher.trading.order import OrderType, OrderStatus
 from punisher.trading import order_manager
-from punisher.utils.dates import str_to_date
+from punisher.trading.trade import Trade
+from punisher.utils.dates import str_to_date, date_to_str
 from punisher.utils.dates import utc_to_epoch
 
 from .data_providers import CCXTExchangeDataProvider
@@ -59,7 +60,12 @@ class PaperExchange(Exchange):
 
     def fetch_my_trades(self, asset, since=None, limit=None, params=None):
         """Returns list of most recent trades for a particular symbol"""
-        return NotImplemented
+        # TODO: implement since and limit
+        trades = []
+        for order in orders:
+            if order.asset == asset:
+                trades.append(order.trades)
+        return trades
 
     def fetch_balance(self):
         """Returns dict in the format of sample-data/account_balance"""
@@ -115,13 +121,23 @@ class PaperExchange(Exchange):
         return NotImplemented
     def withdraw(self, asset, quantity, wallet):
         return NotImplemented
-    def calculate_fee(self):
-        return NotImplemented
+
+    def calculate_fee(self, asset, type, side, quantity,
+                      price, taker_or_maker=None, params=None):
+        # TODO: Implement this
+        # taker = market order
+        # maker = limit order
+        cost = abs(quantity) * price
+        fee_rate = self._get_fee_rate(asset, taker_or_maker)
+        fee = cost * fee_rate
+        return fee
+
     def order_on_margin(self, price):
         return NotImplemented
 
     def _create_order(self, asset, quantity, price, order_type):
         assert quantity != 0 and price != 0
+        print("TIME", self.data_provider.get_time())
         order = ExchangeOrder.from_dict({
             'id': self.make_order_id(),
             'exchange_id': self.id,
@@ -131,8 +147,8 @@ class PaperExchange(Exchange):
             'filled': 0.0,
             'side': order_type.side,
             'type': order_type.type,
-            'status': OrderStatus.OPEN.name,
-            'datetime': datetime.utcnow().isoformat()
+            'status': OrderStatus.CREATED.name,
+            'datetime': date_to_str(self.data_provider.get_time())
         })
 
         if not self.balance.is_balance_sufficient(
@@ -150,25 +166,50 @@ class PaperExchange(Exchange):
                 asset.base, self.balance.get(asset.base)[BalanceType.FREE])
             )
 
+        self.balance.update_with_created_order(order)
+        # Now that we have created the order, update it's status to open
+        # since it is in the exchange
+        order.status = OrderStatus.OPEN
         order = self._fill_order(order)
         self.orders.append(order)
 
         return order
 
     def _fill_order(self, order):
-        # TODO: set the filled time/canceled time, opened time etc somewhere?
-        # TODO: change to request_fill_order based on volume
-        # TODO: write a cleaner fill order that doesnt need to check order type
-        # TODO: handle pending orders, where "used" is also updated
-        # For example, when I place a limit order that doesn't get filled
-        # my Quote currency total value doesn't change,
-        # but its "used" amount does
-        self.balance.update_by_order(order.asset, order.quantity,
-                                     order.price, order.order_type)
-        order.filled_quantity = order.quantity
-        order.filled_time = datetime.utcnow()
+        # TODO: implement slippage
+
+        fee = self.calculate_fee(
+                asset=order.asset,
+                type=order.order_type,
+                side=order.order_type.side,
+                quantity=order.quantity,
+                price=order.price,
+                taker_or_maker=None
+            )
+
+        trade = Trade(
+            trade_id=None,
+            exchange_id=self.id,
+            exchange_order_id=order.ex_order_id,
+            asset=order.asset,
+            price=order.price,
+            quantity=order.quantity,
+            trade_time=self.data_provider.get_time(),
+            side=order.order_type.side,
+            fee=fee
+        )
+
+        self.balance.update_with_trade(trade)
+
+        order.trades.append(trade)
+        order.filled_quantity = trade.quantity
+        order.filled_time = self.data_provider.get_time()
         order.status = OrderStatus.FILLED
         return order
+
+    def _get_fee_rate(self, asset, taker_or_maker):
+        # TODO: do this crap
+        return 0.0
 
     def make_order_id(self):
         return uuid.uuid4().hex

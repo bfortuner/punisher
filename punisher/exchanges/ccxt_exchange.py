@@ -8,6 +8,7 @@ from punisher.portfolio.balance import Balance, BalanceType
 from punisher.trading.order import Order, ExchangeOrder
 from punisher.trading.order import OrderType, OrderStatus
 from punisher.trading import order_manager
+from punisher.trading.trade import Trade
 from punisher.utils.dates import str_to_date
 from punisher.utils.dates import utc_to_epoch
 
@@ -53,18 +54,20 @@ class CCXTExchange(Exchange):
 
     def fetch_public_trades(self, asset):
         """Returns list of most recent trades for a particular symbol"""
-        return self.client.fetch_trades(asset.symbol)
+        response = self.client.fetch_trades(asset.symbol)
+        return self._build_trades(response)
 
     def fetch_my_trades(self, asset, since=None, limit=None, params=None):
         """Returns list of most recent trades for a particular symbol"""
         params = self.get_default_params_if_none(params)
-        return self.client.fetch_my_trades(asset.symbol, since, limit, params)
+        response = self.client.fetch_my_trades(asset.symbol, since, limit, params)
+        return self._build_trades(response)
 
     def fetch_order_trades(self, order_id, asset):
         trades = []
         all_trades = self.fetch_my_trades(asset)
         for trade in all_trades:
-            if trade['order'] == order_id:
+            if trade.exchange_order_id == order_id:
                 trades.append(trade)
         return trades
 
@@ -144,23 +147,27 @@ class CCXTExchange(Exchange):
         return self.client.calculate_fee(asset.symbol, type, side,
             quantity, price, taker_or_maker, params)
 
-    def calculate_order_price(self, total_quantity, trades):
-        avg_price = 0.0
-        for trade in trades:
-            trade_qty = trade['amount']
-            trade_cost = trade['cost']
-            trade_price = trade['price']
-            trade_feed = trade['fee']
-            avg_price += (trade_qty / total_quantity) * trade_price
-        return avg_price
-
     def calculate_filled_time(self, trades):
         max_time = None
         for trade in trades:
-            filled_time = str_to_date(trade['datetime'])
+            filled_time = trade.trade_time
             if max_time is None or filled_time > max_time:
                 max_time = filled_time
         return max_time
+
+    def _build_trades(self, trades_list):
+        trades = []
+        for trade in trades_list:
+            trades.append(self._build_trade(trade))
+        return trades
+
+    def _build_trade(self, trade_dct):
+        trade_dct['exchange_id'] = self.id
+        if "fee" in trade_dct:
+            trade_dct['fee'] = trade_dct['fee'].get("cost", None)
+        else:
+            trade_dct['fee'] = 0.0
+        return Trade.from_dict(trade_dct)
 
     def _build_orders(self, orders_dct):
         orders = []

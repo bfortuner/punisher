@@ -10,7 +10,7 @@ Run the ```demo.ipynb``` jupyter notebook
 
 or
 
-```$ python -m punisher.strategies.simple -ohlcv .data/binance_ETH_BTC_30m.csv -t 30m -m backtest -a ETH/BTC```
+```$ python -m punisher.strategies.simple -ohlcv .data/binance_ETH_BTC_30m.csv -t 30m -m backtest -a ETH/BTC -ex binance```
 
 **Developers**
 
@@ -57,7 +57,7 @@ python -m pytest -s tests/ (print output to console)
 
 ## How to commit (cleanly)
 
-1. Before coding: 
+1. Before coding:
 
 ```
 git pull master

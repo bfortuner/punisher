@@ -1,6 +1,7 @@
 import abc
 import numpy as np
 
+from datetime import datetime
 from punisher.utils.dates import utc_to_epoch
 
 supported_timeframes = { '1m': 1, '5m': 5, '15m': 900, '30m': 1800 }
@@ -36,6 +37,10 @@ class ExchangeDataProvider(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def cash_coins(self):
+        pass
+
+    @abc.abstractmethod
+    def get_time(self):
         pass
 
 
@@ -116,6 +121,10 @@ class FeedExchangeDataProvider(ExchangeDataProvider):
             'quoteVolume': volume * np.mean([open_, close]),
         }
 
+    def get_time(self):
+        return self.feed.history(1).get('utc')
+        #return self.feed.peek().get('utc')
+
     @property
     def timeframes(self):
         return supported_timeframes
@@ -144,6 +153,9 @@ class CCXTExchangeDataProvider(ExchangeDataProvider):
 
     def fetch_ticker(self, asset):
         return self.exchange.fetch_ticker(asset)
+
+    def get_time(self):
+        return datetime.utcnow()
 
     @property
     def timeframes(self):
