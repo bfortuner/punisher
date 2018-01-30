@@ -8,13 +8,15 @@
 ### Balance
 
 * Verify starting_cash <= actual balance on Live Exchange
-* Audit method to verify local balance == exchange balance for duration of strategy (assuming no other transactions are taking place)
 
 ### Data / Feeds
 
-* Add ability for a live feed to initialize with historical data, but have the model start at present time
-* How to handle a missed data point? When the feed is delayed? When timesteps are missing?
-* Add the Brave New Coin Feed (which aggregates pricing information across exchanges)
+* BUG: Data feed re-downloads all data every feed.next() iteration
+* BUG: Simulate does not check for None after call feed.next()
+* Update `ohlcv_fetcher.py` to clean up local copies of files and aggregate all subfiles into one file per asset.
+* Method to check for NaN values and missing timesteps in data feed. And method to fill these values with the known value(pd.fillna('ffill'))
+* Add Brave New Coin data provider and start downloading data with ohlcv_fetcher
+* Update live feed to initialize with historical data, but start vending data at present time.
 
 ### Record
 
@@ -30,10 +32,19 @@
   * Portfolio optimization
   * Exchange Arbitrage
 
+### Machine Learning
+
+* Add example notebooks in PyTorch
+  * RNN
+  * LSTM
+  * Conv LSTM
+  * Reinforcement Learning
+
 ### Ordering
 
+* Cancel orders 0% filled after new timestep reached with no fill
 * Add method rebalancePortfolio(assets, weights) to OrderManager which places the necessary buy/sell orders to rebalance a portfolio provided a list of weights (Portfolio Optimization)
-* How to handle open orders not filled after X amount of time? Always cancel? Edit? Reorder?
+* Add margin ordering + accounts
 
 ### Portfolio
 
@@ -42,19 +53,17 @@
 
 ### Trading
 
-* Add fees into position cost price during live trading
 * Create fees model for paper exchange
 * Create slippage model for paper exchange
-* Add Margin Ordering + Accounts
+* Add margin ordering + accounts
 
 ### Dash Visualizations
 
-* Plot OHLCV in USD for each asset
 * Plot Buy/Sell orders chart
 * Launch Dash inside the Strategy Script (separate thread)
 * Plot Cash levels line chart
 * Plot portfolio allocation bar chart (position weights)
-* Dropdown Exchange OHLCV pricing chart (multiple exchange price data in feed)
+* Dropdown to set Exchange for OHLCV pricing chart (when multiple exchange price data in feed)
 * Plot balance by coin bar chart
 * Plot "benchmark" PnL/Returns (provided by user)
 * Create a multi-page Dash app where we can view multiple strategies running (stop/start/pause them)
@@ -62,18 +71,13 @@
 ### Indicators / Metrics
 
 * SMA (Simple Moving Average method)
-
-### Refactoring
-
-* Break up constants.py into smaller files within submodules (i.e. keep values near where they're used)
+* Bolinger Bands
 
 ### Testing
 
-* Start writing Unit tests anytime a class or function is updated
 * Test full trading lifecycle (backtest, sim, live)
 * Test Canceling orders
 
 ### Known Issues / Bugs
 
 * Fetching historical data using 1m period only goes back 1 day and may cause bugs when using start/end
-* Remove datetime.datetime.utcnow() from any code that gets used by backtest
