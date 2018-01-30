@@ -99,7 +99,9 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
 
         # Portfolio needs to know about new trades and latest prices
         portfolio.update(
-            last_port_update_time, updated_orders, latest_prices)
+            last_port_update_time, row.get('utc') , updated_orders, latest_prices)
+
+        last_port_update_time = row.get('utc')
 
         # Update record with updates to orders
         for order in updated_orders:
@@ -110,9 +112,6 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         orders.extend(
             order_manager.get_created_orders(updated_orders))
 
-        last_port_update_time = row.get('utc')
-        portfolio.update_performance(
-            time_since_last_row, last_port_update_time)
         record.save()
         row = feed.next()
 
@@ -146,7 +145,7 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
     )
 
     row = feed.next()
-    last_port_update_time = row.get('utc') - feed.timeframe.delta
+    last_port_update_time = datetime.utcnow()
     orders = []
     record.save()
 
@@ -181,9 +180,13 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
         latest_prices = get_latest_prices(
                 symbols_traded, row, exchange.id)
 
+        current_time = datetime.utcnow()
         # Portfolio needs to know about new trades/latest prices
         portfolio.update(
-            last_port_update_time, updated_orders, latest_prices)
+            last_port_update_time, current_time, updated_orders, latest_prices)
+
+        # Keep updating last time we updated our portfolio
+        last_port_update_time = current_time
 
         # Reset open orders list to only track open/created orders
         orders = order_manager.get_open_orders(updated_orders)
@@ -195,15 +198,7 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
             record.orders[order.id] = order
 
         record.save()
-        # Keep updating last time we updated our portfolio
-        last_port_update_time = datetime.utcnow()
-
-        # If {TIME_PERIOD} minutes have passed, fetch new data
-        time_since_last_row = datetime.utcnow() - row.get('utc')
-        if time_since_last_row >= feed.timeframe.delta:
-            portfolio.update_performance(
-                time_since_last_row, last_port_update_time)
-            row = feed.next()
+        row = feed.next()
 
     return record
 
@@ -236,7 +231,7 @@ def live(name, exchange, balance, portfolio, feed, strategy):
     )
 
     row = feed.next()
-    last_port_update_time = row.get('utc') - feed.timeframe.delta
+    last_port_update_time = datetime.utcnow()
     orders = []
     record.save()
 
@@ -271,9 +266,13 @@ def live(name, exchange, balance, portfolio, feed, strategy):
         latest_prices = get_latest_prices(
                 symbols_traded, row, exchange.id)
 
+        current_time = datetime.utcnow()
         # Portfolio needs to know about new trades/latest prices
         portfolio.update(
-            last_port_update_time, updated_orders, latest_prices)
+            last_port_update_time, current_time, updated_orders, latest_prices)
+
+        # Keep updating last time we updated our portfolio
+        last_port_update_time = current_time
 
         # Reset open orders list to only track open/created orders
         orders = order_manager.get_open_orders(updated_orders)
@@ -285,14 +284,6 @@ def live(name, exchange, balance, portfolio, feed, strategy):
             record.orders[order.id] = order
 
         record.save()
-        # Keep updating last time we updated our portfolio
-        last_port_update_time = datetime.utcnow()
-
-        # If {TIME_PERIOD} minutes have passed, fetch new data
-        time_since_last_row = datetime.utcnow() - row.get('utc')
-        if time_since_last_row >= feed.timeframe.delta:
-            portfolio.update_performance(
-                time_since_last_row, last_port_update_time)
-            row = feed.next()
+        row = feed.next()
 
     return record

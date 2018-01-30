@@ -30,10 +30,11 @@ class Portfolio():
         self.perf = perf_tracker
         self.positions = [] if positions is None else positions
 
-    def update(self, last_update_time, orders, latest_prices):
+    def update(self, last_update_time, current_time, orders, latest_prices):
         self.update_positions(orders, last_update_time)
         self.update_position_prices(latest_prices)
-        #self.perf.add_period(last_update_time, self.cash, self.positions)
+        self.perf.add_period(
+            last_update_time, current_time, self.cash, self.positions)
 
     def update_performance(self, start, end):
         self.perf.add_period(start, end, self.cash, self.positions)
