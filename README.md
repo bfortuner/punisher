@@ -1,4 +1,4 @@
-# If the Punisher traded crypto..
+# My, Man!
 
 ![alt text](docs/punisher.png "Logo Title Text 1")
 
