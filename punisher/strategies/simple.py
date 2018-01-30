@@ -60,11 +60,22 @@ class SimpleStrategy(Strategy):
         current_time = data.get('utc')
         if random.random() > 0.5:
             order = order_manager.build_limit_buy_order(
-                ctx.exchange, self.asset, quantity, price, current_time)
+                balance=ctx.record.portfolio.balance,
+                exchange=ctx.exchange,
+                asset=self.asset,
+                quantity=quantity,
+                price=price,
+                current_time=current_time
+            )
             new_orders.append(order)
         elif ctx.record.balance.get(self.asset.base)[BalanceType.FREE] > quantity:
             order = order_manager.build_market_sell_order(
-                ctx.exchange, self.asset, quantity, current_time)
+                balance=ctx.record.portfolio.balance,
+                exchange=ctx.exchange,
+                asset=self.asset,
+                quantity=quantity,
+                current_time=current_time
+            )
             new_orders.append(order)
 
         # Optionally cancel pending orders (LIVE trading)

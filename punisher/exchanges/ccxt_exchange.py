@@ -148,6 +148,9 @@ class CCXTExchange(Exchange):
             quantity, price, taker_or_maker, params)
 
     def calculate_order_price(self, total_quantity, trades):
+        # TODO: Total quantity is a bit misleading here. The value
+        # currently being passed in here is filled_quantity.
+        # Think about how this should be used in the future...
         avg_price = 0.0
         for trade in trades:
             avg_price += (trade.quantity / total_quantity) * trade.price
@@ -171,7 +174,8 @@ class CCXTExchange(Exchange):
         trade_dct['exchange_id'] = self.id
         if "fee" in trade_dct:
             trade_dct['fee'] = trade_dct['fee'].get("cost", None)
-        trade_dct['fee'] = fee_cost
+        else:
+            trade_dct['fee'] = 0.0
         return Trade.from_dict(trade_dct)
 
     def _build_orders(self, orders_dct):

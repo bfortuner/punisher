@@ -113,7 +113,7 @@ class Order():
             print("Inspecting trade times...")
             print("trade time", trade.trade_time)
             print("last_update_time", last_update_time)
-            if trade.trade_time > last_update_time:
+            if trade.trade_time >= last_update_time:
                 new_trades.append(trade)
         return new_trades
 

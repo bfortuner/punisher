@@ -27,13 +27,13 @@ class TradeSide(Enum):
 
 class Trade:
     __slots__ = [
-        "id", "exchange_id", "exchange_order_id", "asset", "price", "quantity",
-        "trade_time", "fee", "side"
+        "id", "exchange_id", "exchange_order_id", "asset",
+        "price", "quantity", "trade_time", "fee", "side"
     ]
 
     def __init__(self, trade_id, exchange_id, exchange_order_id,
             asset, quantity, price, trade_time, side, fee):
-        self.id = trade_id if trade_id else Trade.make_id()
+        self.id = trade_id if trade_id else self.make_id()
         self.exchange_id = exchange_id
         self.exchange_order_id = exchange_order_id
         self.asset = asset
@@ -80,8 +80,8 @@ class Trade:
         dct = json.loads(json_str)
         return self.from_dict(dct)
 
-    @staticmethod
-    def make_id():
+    @classmethod
+    def make_id(self):
         return uuid.uuid4().hex
 
     def __repr__(self):

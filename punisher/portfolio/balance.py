@@ -15,7 +15,7 @@ class Balance():
     def __init__(self, cash_currency=coins.BTC, starting_cash=1.0):
         self.free = {cash_currency: starting_cash}
         self.used = {cash_currency: 0.0}
-        self.total = {cash_currency: 0.0}
+        self.total = {cash_currency: starting_cash}
 
     @property
     def currencies(self):

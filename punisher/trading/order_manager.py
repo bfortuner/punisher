@@ -6,13 +6,13 @@ import ccxt
 from punisher.portfolio.asset import Asset
 from punisher.portfolio.balance import BalanceType
 
-from .errors import handle_ordering_exception
+from .errors import handle_ordering_exception, OrderingError, ErrorCode
 from .order import Order
 from .order import OrderType, OrderStatus
 
 
-def build_limit_buy_order(exchange, asset, quantity, price, current_time):
-    return Order(
+def build_limit_buy_order(balance, exchange, asset, quantity, price, current_time):
+    order = Order(
         exchange_id=exchange.id,
         asset=asset,
         price=price,
@@ -20,8 +20,19 @@ def build_limit_buy_order(exchange, asset, quantity, price, current_time):
         order_type=OrderType.LIMIT_BUY,
         created_time=current_time
     )
+    if balance.is_balance_sufficient(
+        asset, quantity, price, OrderType.LIMIT_BUY):
+        return order
 
-def build_limit_sell_order(exchange, asset, quantity, price, current_time):
+    print("Insufficient funds in portfolio... failed to build limit buy order")
+    error = OrderingError(ErrorCode.INSUFFICIENT_FUNDS, "Insufficient funds.")
+    order.error = error
+    order.status = OrderStatus.FAILED
+    return order
+
+
+
+def build_limit_sell_order(balance, exchange, asset, quantity, price, current_time):
     return Order(
         exchange_id=exchange.id,
         asset=asset,
@@ -30,8 +41,17 @@ def build_limit_sell_order(exchange, asset, quantity, price, current_time):
         order_type=OrderType.LIMIT_SELL,
         created_time=current_time
     )
+    if balance.is_balance_sufficient(
+        asset, quantity, price, OrderType.LIMIT_SELL):
+        return order
 
-def build_market_buy_order(exchange, asset, quantity, current_time):
+    print("Insufficient funds in portfolio... failed to build limit sell order")
+    error = OrderingError(ErrorCode.INSUFFICIENT_FUNDS, "Insufficient funds.")
+    order.error = error
+    order.status = OrderStatus.FAILED
+    return order
+
+def build_market_buy_order(balance, exchange, asset, quantity, current_time):
     return Order(
         exchange_id=exchange.id,
         asset=asset,
@@ -40,8 +60,17 @@ def build_market_buy_order(exchange, asset, quantity, current_time):
         order_type=OrderType.MARKET_BUY,
         created_time=current_time
     )
+    if balance.is_balance_sufficient(
+        asset, quantity, price, OrderType.MARKET_BUY):
+        return order
 
-def build_market_sell_order(exchange, asset, quantity, current_time):
+    print("Insufficient funds in portfolio... failed to build limit sell order")
+    error = OrderingError(ErrorCode.INSUFFICIENT_FUNDS, "Insufficient funds.")
+    order.error = error
+    order.status = OrderStatus.FAILED
+    return order
+
+def build_market_sell_order(balance, exchange, asset, quantity, current_time):
     return Order(
         exchange_id=exchange.id,
         asset=asset,
@@ -50,6 +79,15 @@ def build_market_sell_order(exchange, asset, quantity, current_time):
         order_type=OrderType.MARKET_SELL,
         created_time=current_time
     )
+    if balance.is_balance_sufficient(
+        asset, quantity, price, OrderType.MARKET_SELL):
+        return order
+
+    print("Insufficient funds in portfolio... failed to build limit sell order")
+    error = OrderingError(ErrorCode.INSUFFICIENT_FUNDS, "Insufficient funds.")
+    order.error = error
+    order.status = OrderStatus.FAILED
+    return order
 
 def get_order(exchange, ex_order_id, asset):
     return exchange.fetch_order(ex_order_id, asset)
@@ -79,9 +117,6 @@ def process_orders(exchange, balance, open_or_new_orders):
     balance.update_with_created_orders(created_orders)
     placed_orders = place_orders(exchange, created_orders)
     open_orders = get_open_orders(open_or_new_orders)
-
-    # We should only be passing in open or new orders
-    assert (len(open_orders) + len(placed_orders) == len(open_or_new_orders))
 
     # Get updates for new and existing open orders
     for order in open_orders:

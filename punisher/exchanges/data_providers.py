@@ -121,11 +121,9 @@ class FeedExchangeDataProvider(ExchangeDataProvider):
             'quoteVolume': volume * np.mean([open_, close]),
         }
 
-    # TODO: Figure out if this should be a different time???
-    # If we get the time using fee.next, will we force a refresh/miss data
-    # in the strategy?
     def get_time(self):
         return self.feed.history(1).get('utc')
+        #return self.feed.peek().get('utc')
 
     @property
     def timeframes(self):

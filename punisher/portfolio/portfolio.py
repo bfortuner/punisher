@@ -33,7 +33,10 @@ class Portfolio():
     def update(self, last_update_time, orders, latest_prices):
         self.update_positions(orders, last_update_time)
         self.update_position_prices(latest_prices)
-        self.perf.add_period(last_update_time, self.cash, self.positions)
+        #self.perf.add_period(last_update_time, self.cash, self.positions)
+
+    def update_performance(self, start, end):
+        self.perf.add_period(start, end, self.cash, self.positions)
 
     def update_positions(self, orders, last_update_time):
         for order in orders:
@@ -60,7 +63,6 @@ class Portfolio():
                 self.balance.update_with_trade(trade)
 
             # Updating balance with any failed orders
-
             if order.status == OrderStatus.FAILED:
                 print("portfolio failed order:")
                 print(order)
@@ -109,11 +111,11 @@ class Portfolio():
 
     @property
     def cash(self):
-        return self.balance.get(self.cash_currency)[BalanceType.FREE]
+        return self.balance.get(self.cash_currency)[BalanceType.TOTAL]
 
     @property
     def starting_cash(self):
-        return self.starting_balance.get(self.cash_currency)[BalanceType.FREE]
+        return self.starting_balance.get(self.cash_currency)[BalanceType.TOTAL]
 
     def to_dict(self):
         return {

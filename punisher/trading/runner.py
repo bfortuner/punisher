@@ -70,10 +70,9 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
     )
 
     row = feed.next()
-    last_port_update_time = row.get('utc') - timedelta(seconds=30)
+    last_port_update_time = row.get('utc') - feed.timeframe.delta
     orders = []
     record.save()
-
     while row is not None:
 
         output = strategy.process(row, ctx)
@@ -87,13 +86,9 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         # or should we leave this decision up to the Strategy?
         # How do we confirm the order has been cancelled by the exchange?
         # order_manager.cancel_orders(exchange, cancel_ids)
-        #import pdb; pdb.set_trace()
 
         updated_orders = order_manager.process_orders(
-                            exchange=exchange,
-                            balance=portfolio.balance,
-                            open_or_new_orders=orders
-                        )
+            exchange, portfolio.balance, orders)
 
         # Get the symbols traded in this strategy
         symbols_traded = get_symbols_traded(
@@ -116,8 +111,10 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         orders.extend(
             order_manager.get_created_orders(updated_orders))
 
-        record.save()
         last_port_update_time = row.get('utc')
+        portfolio.update_performance(
+            time_since_last_row, last_port_update_time)
+        record.save()
         row = feed.next()
 
     return record
@@ -151,7 +148,7 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
 
     row = feed.next()
     timeframe = supported_timeframes[feed.timeframe.id]
-    last_port_update_time = row.get('utc') - timedelta(seconds=30)
+    last_port_update_time = row.get('utc') - feed.timeframe.delta
     orders = []
     record.save()
 
@@ -205,7 +202,9 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
 
         # If {TIME_PERIOD} minutes have passed, fetch new data
         time_since_last_row = datetime.utcnow() - row.get('utc')
-        if time_since_last_row >= timedelta(minutes=timeframe):
+        if time_since_last_row >= feed.timeframe.delta:
+            portfolio.update_performance(
+                time_since_last_row, last_port_update_time)
             row = feed.next()
 
     return record
@@ -240,7 +239,7 @@ def live(name, exchange, balance, portfolio, feed, strategy):
 
     row = feed.next()
     timeframe = supported_timeframes[feed.timeframe.id]
-    last_port_update_time = row.get('utc') - timedelta(seconds=30)
+    last_port_update_time = row.get('utc') - feed.timeframe.delta
     orders = []
     record.save()
 
@@ -294,7 +293,9 @@ def live(name, exchange, balance, portfolio, feed, strategy):
 
         # If {TIME_PERIOD} minutes have passed, fetch new data
         time_since_last_row = datetime.utcnow() - row.get('utc')
-        if time_since_last_row >= timedelta(minutes=timeframe):
+        if time_since_last_row >= feed.timeframe.delta:
+            portfolio.update_performance(
+                time_since_last_row, last_port_update_time)
             row = feed.next()
 
     return record

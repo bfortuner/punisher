@@ -176,16 +176,8 @@ class PaperExchange(Exchange):
         return order
 
     def _fill_order(self, order):
-        # TODO: set the filled time/canceled time, opened time etc somewhere?
-        # TODO: change to request_fill_order based on volume
-        # TODO: write a cleaner fill order that doesnt need to check order type
-        # TODO: handle pending orders, where "used" is also updated
-        # For example, when I place a limit order that doesn't get filled
-        # my Quote currency total value doesn't change,
-        # but its "used" amount does
+        # TODO: implement slippage
 
-
-        # TODO: only doing 1 trade for now
         fee = self.calculate_fee(
                 asset=order.asset,
                 type=order.order_type,

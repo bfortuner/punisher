@@ -37,6 +37,7 @@ class Position():
         https://github.com/quantopian/zipline/blob/master/zipline/finance/performance/position.py
         """
         total_quantity = self.quantity + txn_quantity
+        self.fee += txn_fee
 
         if total_quantity == 0.0:
             self.cost_price = 0.0
@@ -56,12 +57,12 @@ class Position():
                 self.cost_price = total_value / total_quantity
 
         self.quantity = total_quantity
-        self.fee += txn_fee
+
 
     @property
     def cost_value(self):
-        return (self.quantity * self.cost_price) - self.fee
-
+        return (self.quantity * self.cost_price)
+        
     @property
     def market_value(self):
         return self.quantity * self.latest_price
@@ -81,7 +82,7 @@ class Position():
             asset=Asset.from_symbol(dct['asset']),
             quantity=dct['quantity'],
             cost_price=dct['cost_price'],
-            fee=dct.get("fee", 0.0)
+            fee=dct['fee']
         )
         pos.latest_price = dct['latest_price']
         return pos
