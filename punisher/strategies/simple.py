@@ -2,6 +2,7 @@ import os
 import datetime
 import random
 import argparse
+from copy import deepcopy
 
 import punisher.config as cfg
 import punisher.constants as c
@@ -52,17 +53,29 @@ class SimpleStrategy(Strategy):
             self.log_metrics(ctx)
 
     def handle_data(self, data, ctx):
-        orders = []
+        new_orders = []
         quantity = .05
         price = data.get('close', self.asset.symbol, ctx.exchange.id)
+        current_time = data.get('utc')
         if random.random() > 0.5:
             order = order_manager.build_limit_buy_order(
-                ctx.exchange, self.asset, quantity, price)
-            orders.append(order)
-        else:
+                balance=ctx.record.portfolio.balance,
+                exchange=ctx.exchange,
+                asset=self.asset,
+                quantity=quantity,
+                price=price,
+                current_time=current_time
+            )
+            new_orders.append(order)
+        elif ctx.record.balance.get(self.asset.base)[BalanceType.FREE] > quantity:
             order = order_manager.build_market_sell_order(
-                ctx.exchange, self.asset, quantity)
-            orders.append(order)
+                balance=ctx.record.portfolio.balance,
+                exchange=ctx.exchange,
+                asset=self.asset,
+                quantity=quantity,
+                current_time=current_time
+            )
+            new_orders.append(order)
 
         # Optionally cancel pending orders (LIVE trading)
         #pending_orders = ctx.exchange.fetch_open_orders(asset)
@@ -72,10 +85,10 @@ class SimpleStrategy(Strategy):
         self.update_metric('SMA', 5.0, ctx)
         self.update_metric('RSI', 10.0, ctx)
         self.update_ohlcv(data, ctx)
-        print(data.get('utc'))
-        self.log_all(orders, data, ctx, data.get('utc'))
+        print(current_time)
+        self.log_all(new_orders, data, ctx, current_time)
         return {
-            'orders': orders,
+            'new_orders': new_orders,
             'cancel_ids': cancel_ids
         }
 
@@ -120,23 +133,27 @@ if __name__ == "__main__":
     )
     portfolio = Portfolio(
         cash_currency=cash_currency,
-        starting_cash=starting_cash,
+        starting_balance=deepcopy(balance),
         perf_tracker=perf_tracker, # option to override, otherwise default
         positions=None # option to override with existing positions
     )
 
     if trade_mode is TradeMode.BACKTEST:
         feed = OHLCVFileFeed(
-            fpath=ohlcv_fpath,
+            exchange_ids=[exchange_id],
+            assets=[asset],
+            timeframe=timeframe,
             start=None, # Usually None for backtest, but its possible to filter the csv
             end=None
         )
-        exchange = load_feed_based_paper_exchange(balance, feed)
-        runner.backtest(experiment_name, exchange, balance,
+        exchange = load_feed_based_paper_exchange(
+            deepcopy(balance), feed, exchange_id)
+        runner.backtest(experiment_name, exchange, portfolio.balance,
                         portfolio, feed, strategy)
 
     elif trade_mode is TradeMode.SIMULATE:
-        exchange = load_ccxt_based_paper_exchange(balance, exchange_id)
+        exchange = load_ccxt_based_paper_exchange(
+            deepcopy(balance), feedexchange_id)
         feed = OHLCVExchangeFeed(
             exchange=exchange,
             assets=[asset],

@@ -14,18 +14,20 @@ class Position():
       - cost_price (float): average volume-weighted price of position (quote currency)
     """
 
-    def __init__(self, asset, quantity, cost_price):
+    def __init__(self, asset, quantity, cost_price, fee=0.0):
         self.asset = asset
         self.quantity = quantity
         self.cost_price = cost_price
         self.latest_price = cost_price
+        self.fee = fee
 
-    def update(self, txn_quantity, txn_price):
+    def update(self, txn_quantity, txn_price, txn_fee=0.0):
         """
-        txn_quantity: # of shares of transaction
+        - txn_quantity: # of shares of transaction
             positive = buy
             negative = sell
-        txn_price: price of transaction
+        - txn_price: price of transaction
+        - txn_fee: fee for the transaction
 
         Cost calculated with Average Cost Basis method
         https://www.investopedia.com/terms/a/averagecostbasismethod.asp
@@ -35,6 +37,7 @@ class Position():
         https://github.com/quantopian/zipline/blob/master/zipline/finance/performance/position.py
         """
         total_quantity = self.quantity + txn_quantity
+        self.fee += txn_fee
 
         if total_quantity == 0.0:
             self.cost_price = 0.0
@@ -55,10 +58,11 @@ class Position():
 
         self.quantity = total_quantity
 
+
     @property
     def cost_value(self):
-        return self.quantity * self.cost_price
-
+        return (self.quantity * self.cost_price)
+        
     @property
     def market_value(self):
         return self.quantity * self.latest_price
@@ -68,7 +72,8 @@ class Position():
             'asset': self.asset.symbol,
             'quantity': self.quantity,
             'cost_price': self.cost_price,
-            'latest_price': self.latest_price
+            'latest_price': self.latest_price,
+            'fee': self.fee
         }
 
     @classmethod
@@ -77,6 +82,7 @@ class Position():
             asset=Asset.from_symbol(dct['asset']),
             quantity=dct['quantity'],
             cost_price=dct['cost_price'],
+            fee=dct['fee']
         )
         pos.latest_price = dct['latest_price']
         return pos

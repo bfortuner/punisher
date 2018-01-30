@@ -20,7 +20,7 @@ class PerformanceTracker():
         self.pnl = 0.0
         self.returns = 0.0
 
-    def add_period(self, start, cash, positions):
+    def add_period(self, start, end, cash, positions):
         positions_value = self.get_positions_value(positions)
         if len(self.periods) == 0:
             start_cash = self.starting_cash
@@ -33,7 +33,7 @@ class PerformanceTracker():
         returns = self.calc_returns(self.starting_cash, end_val)
         self.periods.append({
             'start_time': start,
-            'end_time': start + self.timeframe.value['delta'],
+            'end_time': end,
             'start_cash': start_cash,
             'end_cash': cash,
             'start_value': start_val,
@@ -62,8 +62,7 @@ class PerformanceTracker():
         """
         TODO: Update to handle assets where the quote cash_currency
         is not the cash currency. E.g. Cash is USD but asset is ETH/BTC.
-
-        Right now it assumes all positions are quoted in cash.
+        Need to convert market_value and fee to the cash_currency
         """
         total = 0.0
         for pos in positions:

@@ -1,6 +1,7 @@
 import os
 import time
 from enum import Enum, unique
+from datetime import datetime, timedelta
 
 import punisher.config as cfg
 import punisher.constants as c
@@ -8,7 +9,6 @@ from punisher.data.store import DATA_STORES
 from punisher.exchanges import load_exchange
 from punisher.portfolio.portfolio import Portfolio
 from punisher.trading import order_manager
-
 from .context import Context
 from .record import Record
 
@@ -20,13 +20,25 @@ class TradeMode(Enum):
     LIVE = 'live data, live orders'
 
 
-def get_latest_prices(orders, row, ex_id):
+def get_latest_prices(symbols_traded, row, ex_id):
+    """
+    Helper method to get latest prices for each order
+    from the last data row.
+    - orders : all Order objects
+    - row : last data row
+    - ex_id: exchange id
+    """
     # TODO: ensure this works for multi exchange
     latest_prices = {}
-    for order in orders:
-        symbol = order.asset.symbol
+    for symbol in symbols_traded:
         latest_prices[symbol] = row.get('close', symbol, ex_id)
     return latest_prices
+
+def get_symbols_traded(orders, positions):
+    symbols_traded = [order.asset.symbol for order in orders]
+    symbols_traded.extend(
+        [position.asset.symbol for position in positions])
+    return set(symbols_traded)
 
 
 def backtest(name, exchange, balance, portfolio, feed, strategy):
@@ -43,13 +55,13 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         'experiment': name,
         'strategy': strategy.name,
     }
+
     record = Record(
         config=config,
         portfolio=portfolio,
-        balance=balance,
+        balance=portfolio.balance,
         store=store
     )
-    record.save()
     ctx = Context(
         exchange=exchange,
         feed=feed,
@@ -57,35 +69,50 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
     )
 
     row = feed.next()
+    last_port_update_time = row.get('utc') - feed.timeframe.delta
+    orders = []
+    record.save()
     while row is not None:
+
         output = strategy.process(row, ctx)
-        orders = output['orders']
+        # Add any new orders from strategy output
+        new_orders = output['new_orders']
         cancel_ids = output['cancel_ids']
 
-        # Record needs to know about all new orders
-        for order in orders:
-            record.orders[order.id] = order
-
+        orders.extend(new_orders)
         # TODO: Cancelling orders
         # should we auto-cancel any outstanding orders
         # or should we leave this decision up to the Strategy?
+        # How do we confirm the order has been cancelled by the exchange?
         # order_manager.cancel_orders(exchange, cancel_ids)
 
-        # Place new orders, retry failed orders, sync existing orders
-        newly_filled_orders = order_manager.process_orders(
-            exchange, record.orders.values())
+        updated_orders = order_manager.process_orders(
+            exchange, portfolio.balance, orders)
+
+        # Get the symbols traded in this strategy
+        symbols_traded = get_symbols_traded(
+                orders, portfolio.positions)
 
         # Update latest prices of positions
-        latest_prices = get_latest_prices(orders, row, exchange.id)
-        # Portfolio needs to know about new filled orders
-        portfolio.update(row.get('utc'), newly_filled_orders, latest_prices)
+        latest_prices = get_latest_prices(
+            symbols_traded, row, exchange.id)
 
-        # Update Virtual Balance (exchange balance left alone)
-        for order in newly_filled_orders:
-            balance.update_by_order(order.asset, order.quantity,
-                                    order.price, order.order_type)
-            print("Equal?", record.balance == exchange.fetch_balance())
+        # Portfolio needs to know about new trades and latest prices
+        portfolio.update(
+            last_port_update_time, updated_orders, latest_prices)
 
+        # Update record with updates to orders
+        for order in updated_orders:
+            record.orders[order.id] = order
+
+        # Reset open orders list to only track open/created orders
+        orders = order_manager.get_open_orders(updated_orders)
+        orders.extend(
+            order_manager.get_created_orders(updated_orders))
+
+        last_port_update_time = row.get('utc')
+        portfolio.update_performance(
+            time_since_last_row, last_port_update_time)
         record.save()
         row = feed.next()
 
@@ -109,54 +136,76 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
     record = Record(
         config=config,
         portfolio=portfolio,
-        balance=balance,
+        balance=portfolio.balance,
         store=store
     )
-    record.save()
     ctx = Context(
         exchange=exchange,
         feed=feed,
         record=record
     )
 
+    row = feed.next()
+    last_port_update_time = row.get('utc') - feed.timeframe.delta
+    orders = []
+    record.save()
+
     while True:
-        row = feed.next()
 
         if row is not None:
             output = strategy.process(row, ctx)
-            orders = output['orders']
+            # Add any new orders from strategy output
+            new_orders = output['new_orders']
             cancel_ids = output['cancel_ids']
 
-            # Record needs to know about all new orders
-            for order in orders:
-                record.orders[order.id] = order
+            # Add new orders to our orders list
+            orders.extend(new_orders)
 
-            # TODO: Cancelling orders
-            # should we auto-cancel any outstanding orders
-            # or should we leave this decision up to the Strategy?
-            # order_manager.cancel_orders(exchange, cancel_ids)
 
-            # Place new orders, retry failed orders, sync existing orders
-            newly_filled_orders = order_manager.process_orders(
-                exchange, record.orders.values())
+        # TODO: Cancelling orders
+        # should we auto-cancel any outstanding orders
+        # or should we leave this decision up to the Strategy?
+        # order_manager.cancel_orders(exchange, cancel_ids)
 
-            # Update latest prices of positions
-            latest_prices = get_latest_prices(orders, row, exchange.id)
-            # Portfolio needs to know about new filled orders
-            portfolio.update(row.get('utc'), newly_filled_orders, latest_prices)
+        # Place new orders, retry failed orders, sync existing orders
+        updated_orders = order_manager.process_orders(
+                            exchange=exchange,
+                            balance=portfolio.balance,
+                            open_or_new_orders=orders
+                        )
+        # Get the symbols traded in this strategy
+        symbols_traded = get_symbols_traded(
+            orders, portfolio.positions)
 
-            # Update Virtual Balance (exchange balance left alone)
-            for order in newly_filled_orders:
-                balance.update_by_order(order.asset, order.quantity,
-                                        order.price, order.order_type)
-                print("Equal?", record.balance == exchange.fetch_balance())
+        # Update latest prices of positions
+        latest_prices = get_latest_prices(
+                symbols_traded, row, exchange.id)
 
-            record.save()
+        # Portfolio needs to know about new trades/latest prices
+        portfolio.update(
+            last_port_update_time, updated_orders, latest_prices)
 
-        time.sleep(30)
+        # Reset open orders list to only track open/created orders
+        orders = order_manager.get_open_orders(updated_orders)
+        orders.extend(
+            order_manager.get_created_orders(updated_orders))
+
+        # Update record with updates to orders
+        for order in updated_orders:
+            record.orders[order.id] = order
+
+        record.save()
+        # Keep updating last time we updated our portfolio
+        last_port_update_time = datetime.utcnow()
+
+        # If {TIME_PERIOD} minutes have passed, fetch new data
+        time_since_last_row = datetime.utcnow() - row.get('utc')
+        if time_since_last_row >= feed.timeframe.delta:
+            portfolio.update_performance(
+                time_since_last_row, last_port_update_time)
+            row = feed.next()
 
     return record
-
 
 def live(name, exchange, balance, portfolio, feed, strategy):
     '''
@@ -177,50 +226,73 @@ def live(name, exchange, balance, portfolio, feed, strategy):
     record = Record(
         config=config,
         portfolio=portfolio,
-        balance=balance,
+        balance=portfolio.balance,
         store=store
     )
-    record.save()
     ctx = Context(
         exchange=exchange,
         feed=feed,
         record=record
     )
 
+    row = feed.next()
+    last_port_update_time = row.get('utc') - feed.timeframe.delta
+    orders = []
+    record.save()
+
     while True:
-        row = feed.next()
 
         if row is not None:
             output = strategy.process(row, ctx)
-            orders = output['orders']
+            # Add any new orders from strategy output
+            new_orders = output['new_orders']
             cancel_ids = output['cancel_ids']
 
-            # Record needs to know about all new orders
-            for order in orders:
-                record.orders[order.id] = order
+            # Add new orders to our orders list
+            orders.extend(new_orders)
 
-            # TODO: Cancelling orders
-            # should we auto-cancel any outstanding orders
-            # or should we leave this decision up to the Strategy?
-            # order_manager.cancel_orders(exchange, cancel_ids)
 
-            # Place new orders, retry failed orders, sync existing orders
-            newly_filled_orders = order_manager.process_orders(
-                exchange, record.orders.values())
+        # TODO: Cancelling orders
+        # should we auto-cancel any outstanding orders
+        # or should we leave this decision up to the Strategy?
+        # order_manager.cancel_orders(exchange, cancel_ids)
 
-            # Update latest prices of positions
-            latest_prices = get_latest_prices(orders, row, exchange.id)
-            # Portfolio needs to know about new filled orders
-            portfolio.update(row.get('utc'), newly_filled_orders, latest_prices)
+        # Place new orders, retry failed orders, sync existing orders
+        updated_orders = order_manager.process_orders(
+                            exchange=exchange,
+                            balance=portfolio.balance,
+                            open_or_new_orders=orders
+                        )
+        # Get the symbols traded in this strategy
+        symbols_traded = get_symbols_traded(
+            orders, portfolio.positions)
 
-            # Update Virtual Balance (exchange balance left alone)
-            for order in newly_filled_orders:
-                balance.update_by_order(order.asset, order.quantity,
-                                        order.price, order.order_type)
-                print("Equal?", record.balance == exchange.fetch_balance())
+        # Update latest prices of positions
+        latest_prices = get_latest_prices(
+                symbols_traded, row, exchange.id)
 
-            record.save()
+        # Portfolio needs to know about new trades/latest prices
+        portfolio.update(
+            last_port_update_time, updated_orders, latest_prices)
 
-        time.sleep(30)
+        # Reset open orders list to only track open/created orders
+        orders = order_manager.get_open_orders(updated_orders)
+        orders.extend(
+            order_manager.get_created_orders(updated_orders))
+
+        # Update record with updates to orders
+        for order in updated_orders:
+            record.orders[order.id] = order
+
+        record.save()
+        # Keep updating last time we updated our portfolio
+        last_port_update_time = datetime.utcnow()
+
+        # If {TIME_PERIOD} minutes have passed, fetch new data
+        time_since_last_row = datetime.utcnow() - row.get('utc')
+        if time_since_last_row >= feed.timeframe.delta:
+            portfolio.update_performance(
+                time_since_last_row, last_port_update_time)
+            row = feed.next()
 
     return record

@@ -6,83 +6,129 @@ import ccxt
 from punisher.portfolio.asset import Asset
 from punisher.portfolio.balance import BalanceType
 
-from .errors import handle_ordering_exception
+from .errors import handle_ordering_exception, OrderingError, ErrorCode
 from .order import Order
 from .order import OrderType, OrderStatus
 
 
-def build_limit_buy_order(exchange, asset, quantity, price):
-    return Order(
+def build_limit_buy_order(balance, exchange, asset, quantity, price, current_time):
+    order = Order(
         exchange_id=exchange.id,
         asset=asset,
         price=price,
         quantity=quantity,
         order_type=OrderType.LIMIT_BUY,
+        created_time=current_time
     )
+    if balance.is_balance_sufficient(
+        asset, quantity, price, OrderType.LIMIT_BUY):
+        return order
 
-def build_limit_sell_order(exchange, asset, quantity, price):
+    print("Insufficient funds in portfolio... failed to build limit buy order")
+    error = OrderingError(ErrorCode.INSUFFICIENT_FUNDS, "Insufficient funds.")
+    order.error = error
+    order.status = OrderStatus.FAILED
+    return order
+
+
+
+def build_limit_sell_order(balance, exchange, asset, quantity, price, current_time):
     return Order(
         exchange_id=exchange.id,
         asset=asset,
         price=price,
         quantity=quantity,
         order_type=OrderType.LIMIT_SELL,
+        created_time=current_time
     )
+    if balance.is_balance_sufficient(
+        asset, quantity, price, OrderType.LIMIT_SELL):
+        return order
 
-def build_market_buy_order(exchange, asset, quantity):
+    print("Insufficient funds in portfolio... failed to build limit sell order")
+    error = OrderingError(ErrorCode.INSUFFICIENT_FUNDS, "Insufficient funds.")
+    order.error = error
+    order.status = OrderStatus.FAILED
+    return order
+
+def build_market_buy_order(balance, exchange, asset, quantity, current_time):
     return Order(
         exchange_id=exchange.id,
         asset=asset,
         price=None,
         quantity=quantity,
         order_type=OrderType.MARKET_BUY,
+        created_time=current_time
     )
+    if balance.is_balance_sufficient(
+        asset, quantity, price, OrderType.MARKET_BUY):
+        return order
 
-def build_market_sell_order(exchange, asset, quantity):
+    print("Insufficient funds in portfolio... failed to build limit sell order")
+    error = OrderingError(ErrorCode.INSUFFICIENT_FUNDS, "Insufficient funds.")
+    order.error = error
+    order.status = OrderStatus.FAILED
+    return order
+
+def build_market_sell_order(balance, exchange, asset, quantity, current_time):
     return Order(
         exchange_id=exchange.id,
         asset=asset,
         price=None,
         quantity=quantity,
         order_type=OrderType.MARKET_SELL,
+        created_time=current_time
     )
+    if balance.is_balance_sufficient(
+        asset, quantity, price, OrderType.MARKET_SELL):
+        return order
+
+    print("Insufficient funds in portfolio... failed to build limit sell order")
+    error = OrderingError(ErrorCode.INSUFFICIENT_FUNDS, "Insufficient funds.")
+    order.error = error
+    order.status = OrderStatus.FAILED
+    return order
 
 def get_order(exchange, ex_order_id, asset):
     return exchange.fetch_order(ex_order_id, asset)
 
-def get_orders(exchange, ex_order_ids, assets):
-    ex_orders = []
-    if not isinstance(assets, list):
-        asset = deepcopy(assets)
-        assets = [asset for i in range(len(ex_order_ids))]
-    for ex_order_id, asset in zip(ex_order_ids, assets):
-        ex_order = get_order(exchange, ex_order_id, asset)
-        ex_orders.append(ex_order)
-    return ex_orders
+# TODO: implement / fix bugs
+# def get_orders(exchange, ex_order_ids, assets):
+#     ex_orders = []s
+#     if not isinstance(assets, list):
+#         asset = deepcopy(assets)
+#         assets = [asset for i in range(len(ex_order_ids))]
+#     for ex_order_id, asset in zip(ex_order_ids, assets):
+#         ex_order = get_order(exchange, ex_order_id, asset)
+#         ex_orders.append(ex_order)
+#     return ex_orders
 
-def process_orders(exchange, orders):
-    filled_orders = []
-
-    # sync OPEN orders (to check if FILLED)
-    open_orders = get_open_orders(orders)
-    for oo in open_orders:
-        ex_order = get_order(exchange, oo.exchange_order_id, oo.asset)
-        sync_order_with_exchange(oo, ex_order)
-    filled_orders.extend(get_filled_orders(open_orders))
-
-    # retry FAILED orders (if attempts < RETRY_LIMIT)
-    failed_orders = get_failed_orders(orders, retry_limit=3)
-    retried_orders = place_orders(exchange, failed_orders)
-    filled_orders.extend(get_filled_orders(retried_orders))
-
-    # place CREATED orders
-    created_orders = get_created_orders(orders)
+def process_orders(exchange, balance, open_or_new_orders):
+    """
+    Process orders takes open_orders from previous round
+    Places newly created orders,
+    """
+    updated_orders = []
+    # Get the newly created orders
+    # and place them on the exchange
+    # update the portfolio balance
+    # add the failed orders to failed_orders
+    created_orders = get_created_orders(open_or_new_orders)
+    balance.update_with_created_orders(created_orders)
     placed_orders = place_orders(exchange, created_orders)
-    filled_orders.extend(get_filled_orders(placed_orders))
+    open_orders = get_open_orders(open_or_new_orders)
 
-    assert_no_duplicates(filled_orders)
+    # Get updates for new and existing open orders
+    for order in open_orders:
+        ex_order = get_order(exchange, order.exchange_order_id, order.asset)
+        sync_order_with_exchange(order, ex_order)
 
-    return filled_orders
+    updated_orders.extend(placed_orders)
+    updated_orders.extend(open_orders)
+
+    assert_no_duplicates(updated_orders)
+
+    return updated_orders
 
 def assert_no_duplicates(orders):
     keys = set()
@@ -130,6 +176,7 @@ def sync_order_with_exchange(order, ex_order):
     order.filled_quantity = ex_order.filled_quantity
     order.price = ex_order.price
     order.fee = ex_order.fee
+    order.trades = ex_order.trades
 
 def place_orders(exchange, orders):
     placed = []
@@ -150,7 +197,6 @@ def cancel_orders(exchange, orders):
         cancel_responses.append(resp)
     return cancel_responses
 
-
 def get_created_orders(orders):
     return get_orders_by_types(orders, [OrderStatus.CREATED])
 
@@ -164,11 +210,11 @@ def get_canceled_orders(orders):
     return get_orders_by_types(orders, [OrderStatus.CANCELED])
 
 def get_failed_orders(orders, retry_limit=0):
-    orders = get_orders_by_types(orders, [OrderStatus.FAILED])
-    failed_orders = []
-    for order in orders:
-        if order.attempts <= retry_limit:
-            failed_orders.append(order)
+    failed_orders = get_orders_by_types(orders, [OrderStatus.FAILED])
+    # failed_orders = []
+    # for order in orders:
+    #     if order.attempts < retry_limit:
+    #         failed_orders.append(order)
     return failed_orders
 
 def get_orders_by_types(orders, order_types):

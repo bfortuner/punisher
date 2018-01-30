@@ -17,7 +17,7 @@ class TestSingleExchangePerformance:
         assert perf_tracker.starting_cash == 10000
         start = datetime.utcnow()
 
-        perf_tracker.add_period(start, 0.0, [position])
+        perf_tracker.add_period(start, start, 0.0, [position])
         # No change on our positions so should be no profit so far
         assert perf_tracker.pnl == 0.0
         assert perf_tracker.returns == 0.0
@@ -31,6 +31,6 @@ class TestSingleExchangePerformance:
         assert position.cost_value == -11000
 
         start = datetime.utcnow()
-        perf_tracker.add_period(start, 22000, [position])
+        perf_tracker.add_period(start, start, 22000, [position])
         assert perf_tracker.pnl == 1000
         assert perf_tracker.returns == 0.1
