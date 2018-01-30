@@ -9,7 +9,6 @@ from punisher.data.store import DATA_STORES
 from punisher.exchanges import load_exchange
 from punisher.portfolio.portfolio import Portfolio
 from punisher.trading import order_manager
-from punisher.exchanges.data_providers import supported_timeframes
 from .context import Context
 from .record import Record
 
@@ -147,7 +146,6 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
     )
 
     row = feed.next()
-    timeframe = supported_timeframes[feed.timeframe.id]
     last_port_update_time = row.get('utc') - feed.timeframe.delta
     orders = []
     record.save()
@@ -238,7 +236,6 @@ def live(name, exchange, balance, portfolio, feed, strategy):
     )
 
     row = feed.next()
-    timeframe = supported_timeframes[feed.timeframe.id]
     last_port_update_time = row.get('utc') - feed.timeframe.delta
     orders = []
     record.save()

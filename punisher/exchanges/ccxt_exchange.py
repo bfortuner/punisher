@@ -147,15 +147,6 @@ class CCXTExchange(Exchange):
         return self.client.calculate_fee(asset.symbol, type, side,
             quantity, price, taker_or_maker, params)
 
-    def calculate_order_price(self, total_quantity, trades):
-        # TODO: Total quantity is a bit misleading here. The value
-        # currently being passed in here is filled_quantity.
-        # Think about how this should be used in the future...
-        avg_price = 0.0
-        for trade in trades:
-            avg_price += (trade.quantity / total_quantity) * trade.price
-        return avg_price
-
     def calculate_filled_time(self, trades):
         max_time = None
         for trade in trades:
