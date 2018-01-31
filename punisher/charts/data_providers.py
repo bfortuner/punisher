@@ -121,7 +121,9 @@ class RecordChartDataProvider():
         cash_currency = self.record.portfolio.cash_currency
         ex_rates = ohlcv_feed.get_exchange_rate(
             self.get_ohlcv().df, cash_currency, quote_coin, ex_id)
-        assert len(ex_rates) == len(periods)
+        # TODO: periods should be created separtely from rows, figure out
+        # how to get this working
+        # assert len(ex_rates) == len(periods)
         df = pd.DataFrame([
             [p['end_time'], p['pnl']] for p in periods
         ], columns=['utc','pnl'])

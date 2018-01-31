@@ -153,15 +153,15 @@ if __name__ == "__main__":
 
     elif trade_mode is TradeMode.SIMULATE:
         exchange = load_ccxt_based_paper_exchange(
-            deepcopy(balance), feedexchange_id)
+            deepcopy(balance), exchange_id)
         feed = OHLCVExchangeFeed(
-            exchange=exchange,
+            exchanges=[exchange],
             assets=[asset],
             timeframe=timeframe,
             start=datetime.datetime.utcnow(),
             end=None
         )
-        runner.simulate(experiment_name, exchange, balance,
+        runner.simulate(experiment_name, exchange, portfolio.balance,
                         portfolio, feed, strategy)
 
     elif trade_mode is TradeMode.LIVE:

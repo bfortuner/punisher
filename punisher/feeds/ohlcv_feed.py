@@ -38,7 +38,6 @@ class OHLCVData():
     def cash_value(self, col, cash_currency):
         pass
 
-
     @property
     def df(self):
         return self.ohlcv_df
@@ -142,6 +141,8 @@ class OHLCVExchangeFeed(OHLCVFeed):
     def initialize(self):
         super().initialize()
         self.init_benchmarks()
+        print("START", self.start)
+        print("END", self.end)
         self._download(self.start, self.end, update=False)
         self.ohlcv_df = load_multiple_assets(
             self.ex_ids, self.assets, self.timeframe,
@@ -157,7 +158,12 @@ class OHLCVExchangeFeed(OHLCVFeed):
         return super().next(refresh)
 
     def update(self):
-        self._download(self.prior_time, self.end, update=True)
+        if self.ohlcv_df.empty:
+            most_recent_data_time = self.start
+        else:
+            most_recent_data_time = self.ohlcv_df.tail(1).iloc[0].get('utc')
+        self._download(
+            most_recent_data_time, self.end, update=True)
         self.ohlcv_df = load_multiple_assets(
             self.ex_ids, self.assets, self.timeframe,
             self.start, self.end)

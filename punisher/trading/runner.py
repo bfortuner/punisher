@@ -67,7 +67,6 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         feed=feed,
         record=record
     )
-
     row = feed.next()
     last_port_update_time = row.get('utc') - feed.timeframe.delta
     orders = []
@@ -143,8 +142,8 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
         feed=feed,
         record=record
     )
-
     row = feed.next()
+    last_row = row
     last_port_update_time = datetime.utcnow()
     orders = []
     record.save()
@@ -152,6 +151,7 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
     while True:
 
         if row is not None:
+            last_row = row
             output = strategy.process(row, ctx)
             # Add any new orders from strategy output
             new_orders = output['new_orders']
@@ -178,10 +178,13 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
 
         # Update latest prices of positions
         latest_prices = get_latest_prices(
-                symbols_traded, row, exchange.id)
+                symbols_traded, last_row, exchange.id)
 
         current_time = datetime.utcnow()
         # Portfolio needs to know about new trades/latest prices
+        # TODO: Don't add a new period every portfolio update
+        # create a starting period time and only update when we have waiting a
+        # entire timeframe
         portfolio.update(
             last_port_update_time, current_time, updated_orders, latest_prices)
 
@@ -198,6 +201,7 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
             record.orders[order.id] = order
 
         record.save()
+        time.sleep(cfg.SLEEP_TIME)
         row = feed.next()
 
     return record
@@ -231,6 +235,7 @@ def live(name, exchange, balance, portfolio, feed, strategy):
     )
 
     row = feed.next()
+    last_row = row
     last_port_update_time = datetime.utcnow()
     orders = []
     record.save()
@@ -238,6 +243,7 @@ def live(name, exchange, balance, portfolio, feed, strategy):
     while True:
 
         if row is not None:
+            last_row = row
             output = strategy.process(row, ctx)
             # Add any new orders from strategy output
             new_orders = output['new_orders']
@@ -264,9 +270,10 @@ def live(name, exchange, balance, portfolio, feed, strategy):
 
         # Update latest prices of positions
         latest_prices = get_latest_prices(
-                symbols_traded, row, exchange.id)
+                symbols_traded, last_row, exchange.id)
 
         current_time = datetime.utcnow()
+
         # Portfolio needs to know about new trades/latest prices
         portfolio.update(
             last_port_update_time, current_time, updated_orders, latest_prices)
@@ -284,6 +291,7 @@ def live(name, exchange, balance, portfolio, feed, strategy):
             record.orders[order.id] = order
 
         record.save()
+        time.sleep(seconds=cfg.SLEEP_TIME)
         row = feed.next()
 
     return record
