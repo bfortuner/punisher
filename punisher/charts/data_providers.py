@@ -135,11 +135,13 @@ class RecordChartDataProvider():
         cash_currency = self.record.portfolio.cash_currency
         ex_rates = ohlcv_feed.get_exchange_rate(
             self.get_ohlcv().df, cash_currency, quote_coin, ex_id)
-        assert len(ex_rates) == len(periods)
+        # assert len(ex_rates) == len(periods)
         start_cash = self.record.portfolio.starting_cash * ex_rates[0]
         df = pd.DataFrame([
             [p['end_time'], p['pnl']] for p in periods],
                 columns=['utc','returns'])
+        print(df['returns'])
+        print(ex_rates)
         df['returns'] = df['returns'] * ex_rates / start_cash
         return df
 
