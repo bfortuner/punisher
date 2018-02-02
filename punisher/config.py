@@ -18,7 +18,7 @@ DATA_DIR = os.environ.get('DATA_DIR', '.data/')
 WEIGHTS_DIR = os.environ.get('WEIGHTS_DIR', '.weights/')
 TESTING = os.environ.get('TESTING', False)
 DEBUG = os.environ.get('DEBUG', True)
-
+SLEEP_TIME = os.environ.get('SLEEP_TIME', 15)
 # Data store (file, sql)
 DATA_STORE = 'FILE_STORE'
 

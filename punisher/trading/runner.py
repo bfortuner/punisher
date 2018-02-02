@@ -20,18 +20,19 @@ class TradeMode(Enum):
     LIVE = 'live data, live orders'
 
 
-def get_latest_prices(symbols_traded, row, ex_id):
+def update_latest_prices(latest_prices, symbols_traded, row, ex_id):
     """
     Helper method to get latest prices for each order
     from the last data row.
+    - latest_prices : latest prices dictionary
     - orders : all Order objects
     - row : last data row
     - ex_id: exchange id
     """
     # TODO: ensure this works for multi exchange
-    latest_prices = {}
-    for symbol in symbols_traded:
-        latest_prices[symbol] = row.get('close', symbol, ex_id)
+    if row is not None:
+        for symbol in symbols_traded:
+            latest_prices[symbol] = row.get('close', symbol, ex_id)
     return latest_prices
 
 def get_symbols_traded(orders, positions):
@@ -67,10 +68,10 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
         feed=feed,
         record=record
     )
-
     row = feed.next()
     last_port_update_time = row.get('utc') - feed.timeframe.delta
     orders = []
+    latest_prices = {}
     record.save()
     while row is not None:
 
@@ -94,12 +95,14 @@ def backtest(name, exchange, balance, portfolio, feed, strategy):
                 orders, portfolio.positions)
 
         # Update latest prices of positions
-        latest_prices = get_latest_prices(
-            symbols_traded, row, exchange.id)
+        latest_prices = update_latest_prices(
+            latest_prices, symbols_traded, row, exchange.id)
 
         # Portfolio needs to know about new trades and latest prices
         portfolio.update(
-            last_port_update_time, row.get('utc') , updated_orders, latest_prices)
+            last_port_update_time, updated_orders, latest_prices)
+
+        portfolio.update_performance(last_port_update_time, row.get('utc'))
 
         last_port_update_time = row.get('utc')
 
@@ -143,15 +146,21 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
         feed=feed,
         record=record
     )
-
     row = feed.next()
+    perf_start = datetime.utcnow()
     last_port_update_time = datetime.utcnow()
     orders = []
+    latest_prices = {}
     record.save()
 
     while True:
 
         if row is not None:
+
+            portfolio.update_performance(perf_start, row.get('utc'))
+
+            perf_start = row.get('utc')
+
             output = strategy.process(row, ctx)
             # Add any new orders from strategy output
             new_orders = output['new_orders']
@@ -177,16 +186,14 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
             orders, portfolio.positions)
 
         # Update latest prices of positions
-        latest_prices = get_latest_prices(
-                symbols_traded, row, exchange.id)
+        latest_prices = update_latest_prices(
+            latest_prices, symbols_traded, row, exchange.id)
 
-        current_time = datetime.utcnow()
-        # Portfolio needs to know about new trades/latest prices
         portfolio.update(
-            last_port_update_time, current_time, updated_orders, latest_prices)
+            last_port_update_time, updated_orders, latest_prices)
 
         # Keep updating last time we updated our portfolio
-        last_port_update_time = current_time
+        last_port_update_time = datetime.utcnow()
 
         # Reset open orders list to only track open/created orders
         orders = order_manager.get_open_orders(updated_orders)
@@ -198,6 +205,7 @@ def simulate(name, exchange, balance, portfolio, feed, strategy):
             record.orders[order.id] = order
 
         record.save()
+        time.sleep(cfg.SLEEP_TIME)
         row = feed.next()
 
     return record
@@ -231,13 +239,18 @@ def live(name, exchange, balance, portfolio, feed, strategy):
     )
 
     row = feed.next()
+    perf_start = datetime.utcnow()
     last_port_update_time = datetime.utcnow()
     orders = []
+    latest_prices = {}
     record.save()
 
     while True:
 
         if row is not None:
+
+            portfolio.update_performance(perf_start, row.get('utc'))
+            perf_start = row.get('utc')
             output = strategy.process(row, ctx)
             # Add any new orders from strategy output
             new_orders = output['new_orders']
@@ -263,16 +276,15 @@ def live(name, exchange, balance, portfolio, feed, strategy):
             orders, portfolio.positions)
 
         # Update latest prices of positions
-        latest_prices = get_latest_prices(
-                symbols_traded, row, exchange.id)
+        latest_prices = update_latest_prices(
+            latest_prices, symbols_traded, row, exchange.id)
 
-        current_time = datetime.utcnow()
         # Portfolio needs to know about new trades/latest prices
         portfolio.update(
-            last_port_update_time, current_time, updated_orders, latest_prices)
+            last_port_update_time, updated_orders, latest_prices)
 
         # Keep updating last time we updated our portfolio
-        last_port_update_time = current_time
+        last_port_update_time = datetime.utcnow()
 
         # Reset open orders list to only track open/created orders
         orders = order_manager.get_open_orders(updated_orders)
@@ -284,6 +296,7 @@ def live(name, exchange, balance, portfolio, feed, strategy):
             record.orders[order.id] = order
 
         record.save()
+        time.sleep(seconds=cfg.SLEEP_TIME)
         row = feed.next()
 
     return record
