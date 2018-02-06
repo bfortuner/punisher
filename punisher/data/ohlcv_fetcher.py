@@ -68,7 +68,7 @@ def upload_to_s3(ex_id, asset, timeframe, start):
 
 # https://pypi.python.org/pypi/backoff
 @backoff.on_exception(backoff.expo,
-                      Exception,
+                      Exception, #TODO: include exchange exceptions only
                       on_backoff=logger_utils.retry_hdlr,
                       max_tries=10)
 def fetch_and_save(ex_id, asset, timeframe, start, end):

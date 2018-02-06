@@ -19,6 +19,7 @@ from punisher import utils
 from punisher.portfolio.asset import Asset
 import punisher.constants as c
 import punisher.config as cfg
+import punisher.utils.logger as logger_utils
 
 # also cool to check out
 # https://github.com/google/python-fire
