@@ -1,7 +1,15 @@
 import os
-import logging
 import imp
+import logging
 import time
+import traceback
+
+
+def retry_hdlr(details):
+    print(traceback.format_exc())
+    print ("Backing off {wait:0.1f} seconds afters {tries} tries "
+           "calling function {target} with args {args} and kwargs "
+           "{kwargs}".format(**details))
 
 
 def get_logger(fpath='',

@@ -2,8 +2,10 @@ import datetime
 import json
 import os
 import time
+import traceback
 
 import argparse
+import backoff
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from tenacity import retry
@@ -45,10 +47,10 @@ def get_s3_path(ex_id, asset):
     fname = get_order_book_fname(ex_id, asset)
     return ORDER_BOOK + '/' + fname
 
-# https://github.com/jd/tenacity
-@retry(
-    wait=wait_exponential(multiplier=1, max=10),
-    stop=stop_after_attempt(5))
+@backoff.on_exception(backoff.expo,
+                      Exception,
+                      on_backoff=logger_utils.retry_hdlr,
+                      max_tries=10)
 def download_and_save_order_book_data(exchange_id, asset, depth):
     exchange = load_exchange(exchange_id)
     depth = {} if depth is None else {'depth': depth}

@@ -258,9 +258,9 @@ def get_ohlcv_fname(asset, exchange_id, timeframe):
         exchange_id, asset.id, timeframe.id)
     return fname
 
-def get_ohlcv_fpath(asset, exchange_id, timeframe):
+def get_ohlcv_fpath(asset, exchange_id, timeframe, outdir=cfg.DATA_DIR):
     fname = get_ohlcv_fname(asset, exchange_id, timeframe)
-    return Path(cfg.DATA_DIR, fname)
+    return Path(outdir, fname)
 
 def fetch_asset(exchange, asset, timeframe, start, end=None):
     ## TODO: Some exchanges adhere to limits. For instance BINANCE
