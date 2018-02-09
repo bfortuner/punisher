@@ -327,7 +327,7 @@ def load_multiple_assets(exchange_ids, assets, timeframe, start, end=None):
                 for col in data.columns:
                     df[col] = data[col]
             else:
-                print("Fpath does not exist: {:s}. \nJust a heads up.".format(fpath))
+                print("Fpath does not exist: {:s}".format(str(fpath)))
     # TODO: Is this okay? How to fill in missing values? How to handle them?
     # df.dropna(inplace=True)
     df['utc'] = [epoch_to_utc(t) for t in df.index]

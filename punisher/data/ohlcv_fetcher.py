@@ -2,6 +2,7 @@ import sys
 import datetime
 import json
 import os
+import re
 import time
 import traceback
 
@@ -25,6 +26,7 @@ from punisher.feeds import ohlcv_feed
 from punisher.portfolio.asset import Asset
 from punisher.utils.dates import Timeframe
 from punisher.utils.dates import str_to_date
+from punisher.utils.encoders import EnumEncoder
 import punisher.utils.logger as logger_utils
 
 parser = argparse.ArgumentParser(description='OHLCV Fetcher')
@@ -33,7 +35,8 @@ parser.add_argument('-sym', '--symbol', help='one symbol', type=str)
 parser.add_argument('-t', '--timeframe', help='length of period (1m, 30m, 1h, 1d)', default='30m', type=str)
 parser.add_argument('--start', help='start time yyyy-mm-dd', default=None, type=str)
 parser.add_argument('--end', help='end time yyyy-mm-dd', default=None, type=str)
-parser.add_argument('--action', help='"fetch" from exchange or "download" from s3', choices=['fetch','download'])
+parser.add_argument('--action', help='"fetch" from exchange, "download" from s3, or "list" files in S3',
+                    choices=['fetch','download', 'list'])
 parser.add_argument('--upload', help='upload to s3 after fetching from exchange', action='store_true')
 parser.add_argument('--refresh', help='sleep seconds for rate limit', default=5, type=int)
 parser.add_argument('--outdir', help='output directory to save files', default=cfg.DATA_DIR, type=str)
@@ -109,6 +112,7 @@ def fetch_forever(exchange_id, asset, timeframe, start, end, upload, refresh):
             exchange_id, asset, timeframe,
             start, end, upload, refresh)
         end = datetime.datetime.utcnow()
+        time.sleep(refresh)
 
 def download(ex_id, asset, timeframe):
     prefix = 'ohlcv/'+ex_id+'_'+asset.id+'_'+timeframe.id
@@ -136,18 +140,50 @@ def merge_files(fpaths, ex_id, asset, timeframe, cleanup=False):
         _ = [os.remove(f) for f in fpaths]
     out_df.to_csv(out_fpath, index=True)
 
+def list_files():
+    prefix = 'ohlcv/'
+    keys = s3_client.list_files(prefix=prefix)
+    reg = re.compile('ohlcv\/([a-z]+)_([A-Z]+_[A-Z]+)_([0-9]+[mhd])_(20[0-9]+)_([0-9]+)_([0-9]+).csv')
+    meta = {}
+    for key in keys:
+        m = re.match(reg, key)
+        ex_id, symbol, timeframe, year, month, day = m.groups()
+        start = datetime.datetime(year=int(year), month=int(month), day=int(day))
+        if timeframe not in meta:
+            meta[timeframe] = {}
+        if ex_id not in meta[timeframe]:
+            meta[timeframe][ex_id] = {}
+        if symbol not in meta[timeframe][ex_id]:
+            meta[timeframe][ex_id][symbol] = {
+                'start': start,
+                'end': start
+            }
+        else:
+            meta[timeframe][ex_id][symbol] = {
+                'start': min(start, meta[timeframe][ex_id][symbol]['start']),
+                'end': max(start, meta[timeframe][ex_id][symbol]['start'])
+            }
+    return meta
+
 
 if __name__ == "__main__":
-    default_start = datetime.datetime(year=2017, month=1, day=1)
+    action = args.action
     exchange_id = args.exchange
-    asset = Asset.from_symbol(args.symbol)
-    timeframe = Timeframe.from_id(args.timeframe)
+    default_start = datetime.datetime(year=2017, month=1, day=1)
+    asset = Asset.from_symbol(args.symbol) if args.symbol is not None else None
+    timeframe = Timeframe.from_id(args.timeframe) if args.timeframe is not None else None
     start = str_to_date(args.start) if args.start is not None else default_start
     end = str_to_date(args.end) if args.end is not None else None
-    action = args.action
     upload = args.upload
     refresh = args.refresh
-    if action == 'fetch':
+
+    if action == 'list':
+        print('Listing OHLCV files in S3 for time: {}, '
+              'exchange: {}, asset: {}'.format(
+              args.timeframe, args.exchange, args.symbol))
+        file_metadata = list_files()
+        print(json.dumps(file_metadata, indent=4, cls=EnumEncoder))
+    elif action == 'fetch':
         print('Fetching OHLCV from exchange: ', exchange_id,
                'Asset:', asset.symbol, 'timeframe:', timeframe.id,
                'start:', start, 'end:', end, 'refresh:', refresh)
@@ -158,9 +194,11 @@ if __name__ == "__main__":
         else:
             print("Backfilling!")
             fetch_once(exchange_id, asset, timeframe, start, end, upload, refresh)
+
     elif action == 'download':
         print('Downloading OHLCV from S3. ExchangeId:', exchange_id,
                'Asset:', asset.symbol, 'timeframe:', timeframe.id)
         download(exchange_id, asset, timeframe)
+
     else:
         raise Exception("Action {:s} not supported!".format(action))
