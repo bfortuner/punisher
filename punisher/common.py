@@ -7,6 +7,7 @@ import random
 import pathlib
 from glob import glob
 from pprint import pprint
+from pathlib import Path
 from copy import deepcopy
 import operator
 import copy
