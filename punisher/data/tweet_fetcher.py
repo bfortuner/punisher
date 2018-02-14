@@ -8,6 +8,7 @@ import traceback
 import argparse
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
+import itertools
 
 import backoff
 import pandas as pd
@@ -16,7 +17,6 @@ import punisher.constants as c
 import punisher.config as cfg
 from punisher.clients import s3_client
 from punisher.clients import got3
-from punisher.data.store import FileStore
 from punisher.utils.dates import str_to_date
 from punisher.utils.encoders import JSONEncoder
 import punisher.utils.logger as logger_utils
@@ -27,6 +27,7 @@ parser.add_argument('-s', '--start', help='start time yyyy-mm-dd', default=None,
 parser.add_argument('-e', '--end', help='end time yyyy-mm-dd', default=None, type=str)
 parser.add_argument('-m', '--max', help='Max tweets to pull each day', default=1000, type=int)
 parser.add_argument('-w', '--workers', help='number of workers in pool', default=1, type=int)
+parser.add_argument('-r', '--retries', help='max number of retries', default=15, type=int)
 parser.add_argument('--filter', help='Include only tweets w at least one like or retweet', action='store_true')
 parser.add_argument('--top', help='Include only tweets from Twitters "top tweets" list', action='store_true')
 parser.add_argument('--action', help='"fetch" from twitter, "download" from s3, or "list" files in S3',
@@ -56,7 +57,7 @@ args = parser.parse_args()
 TWITTER = 'twitter'
 TWITTER_DIR = Path(args.outdir, TWITTER)
 TWITTER_DIR.mkdir(exist_ok=True)
-MAX_RETRIES = 15
+MAX_RETRIES = args.retries
 
 def get_tweet_query_fname(query, date):
     query = query.replace(' ', '_')
@@ -141,9 +142,8 @@ def fetch_tweets(query, start, end, max_tweets, lang,
 
 def download_from_s3(query, start_date):
     """ Download query files for all dates """
-    #s3_path = get_s3_path(query, start_date)
     query = query.replace(' ', '_')
-    prefix = TWITTER + '/' + query #+ '/' + s3_path
+    prefix = TWITTER + '/' + query
     keys = s3_client.list_files(prefix=prefix)
     fpaths = []
     for key in keys:
@@ -174,11 +174,24 @@ def list_files():
                 }
     return meta
 
+def fetch_tweets_async(query, start, end, max_tweets, lang, filter_tweets,
+                       top_tweets, upload, cleanup, workers):
+    days = (end - start).days
+    start_dates = [start + datetime.timedelta(days=d) for d in range(days)]
+    end_dates = [date + datetime.timedelta(days=1) for date in start_dates]
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        _ = executor.map(
+            fetch_tweets, itertools.repeat(query), start_dates, end_dates,
+            itertools.repeat(max_tweets), itertools.repeat(lang),
+            itertools.repeat(filter_tweets), itertools.repeat(top_tweets),
+            itertools.repeat(upload), itertools.repeat(cleanup)
+        )
 
 if __name__ == "__main__":
     action = args.action
     start = str_to_date(args.start) if args.start is not None else None
     end = str_to_date(args.end) if args.end is not None else None
+
     if args.cleanup:
         assert args.upload is True
     if action == 'fetch':
@@ -188,14 +201,22 @@ if __name__ == "__main__":
         print('Listing files in S3')
         file_metadata = list_files()
         print(json.dumps(file_metadata, indent=4, cls=JSONEncoder))
+
     elif action == 'fetch':
         print('Fetching from twitter: ', args.query, 'start:', start, 'end:', end)
-        fetch_tweets(
-            args.query, start, end, args.max, args.lang,
-            args.filter, args.top, args.upload, args.cleanup
-        )
+        if args.workers > 1:
+            fetch_tweets_async(
+                args.query, start, end, args.max, args.lang, args.filter,
+                args.top, args.upload, args.cleanup, args.workers
+            )
+        else:
+            fetch_tweets(
+                args.query, start, end, args.max, args.lang,
+                args.filter, args.top, args.upload, args.cleanup
+            )
+
     elif action == 'download':
-        print('Downloading from S3: ', args.query)#, 'start:', start, 'end:', end)
+        print('Downloading from S3: ', args.query)
         download_from_s3(args.query, start)
 
     else:
