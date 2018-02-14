@@ -16,10 +16,11 @@ import pandas as pd
 import punisher.constants as c
 import punisher.config as cfg
 from punisher.clients import s3_client
-from punisher.clients import got3
+from punisher.clients import twitter_client
 from punisher.utils.dates import str_to_date
 from punisher.utils.encoders import JSONEncoder
 import punisher.utils.logger as logger_utils
+
 
 parser = argparse.ArgumentParser(description='Historical Tweet Fetcher')
 parser.add_argument('-q', '--query', help='Query in the format https://twitter.com/search-advanced', type=str)
@@ -59,49 +60,16 @@ TWITTER_DIR = Path(args.outdir, TWITTER)
 TWITTER_DIR.mkdir(exist_ok=True)
 MAX_RETRIES = args.retries
 
-def get_tweet_query_fname(query, date):
-    query = query.replace(' ', '_')
-    fname = '{:s}_{:d}_{:d}_{:d}.json'.format(
-        query, date.year, date.month, date.day
-    )
-    return fname
-
-def get_tweet_query_fpath(query, date):
-    fname = get_tweet_query_fname(query, date)
-    query = query.replace(' ', '_')
-    query_dir = Path(TWITTER_DIR, query)
-    query_dir.mkdir(exist_ok=True)
-    return Path(query_dir, fname)
-
-def get_s3_path(query, date):
-    fname = get_tweet_query_fname(query, date)
+def get_s3_path(query, lang, date):
+    fname = twitter_client.get_tweet_query_fname(query, lang, date)
     query = query.replace(' ', '_')
     return TWITTER + '/' + query + '/' + fname
 
-def upload_to_s3(query, date):
-    fpath = get_tweet_query_fpath(query, date)
-    s3_path = get_s3_path(query, date)
+def upload_to_s3(query, lang, date):
+    fpath = twitter_client.get_tweet_query_fpath(query, lang, date, TWITTER_DIR)
+    s3_path = get_s3_path(query, lang, date)
     print('Uploading to s3:', s3_path)
     s3_client.upload_file(str(fpath), s3_path)
-
-def save_query_tweets(tweets, query, date):
-    fpath = get_tweet_query_fpath(query, date)
-    f = open(fpath, 'w')
-    json.dump(tweets, f, cls=JSONEncoder)
-    f.close()
-
-def load_query_tweets(query, date):
-    fpath = get_tweet_query_fpath(query, date)
-    with codecs.open(fpath, 'r', 'utf-8') as f:
-        tweets = json.load(f, encoding='utf-8')
-    return tweets
-
-def filter_query_tweets(tweets):
-    filtered_tweets = []
-    for tweet in tweets:
-        if tweet.favorites > 0 or tweet.retweets > 0:
-            filtered_tweets.append(tweet)
-    return filtered_tweets
 
 @backoff.on_exception(backoff.expo,
                       Exception, #TODO: include twitter exceptions only
@@ -118,26 +86,22 @@ def fetch_tweets(query, start, end, max_tweets, lang,
         start = datetime.datetime(year=2018, month=2, day=4)
         end = datetime.datetime(year=2018, month=2, day=6)
     """
-    start_str = start.isoformat().split('T')[0]
-    end_str = end.isoformat().split('T')[0]
     time_delta = datetime.timedelta(days=1)
     cur_start = start
-    tweetCriteria = got3.manager.TweetCriteria().setQuerySearch(
-        query).setSince(start_str).setUntil(end_str).setMaxTweets(
-        max_tweets).setLang(lang).setTopTweets(top_tweets)
     while cur_start < end:
         cur_end = cur_start + time_delta
         print("Start", cur_start, "End", cur_end)
-        tweets = got3.manager.TweetManager.getTweets(tweetCriteria)
+        tweets = twitter_client.fetch_tweets(
+            query, start, end, max_tweets, lang,
+            filter_tweets, top_tweets
+        )
         print("Downloaded", len(tweets))
-        if filter_tweets:
-            tweets = filter_query_tweets(tweets)
-            print("Downloaded and filtered:", len(tweets))
-        save_query_tweets(tweets, query, cur_start)
+        twitter_client.save_query_tweets(tweets, query, lang, cur_start)
         if upload:
-            upload_to_s3(query, cur_start)
+            upload_to_s3(query, lang, cur_start)
         if cleanup:
-            os.remove(get_tweet_query_fpath(query, cur_start))
+            fpath = twitter_client.get_tweet_query_fpath(query, lang, cur_start, TWITTER_DIR)
+            os.remove(fpath)
         cur_start = cur_end
 
 def download_from_s3(query, start_date):

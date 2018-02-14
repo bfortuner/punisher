@@ -1,6 +1,7 @@
 import time
 import datetime
 import calendar
+import dateutil
 import dateutil.parser
 import pandas as pd
 import numpy as np
@@ -73,3 +74,10 @@ def get_time_range(df, start_utc=None, end_utc=None):
     if end_utc is not None:
         df = df[df.index < utc_to_epoch(end_utc)]
     return df
+
+def local_to_utc(local_time):
+    utc_zone = dateutil.tz.tzutc()
+    local_zone = dateutil.tz.tzlocal()
+    local_time = local_time.replace(tzinfo=local_zone)
+    utc_time = local_time.astimezone(utc_zone)
+    return utc_time

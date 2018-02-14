@@ -32,12 +32,13 @@ import dash
 # import torch.autograd as autograd
 # import torchvision.models
 
-# Clients
-import ccxt
-
 # Config
 import punisher.config as cfg
 import punisher.constants as c
+
+# Clients
+import ccxt
+from punisher.clients import twitter_client
 
 # Data
 from punisher.data.store import FileStore
