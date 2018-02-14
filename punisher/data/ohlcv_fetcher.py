@@ -147,22 +147,23 @@ def list_files():
     meta = {}
     for key in keys:
         m = re.match(reg, key)
-        ex_id, symbol, timeframe, year, month, day = m.groups()
-        start = datetime.datetime(year=int(year), month=int(month), day=int(day))
-        if timeframe not in meta:
-            meta[timeframe] = {}
-        if ex_id not in meta[timeframe]:
-            meta[timeframe][ex_id] = {}
-        if symbol not in meta[timeframe][ex_id]:
-            meta[timeframe][ex_id][symbol] = {
-                'start': start,
-                'end': start
-            }
-        else:
-            meta[timeframe][ex_id][symbol] = {
-                'start': min(start, meta[timeframe][ex_id][symbol]['start']),
-                'end': max(start, meta[timeframe][ex_id][symbol]['start'])
-            }
+        if m is not None:
+            ex_id, symbol, timeframe, year, month, day = m.groups()
+            start = datetime.datetime(year=int(year), month=int(month), day=int(day))
+            if timeframe not in meta:
+                meta[timeframe] = {}
+            if ex_id not in meta[timeframe]:
+                meta[timeframe][ex_id] = {}
+            if symbol not in meta[timeframe][ex_id]:
+                meta[timeframe][ex_id][symbol] = {
+                    'start': start,
+                    'end': start
+                }
+            else:
+                meta[timeframe][ex_id][symbol] = {
+                    'start': min(start, meta[timeframe][ex_id][symbol]['start']),
+                    'end': max(start, meta[timeframe][ex_id][symbol]['end'])
+                }
     return meta
 
 
