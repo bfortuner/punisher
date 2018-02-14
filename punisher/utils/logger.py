@@ -4,13 +4,23 @@ import logging
 import time
 import traceback
 
+import punisher.config as cfg
+from punisher.clients import ses_client
+
 
 def retry_hdlr(details):
     print(traceback.format_exc())
-    print ("Backing off {wait:0.1f} seconds afters {tries} tries "
+    print("Backing off {wait:0.1f} seconds afters {tries} tries "
            "calling function {target} with args {args} and kwargs "
            "{kwargs}".format(**details))
 
+def giveup_hdlr(details):
+    msg = ("Stop retrying afters {tries} attempts "
+           "calling function {target} with args {args} and kwargs "
+           "{kwargs} \n".format(**details))
+    msg += traceback.format_exc()
+    print(msg)
+    ses_client.send_error_email(to_email=cfg.ADMIN_EMAIL, msg=msg)
 
 def get_logger(fpath='',
                logger_name='output',
@@ -37,7 +47,6 @@ def get_logger(fpath='',
         logger.addHandler(fh)
 
     return logger
-
 
 def get_time_msg(start_time):
     time_elapsed = time.time() - start_time

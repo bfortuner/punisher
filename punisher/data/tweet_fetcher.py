@@ -56,6 +56,7 @@ args = parser.parse_args()
 TWITTER = 'twitter'
 TWITTER_DIR = Path(args.outdir, TWITTER)
 TWITTER_DIR.mkdir(exist_ok=True)
+MAX_RETRIES = 15
 
 def get_tweet_query_fname(query, date):
     query = query.replace(' ', '_')
@@ -101,10 +102,11 @@ def filter_query_tweets(tweets):
             filtered_tweets.append(tweet)
     return filtered_tweets
 
-# @backoff.on_exception(backoff.expo,
-#                       Exception, #TODO: include twitter exceptions only
-#                       on_backoff=logger_utils.retry_hdlr,
-#                       max_tries=10)
+@backoff.on_exception(backoff.expo,
+                      Exception, #TODO: include twitter exceptions only
+                      on_backoff=logger_utils.retry_hdlr,
+                      on_giveup=logger_utils.giveup_hdlr,
+                      max_tries=MAX_RETRIES)
 def fetch_tweets(query, start, end, max_tweets, lang,
                  filter_tweets, top_tweets, upload, cleanup):
     """

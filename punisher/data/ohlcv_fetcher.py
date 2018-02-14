@@ -47,6 +47,7 @@ args = parser.parse_args()
 OHLCV = 'ohlcv'
 OHLCV_DIR = Path(args.outdir, OHLCV)
 OHLCV_DIR.mkdir(exist_ok=True)
+MAX_RETRIES = 15
 
 def get_rotating_ohlcv_fname(ex_id, asset, timeframe, start):
     fname = '{:s}_{:s}_{:s}_{:d}_{:d}_{:d}.csv'.format(
@@ -71,9 +72,10 @@ def upload_to_s3(ex_id, asset, timeframe, start):
 
 # https://pypi.python.org/pypi/backoff
 @backoff.on_exception(backoff.expo,
-                      Exception, #TODO: include exchange exceptions only
+                      Exception, #TODO: include ccxt exceptions only
                       on_backoff=logger_utils.retry_hdlr,
-                      max_tries=10)
+                      on_giveup=logger_utils.giveup_hdlr,
+                      max_tries=MAX_RETRIES)
 def fetch_and_save(ex_id, asset, timeframe, start, end):
     exchange = load_exchange(ex_id)
     df = ohlcv_feed.fetch_asset(exchange, asset, timeframe, start, end)

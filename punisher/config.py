@@ -19,8 +19,8 @@ WEIGHTS_DIR = os.environ.get('WEIGHTS_DIR', '.weights/')
 TESTING = os.environ.get('TESTING', False)
 DEBUG = os.environ.get('DEBUG', True)
 SLEEP_TIME = os.environ.get('SLEEP_TIME', 15)
-# Data store (file, sql)
 DATA_STORE = 'FILE_STORE'
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', None)
 
 # Logging
 APP_LOG_LEVEL = logging.INFO
@@ -28,6 +28,7 @@ MAIL_LOG_LEVEL = logging.ERROR
 
 # AWS
 AWS_REGION = 'us-west-1'
+SES_AWS_REGION = 'us-west-2'
 S3_BUCKET = 'myman'
 AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY', 'password')
 AWS_SECRET_KEY = os.environ.get('AWS_SECRET_KEY', 'password')
