@@ -125,5 +125,6 @@ dependencies:
     - pyquery==1.4.0
     - python-dotenv==0.7.1
     - tenacity==4.8.0
+    - textblob==0.15.1
     - werkzeug==0.14.1
     - yarl==0.18.0

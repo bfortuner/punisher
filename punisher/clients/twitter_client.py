@@ -17,6 +17,7 @@ import pandas as pd
 import punisher.constants as c
 import punisher.config as cfg
 from punisher.utils.dates import str_to_date, local_to_utc
+from punisher.utils.dates import utc_to_epoch
 from punisher.utils.encoders import JSONEncoder
 import punisher.utils.logger as logger_utils
 
@@ -53,6 +54,12 @@ def load_query_tweets(query, lang, date):
     with codecs.open(fpath, 'r', 'utf-8') as f:
         tweets = json.load(f, encoding='utf-8')
     return tweets
+
+def load_query_tweets_df(query, lang, date):
+    tweet_dct = load_query_tweets(query, lang, date)
+    tweet_df = pd.read_json(json.dumps(tweet_dct))
+    tweet_df['epoch'] = [utc_to_epoch(d) for d in tweet_df['date']]
+    return tweet_df
 
 def filter_query_tweets(tweets):
     filtered_tweets = []
