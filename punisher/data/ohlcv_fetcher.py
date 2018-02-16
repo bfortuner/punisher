@@ -8,26 +8,23 @@ import traceback
 
 import argparse
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor
 
 import backoff
 import pandas as pd
-from tenacity import retry
-from tenacity import wait_exponential
-from tenacity import stop_after_attempt
 
 import punisher.constants as c
 import punisher.config as cfg
+from punisher.clients import bnc_client
 from punisher.clients import s3_client
+from punisher.exchanges import ex_cfg
 from punisher.exchanges import load_exchange
-from punisher.data.store import FileStore
-from punisher.feeds import OHLCVExchangeFeed
 from punisher.feeds import ohlcv_feed
 from punisher.portfolio.asset import Asset
 from punisher.utils.dates import Timeframe
 from punisher.utils.dates import str_to_date
 from punisher.utils.encoders import EnumEncoder
 import punisher.utils.logger as logger_utils
+
 
 parser = argparse.ArgumentParser(description='OHLCV Fetcher')
 parser.add_argument('-ex', '--exchange', help='one exchange id', type=str)
@@ -77,8 +74,11 @@ def upload_to_s3(ex_id, asset, timeframe, start):
                       on_giveup=logger_utils.giveup_hdlr,
                       max_tries=MAX_RETRIES)
 def fetch_and_save(ex_id, asset, timeframe, start, end):
-    exchange = load_exchange(ex_id)
-    df = ohlcv_feed.fetch_asset(exchange, asset, timeframe, start, end)
+    if ex_id == ex_cfg.BNC:
+        df = bnc_client.fetch_asset(asset, timeframe, start, end)
+    else:
+        exchange = load_exchange(ex_id)
+        df = ohlcv_feed.fetch_asset(exchange, asset, timeframe, start, end)
     fpath = get_rotating_ohlcv_fpath(ex_id, asset, timeframe, start)
     df.to_csv(fpath, index=True)
     return df

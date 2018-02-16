@@ -81,3 +81,10 @@ def local_to_utc(local_time):
     local_time = local_time.replace(tzinfo=local_zone)
     utc_time = local_time.astimezone(utc_zone)
     return utc_time
+
+def utc_to_local(utc_time):
+    utc_zone = dateutil.tz.tzutc()
+    utc_time = utc_time.replace(tzinfo=utc_zone)
+    local_zone = dateutil.tz.tzlocal()
+    local_time = utc_time.astimezone(local_zone)
+    return local_time

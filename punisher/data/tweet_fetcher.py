@@ -71,11 +71,11 @@ def upload_to_s3(query, lang, date):
     print('Uploading to s3:', s3_path)
     s3_client.upload_file(str(fpath), s3_path)
 
-@backoff.on_exception(backoff.expo,
-                      Exception, #TODO: include twitter exceptions only
-                      on_backoff=logger_utils.retry_hdlr,
-                      on_giveup=logger_utils.giveup_hdlr,
-                      max_tries=MAX_RETRIES)
+# @backoff.on_exception(backoff.expo,
+#                       Exception, #TODO: include twitter exceptions only
+#                       on_backoff=logger_utils.retry_hdlr,
+#                       on_giveup=logger_utils.giveup_hdlr,
+#                       max_tries=MAX_RETRIES)
 def fetch_tweets(query, start, end, max_tweets, lang,
                  filter_tweets, top_tweets, upload, cleanup):
     """

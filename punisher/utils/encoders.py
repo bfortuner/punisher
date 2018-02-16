@@ -29,7 +29,7 @@ class JSONEncoder(json.JSONEncoder):
 
 class EnumEncoder(JSONEncoder):
     def default(self, obj):
-        return super().default(self, obj)
+        return super().default(obj)
 
 
 class EnumDecoder(json.JSONDecoder):
