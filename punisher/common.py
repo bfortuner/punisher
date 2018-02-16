@@ -38,6 +38,7 @@ import punisher.constants as c
 
 # Clients
 import ccxt
+from punisher.clients import reddit_client
 from punisher.clients import twitter_client
 
 # Data
