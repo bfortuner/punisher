@@ -51,11 +51,11 @@ def upload_to_s3(subreddit, date):
     print('Uploading to s3:', s3_path)
     s3_client.upload_file(str(fpath), s3_path)
 
-# @backoff.on_exception(backoff.expo,
-#                       Exception, #TODO: include reddit exceptions only
-#                       on_backoff=logger_utils.retry_hdlr,
-#                       on_giveup=logger_utils.giveup_hdlr,
-#                       max_tries=MAX_RETRIES)
+@backoff.on_exception(backoff.expo,
+                      Exception, #TODO: include reddit exceptions only
+                      on_backoff=logger_utils.retry_hdlr,
+                      on_giveup=logger_utils.giveup_hdlr,
+                      max_tries=MAX_RETRIES)
 def fetch_submissions(subreddit, start, end, n_comments, upload, cleanup):
     """
     Downloads reddit submission and comments
@@ -89,7 +89,7 @@ def download_from_s3(subreddit, start_date):
     keys = s3_client.list_files(prefix=prefix)
     fpaths = []
     for key in keys:
-        fpath = Path(REDDIT_DIR, Path(key).name)
+        fpath = Path(REDDIT_DIR, subreddit, Path(key).name)
         fpaths.append(fpath)
         print("Downloading from s3", fpath)
         s3_client.download_file(str(fpath), key)
@@ -124,7 +124,7 @@ def fetch_submissions_async(subreddit, start, end, n_comments, upload,
     with ThreadPoolExecutor(max_workers=workers) as executor:
         _ = executor.map(
             fetch_submissions, itertools.repeat(subreddit), start_dates, end_dates,
-            itertools.repeat(n_comments), itertools.repeat(upload), 
+            itertools.repeat(n_comments), itertools.repeat(upload),
             itertools.repeat(cleanup)
         )
 

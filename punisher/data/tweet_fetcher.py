@@ -111,7 +111,7 @@ def download_from_s3(query, start_date):
     keys = s3_client.list_files(prefix=prefix)
     fpaths = []
     for key in keys:
-        fpath = Path(TWITTER_DIR, Path(key).name)
+        fpath = Path(TWITTER_DIR, query, Path(key).name)
         fpaths.append(fpath)
         print("Downloading from s3", fpath)
         s3_client.download_file(str(fpath), key)
