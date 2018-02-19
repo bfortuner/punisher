@@ -296,7 +296,7 @@ def live(name, exchange, balance, portfolio, feed, strategy):
             record.orders[order.id] = order
 
         record.save()
-        time.sleep(seconds=cfg.SLEEP_TIME)
+        time.sleep(cfg.SLEEP_TIME)
         row = feed.next()
 
     return record

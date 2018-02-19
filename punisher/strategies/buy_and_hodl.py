@@ -36,7 +36,7 @@ parser.add_argument('-ohlcv', '--ohlcv_fpath', help='path to OHLCV csv file', de
 parser.add_argument('-ex', '--exchange_id', help='CCXT exchange name', default='', type=str)
 
 class BuyAndHodlStrategy(Strategy):
-    def __init__(self, asset, quantity, target_hodl_ratio=.08):
+    def __init__(self, asset, quantity, target_hodl_ratio=.8):
         super().__init__()
         self.asset = asset
         self.quantity = quantity
@@ -63,8 +63,8 @@ class BuyAndHodlStrategy(Strategy):
             * portfolio.starting_cash)
 
         # Remaining cash to use in strategy
-        remaining_hodl_value = target_hodl_value - portfolio.balance.get(
-            portfolio.cash_currency)[BalanceType.USED]
+        remaining_hodl_value = target_hodl_value - (portfolio.starting_cash -
+            portfolio.cash)
 
         new_orders = []
         price = data.get('close', self.asset.symbol, ctx.exchange.id)
@@ -77,14 +77,10 @@ class BuyAndHodlStrategy(Strategy):
         # Stop buying if cash dips below reserve value,
         # Start buying if cash returns above reserve_value
         self.is_buying = portfolio.cash >= reserve_value
-        print("PRICE", price)
-        print("CASH", portfolio.cash)
-        print("STATUS", self.is_buying)
-        print("TARGET_HODL VALUE", target_hodl_value)
-        print("REMAINING HODL VALUE", remaining_hodl_value)
-        if (self.is_buying and portfolio.cash > price and
-            remaining_hodl_value > 0):
+
+        if (self.is_buying and remaining_hodl_value > 0):
             quantity = remaining_hodl_value / price
+            print("QUANTITY", quantity)
             order = order_manager.build_limit_buy_order(
                 balance=portfolio.balance,
                 exchange=ctx.exchange,
@@ -134,7 +130,7 @@ if __name__ == "__main__":
          starting_cash, ohlcv_fpath, exchange_id))
 
     print(("To visualize, run: `python -m punisher.charts.dash_charts.dash_record --name {:s}`\n").format(experiment_name))
-    
+
     strategy = BuyAndHodlStrategy(asset, quantity)
     balance = Balance(
         cash_currency=cash_currency,
@@ -180,7 +176,7 @@ if __name__ == "__main__":
     elif trade_mode is TradeMode.LIVE:
         exchange = load_exchange(exchange_id)
         feed = OHLCVExchangeFeed(
-            exchange=exchange,
+            exchanges=[exchange],
             assets=[asset],
             timeframe=timeframe,
             start=datetime.datetime.utcnow(),

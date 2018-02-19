@@ -62,7 +62,7 @@ class Position():
     @property
     def cost_value(self):
         return (self.quantity * self.cost_price)
-        
+
     @property
     def market_value(self):
         return self.quantity * self.latest_price

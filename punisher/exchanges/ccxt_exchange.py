@@ -186,8 +186,6 @@ class CCXTExchange(Exchange):
 
         if order.status == OrderStatus.FILLED:
             order.filled_time = self.calculate_filled_time(order.trades)
-            order.price = self.calculate_order_price(
-                order.filled_quantity, order.trades)
 
         print("Order Output", order)
         return order
