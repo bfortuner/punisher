@@ -126,16 +126,15 @@ if __name__ == "__main__":
          + "TradeMode: {:s}\n"
          + "Timeframe: {:s}\n"
          + "Asset: {:s}\n"
-         + "Quantity: {:.4f}\n"
          + "StartingCash: {:4f}\n"
          + "OHLCV: {:s}\n"
          + "Exchange: {:s}\n"
          + "----------------------\n").format(
          experiment_name, trade_mode.name, timeframe.id, asset.symbol,
-         quantity, starting_cash, ohlcv_fpath, exchange_id))
+         starting_cash, ohlcv_fpath, exchange_id))
 
     print(("To visualize, run: `python -m punisher.charts.dash_charts.dash_record --name {:s}`\n").format(experiment_name))
-
+    
     strategy = BuyAndHodlStrategy(asset, quantity)
     balance = Balance(
         cash_currency=cash_currency,
