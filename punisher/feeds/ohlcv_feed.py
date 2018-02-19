@@ -25,7 +25,7 @@ class OHLCVData():
         self.ohlcv_df = ohlcv_df
 
     def get(self, field, symbol=None, ex_id=None, idx=0):
-        col_name = get_col_name(field, symbol, ex_id)
+        col_name = l_name(field, symbol, ex_id)
         return self.ohlcv_df[col_name].iloc[idx]
 
     def col(self, field, symbol=None, ex_id=None):
@@ -258,9 +258,9 @@ def get_ohlcv_fname(asset, exchange_id, timeframe):
         exchange_id, asset.id, timeframe.id)
     return fname
 
-def get_ohlcv_fpath(asset, exchange_id, timeframe):
+def get_ohlcv_fpath(asset, exchange_id, timeframe, outdir=cfg.DATA_DIR):
     fname = get_ohlcv_fname(asset, exchange_id, timeframe)
-    return Path(cfg.DATA_DIR, fname)
+    return Path(outdir, fname)
 
 def fetch_asset(exchange, asset, timeframe, start, end=None):
     ## TODO: Some exchanges adhere to limits. For instance BINANCE
@@ -300,6 +300,10 @@ def download_ohlcv(exchanges, assets, timeframe, start, end=None, update=False):
             else:
                 _ = fetch_and_save_asset(ex, asset, timeframe, start, end)
 
+def load_ohlcv(ex_id, asset, timeframe, start=None, end=None):
+    fpath = get_ohlcv_fpath(asset, ex_id, timeframe)
+    return load_asset(fpath, start, end)
+
 def load_asset(fpath, start=None, end=None):
     df = pd.read_csv(
         fpath, index_col='epoch',
@@ -327,7 +331,7 @@ def load_multiple_assets(exchange_ids, assets, timeframe, start, end=None):
                 for col in data.columns:
                     df[col] = data[col]
             else:
-                print("Fpath does not exist: {:s}. \nJust a heads up.".format(fpath))
+                print("Fpath does not exist: {:s}".format(str(fpath)))
     # TODO: Is this okay? How to fill in missing values? How to handle them?
     # df.dropna(inplace=True)
     df['utc'] = [epoch_to_utc(t) for t in df.index]
@@ -337,6 +341,7 @@ def make_asset_df(data, asset, ex_id, start=None, end=None):
     columns = get_ohlcv_columns(asset, ex_id)
     df = pd.DataFrame(data, columns=columns)
     df['epoch'] = df['epoch'] // 1000 # ccxt includes millis
+    df['epoch'] = df['epoch'].astype(int)
     df['utc'] = [epoch_to_utc(t) for t in df['epoch']]
     df.set_index('epoch', inplace=True)
     df.sort_index(inplace=True)
@@ -354,6 +359,22 @@ def merge_asset_dfs(new_data, fpath):
     cur_df.to_csv(fpath, index=True)
     return cur_df
 
+def check_missing_timesteps(df, timestep):
+    df = df.sort_values(by='utc')
+    start_time = df.iloc[0]['utc']
+    end_time = df.iloc[-1]['utc']
+    print("Start", start_time)
+    print("End", end_time)
+    last_time = start_time
+    n_missing = 0
+    for idx,row in df[1:].iterrows():
+        cur_time = row['utc']
+        if cur_time != last_time + datetime.timedelta(seconds=timestep):
+            print("Expected:", last_time + datetime.timedelta(seconds=timestep),
+                  "| Time:", cur_time)
+            n_missing += (cur_time - last_time).seconds//timestep
+        last_time = cur_time
+    return n_missing
 
 EXCHANGE_FEED = 'EXCHANGE_FEED'
 CSV_FEED = 'CSV_FEED'

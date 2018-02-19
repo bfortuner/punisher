@@ -42,7 +42,7 @@ conda install ipywidgets
 jupyter nbextension enable --py --sys-prefix widgetsnbextension
 conda install -c tim_shawver/label/dev qgrid==1.0.0b10
 conda install -c conda-forge python.app
-conda install pytorch torchvision -c pytorch
+conda install pytorch torchvision -c pytorch (http://pytorch.org/)
 ```
 
 ## Running Tests

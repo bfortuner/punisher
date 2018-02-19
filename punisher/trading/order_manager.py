@@ -30,8 +30,6 @@ def build_limit_buy_order(balance, exchange, asset, quantity, price, current_tim
     order.status = OrderStatus.FAILED
     return order
 
-
-
 def build_limit_sell_order(balance, exchange, asset, quantity, price, current_time):
     return Order(
         exchange_id=exchange.id,

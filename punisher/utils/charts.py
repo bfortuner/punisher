@@ -35,7 +35,6 @@ def plot_prices(time, close, fs=(12,6), title="Price"):
     plt.title(title)
     plt.show()
 
-
 def plot_range(df, start, end, column_name):
     df = dates.get_time_range(df, start, end)
     vals = df[['utc', column_name]].values

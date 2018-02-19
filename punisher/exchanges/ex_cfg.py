@@ -9,7 +9,7 @@ GDAX = 'gdax'
 GEMINI = 'gemini'
 BINANCE = 'binance'
 POLONIEX = 'poloniex'
-BNC = 'bravenewcoin'
+BNC = 'bnc'
 PAPER = 'paper'
 
 DEFAULT_EXCHANGE_ID = BINANCE

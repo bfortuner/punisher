@@ -7,6 +7,7 @@ import random
 import pathlib
 from glob import glob
 from pprint import pprint
+from pathlib import Path
 from copy import deepcopy
 import operator
 import copy
@@ -31,12 +32,14 @@ import dash
 # import torch.autograd as autograd
 # import torchvision.models
 
-# Clients
-import ccxt
-
 # Config
 import punisher.config as cfg
 import punisher.constants as c
+
+# Clients
+import ccxt
+from punisher.clients import reddit_client
+from punisher.clients import twitter_client
 
 # Data
 from punisher.data.store import FileStore
