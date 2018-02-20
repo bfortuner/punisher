@@ -126,8 +126,11 @@ def merge_trades_dfs(new_data, fpath):
         parse_dates=['trade_time'],
         date_parser=str_to_date)
     new_df = pd.DataFrame(new_data)
-    cur_df = pd.concat([cur_df, new_df])
-    cur_df = cur_df[~cur_df.index.duplicated(keep='last')]
+    if len(cur_df) > 0:        
+        cur_df = pd.concat([cur_df, new_df])
+        cur_df = cur_df[~cur_df.index.duplicated(keep='last')]
+    else:
+        cur_df = new_df
     cur_df.to_csv(fpath, index=True)
     cur_df.sort_values(by='trade_time', inplace=True)
     return cur_df

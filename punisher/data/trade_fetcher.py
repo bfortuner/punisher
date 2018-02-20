@@ -32,7 +32,7 @@ parser.add_argument('--end', help='end time yyyy-mm-dd', default=None, type=str)
 parser.add_argument('--action', help='"fetch" from exchange, "download" from s3, or "list" files in S3',
                     choices=['fetch','download', 'list'])
 parser.add_argument('--upload', help='upload to s3 after fetching from exchange', action='store_true')
-parser.add_argument('--refresh', help='sleep seconds for rate limit', default=5, type=int)
+parser.add_argument('--refresh', help='sleep seconds for rate limit', default=2, type=int)
 parser.add_argument('--outdir', help='output directory to save files', default=cfg.DATA_DIR, type=str)
 parser.add_argument('--cleanup', help='remove local copy of files after s3 upload', action='store_true')
 
@@ -55,29 +55,32 @@ def upload_to_s3(ex_id, asset, start):
     print('Uploading to s3:', s3_path)
     s3_client.upload_file(str(fpath), s3_path)
 
-@backoff.on_exception(backoff.expo,
-                      Exception, #TODO: include ccxt exceptions only
-                      on_backoff=logger_utils.retry_hdlr,
-                      on_giveup=logger_utils.giveup_hdlr,
-                      max_tries=MAX_RETRIES)
+# @backoff.on_exception(backoff.expo,
+#                       Exception, #TODO: include ccxt exceptions only
+#                       on_backoff=logger_utils.retry_hdlr,
+#                       on_giveup=logger_utils.giveup_hdlr,
+#                       max_tries=MAX_RETRIES)
 def fetch_once(ex_id, asset, start, end, upload, refresh, cleanup):
     exchange = load_exchange(ex_id)
     while start < end:
         print("Start:", start, "End:", end)
         df = trade_feed.update_local_trades_cache(exchange, asset, start)
 
-        if len(df) == 0:
-            raise Exception("No Data In this Time Range!")
+        if len(df) > 0:
+            if upload:
+                upload_to_s3(ex_id, asset, start)
 
-        if upload:
-            upload_to_s3(ex_id, asset, start)
+            if cleanup:
+                fpath = trade_feed.get_rotating_trades_fpath(
+                    ex_id, asset, start, TRADES_DIR)
+                os.remove(fpath)
 
-        if cleanup:
-            fpath = trade_feed.get_rotating_trades_fpath(
-                ex_id, asset, start, TRADES_DIR)
-            os.remove(fpath)
+                start = df[['trade_time']].max()[0]
+        else:
+            # For periods of time with no data, we increment 5 minutes and try again
+            # This may cause us to lose data for some less liquid pairs
+            start += datetime.timedelta(minutes=5)
 
-        start = df[['trade_time']].max()[0]
         time.sleep(refresh)
     return df, start
 
