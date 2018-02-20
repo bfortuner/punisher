@@ -4,21 +4,25 @@
 
 ## Quickstart
 
-**Users**
+1. Download price data from S3
 
-Run the ```demo.ipynb``` jupyter notebook
+```
+python -m punisher.data.ohlcv_fetcher --exchange binance --symbol ETH/BTC --timeframe 30m --action download
+```
 
-or
+2. Run the strategy script in backtesting mode
+```
+python -m punisher.strategies.simple -ohlcv .data/binance_ETH_BTC_30m.csv -t 30m -m backtest -a ETH/BTC -ex binance
+```
 
-```$ python -m punisher.strategies.simple -ohlcv .data/binance_ETH_BTC_30m.csv -t 30m -m backtest -a ETH/BTC -ex binance```
-
-**Developers**
-
-Run ```developers.ipynb``` to see how various components interact
+3. View the results (visit localhost:8000)
+```
+python -m punisher.charts.dash_charts.dash_record --name default_backtest
+```
 
 ## Install
 
-1. Install [Anaconda](https://www.anaconda.com/download) with Python 3.6
+1. Install [Miniconda](https://conda.io/miniconda.html) with Python 3.6
 
 2. Create conda environment
 ```
@@ -28,21 +32,32 @@ source activate punisher
 3. Add your API keys to ```dotenv_example``` and rename ```.env```.
 
 **No API keys?**
-You can still download data with the Exchange APIs, just empty the dictionary we pass in as a config in exchange.py
+You can still download data from our S3 bucket for backtesting. Or access the Exchange public APIs by emptying the dictionary we pass in as a config to the CCXTExchange class.
 
-4. Initialize [submodules](https://chrisjean.com/git-submodules-adding-using-removing-and-updating/)
-```
-git submodule init
-git submodule update
-```
-
-5. Install Extras (Optional)
+4. Install Extras (Optional)
 ```
 conda install ipywidgets
 jupyter nbextension enable --py --sys-prefix widgetsnbextension
 conda install -c tim_shawver/label/dev qgrid==1.0.0b10
 conda install -c conda-forge python.app
 conda install pytorch torchvision -c pytorch (http://pytorch.org/)
+```
+
+## Download data from S3
+
+OHLCV
+```
+python -m punisher.data.ohlcv_fetcher --exchange gdax --symbol BTC/USD --timeframe 1d --action download
+```
+
+Reddit
+```
+python -m punisher.data.reddit_fetcher --subreddit bitcoin --action download
+```
+
+Twitter
+```
+python -m punisher.data.tweet_fetcher --query 'bitcoin OR btc' --lang en --action download
 ```
 
 ## Running Tests

@@ -25,7 +25,7 @@ class OHLCVData():
         self.ohlcv_df = ohlcv_df
 
     def get(self, field, symbol=None, ex_id=None, idx=0):
-        col_name = l_name(field, symbol, ex_id)
+        col_name = get_col_name(field, symbol, ex_id)
         return self.ohlcv_df[col_name].iloc[idx]
 
     def col(self, field, symbol=None, ex_id=None):
