@@ -5,6 +5,10 @@
 * Explore papers / projects using twitter for sentiment, news analysis on stocks/crypto
 * Explore machine learning research / projects for price prediction, portfolio optimization, and news/event
 
+### Exchanges
+
+* CCXT GDAX fails to parse orders if filled is None. https://github.com/ccxt/ccxt/issues/1448
+
 ### Balance
 
 * Verify starting_cash <= actual balance on Live Exchange

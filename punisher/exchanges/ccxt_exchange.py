@@ -52,14 +52,16 @@ class CCXTExchange(Exchange):
         params = self.get_default_params_if_none(params)
         return self.client.fetch_l2_order_book(asset.symbol, params)
 
-    def fetch_public_trades(self, asset):
-        """Returns list of most recent trades for a particular symbol"""
-        response = self.client.fetch_trades(asset.symbol)
+    def fetch_public_trades(self, asset, start=None, limit=None):
+        """Returns list of trades for a particular symbol"""
+        start = utc_to_epoch(start)*1000 if start is not None else start
+        response = self.client.fetch_trades(asset.symbol, start, limit)
         return self._build_trades(response)
 
-    def fetch_my_trades(self, asset, since=None, limit=None, params=None):
+    def fetch_my_trades(self, asset, start=None, limit=None, params=None):
         """Returns list of most recent trades for a particular symbol"""
         params = self.get_default_params_if_none(params)
+        start = utc_to_epoch(start)*1000 if start is not None else start
         response = self.client.fetch_my_trades(asset.symbol, since, limit, params)
         return self._build_trades(response)
 
@@ -163,7 +165,9 @@ class CCXTExchange(Exchange):
 
     def _build_trade(self, trade_dct):
         trade_dct['exchange_id'] = self.id
-        if "fee" in trade_dct:
+        trade_dct['quantity'] = trade_dct['amount']
+        trade_dct['trade_time'] = trade_dct['datetime']
+        if 'fee' in trade_dct and trade_dct['fee'] is not None:
             trade_dct['fee'] = trade_dct['fee'].get("cost", None)
         else:
             trade_dct['fee'] = 0.0
@@ -177,19 +181,11 @@ class CCXTExchange(Exchange):
 
     def _build_order(self, order_dct):
         # TODO: Add Fees and commissions (using trades)
-        print("ORDER Input", order_dct)
         order_dct['status'] = self._get_order_status(order_dct)
         order_dct['exchange_id'] = self.id
         order = ExchangeOrder.from_dict(order_dct)
         order.trades = self.fetch_order_trades(
             order.ex_order_id, order.asset)
-
-        if order.status == OrderStatus.FILLED:
-            order.filled_time = self.calculate_filled_time(order.trades)
-            order.price = self.calculate_order_price(
-                order.filled_quantity, order.trades)
-
-        print("Order Output", order)
         return order
 
     def _get_order_status(self, order_dct):

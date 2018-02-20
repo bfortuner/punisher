@@ -3,7 +3,9 @@ ADA = 'ADA'
 BCH = 'BCH'
 BTS = 'BTS'
 DASH = 'DASH'
+EOS = 'EOS'
 LTC = 'LTC'
+NEO = 'NEO'
 NXT = 'NXT'
 REP = 'REP'
 STR = 'STR'
@@ -20,8 +22,8 @@ USDT = 'USDT'
 
 
 COINS = set([
-    ADA, BCH, BTC, BTS, DASH, ETH,
-    LTC, NXT, REP, STR, USD, USDT,
+    ADA, BCH, BTC, BTS, DASH, EOS, ETH,
+    LTC, NEO, NXT, REP, STR, USD, USDT,
     XEM, XMR, XRP, ZEC
 ])
 

@@ -51,6 +51,8 @@ class Asset():
     def from_symbol(self, symbol):
         if '/' in symbol:
             base,quote = symbol.split('/')
+        elif '_' in symbol:
+            base,quote = symbol.split('_')
         else:
             base = symbol[:3]
             quote = symbol[3:]

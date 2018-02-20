@@ -15,7 +15,7 @@ class TradeSide(Enum):
 
     @classmethod
     def from_side(self, side):
-        if side == 'buy':
+        if side.lower() == 'buy':
             return TradeSide.BUY
         return TradeSide.SELL
 
@@ -40,12 +40,8 @@ class Trade:
         self.price = price
         self.quantity = quantity
         self.trade_time = trade_time
-        self.side = self.set_trade_side(side)
+        self.side = side
         self.fee = fee
-
-    def set_trade_side(self, side):
-        self.side = TradeSide.from_side(side)
-        return self.side
 
     def to_dict(self):
         dct = {
@@ -54,19 +50,20 @@ class Trade:
         }
         del dct['asset']
         dct['symbol'] = self.asset.symbol
+        dct['side'] = self.side.name
         dct['trade_time'] = date_to_str(self.trade_time)
         return dct
 
     @classmethod
     def from_dict(self, d):
         return Trade(
-            trade_id=d.get("id"),
+            trade_id=d.get('id'),
             exchange_id=d['exchange_id'],
-            exchange_order_id=d['order'],
+            exchange_order_id=d.get('order'), #isn't returned for fetch_public_trades
             asset=Asset.from_symbol(d['symbol']),
             price=d['price'],
-            quantity=d['amount'],
-            trade_time=str_to_date(d['datetime']),
+            quantity=d['quantity'],
+            trade_time=str_to_date(d['trade_time']),
             side=TradeSide.from_side(d['side']),
             fee=d['fee']
         )
