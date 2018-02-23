@@ -27,7 +27,8 @@ EXCHANGE_CONFIGS = {
         'secret': cfg.POLONIEX_API_SECRET_KEY,
         'verbose': False,
         'usd_coin': coins.USDT,
-        'cash_coins': set([coins.BTC, coins.ETH]),
+        'cash_coins': set([coins.BTC, coins.ETH, coins.USDT]),
+        'enableRateLimit': True,
     },
     GEMINI: {
         'apiKey': cfg.GEMINI_API_KEY,
@@ -35,6 +36,7 @@ EXCHANGE_CONFIGS = {
         'usd_coin': coins.USD,
         'cash_coins': set([coins.BTC, coins.ETH, coins.USD]),
         'verbose':False,
+        'enableRateLimit': True,
     },
     GDAX: {
         'apiKey': cfg.GDAX_API_KEY,
@@ -43,19 +45,21 @@ EXCHANGE_CONFIGS = {
         'usd_coin': coins.USD,
         'cash_coins': set([coins.BTC, coins.ETH, coins.USD]),
         'verbose':False,
+        'enableRateLimit': True,
     },
     BINANCE: {
         'apiKey': cfg.BINANCE_API_KEY,
         'secret': cfg.BINANCE_API_SECRET_KEY,
         'usd_coin': coins.USDT,
-        'cash_coins': set([coins.BTC, coins.ETH]),
+        'cash_coins': set([coins.BTC, coins.ETH, coins.USDT]),
         'verbose':False,
+        'enableRateLimit': True,
     },
     PAPER: {
         'data_provider_exchange_id': DEFAULT_EXCHANGE_ID,
         'balance': c.DEFAULT_BALANCE,
         'usd_coin': coins.USD,
-        'cash_coins': set([coins.BTC, coins.ETH, coins.USD]),
+        'cash_coins': set([coins.BTC, coins.ETH, coins.USD, coins.USDT]),
         'verbose':False,
     }
 }

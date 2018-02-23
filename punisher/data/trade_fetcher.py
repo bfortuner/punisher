@@ -61,25 +61,30 @@ def upload_to_s3(ex_id, asset, start):
 #                       on_giveup=logger_utils.giveup_hdlr,
 #                       max_tries=MAX_RETRIES)
 def fetch_once(ex_id, asset, start, end, upload, refresh, cleanup):
+    print("Fetching for period Start:", start, "End:", end)
     exchange = load_exchange(ex_id)
+    last_fpath = trade_feed.get_rotating_trades_fpath(ex_id, asset, start)
     while start < end:
-        print("Start:", start, "End:", end)
-        df = trade_feed.update_local_trades_cache(exchange, asset, start)
+        cur_end = start + datetime.timedelta(hours=24)
+        print("Start:", start, "End:", cur_end)
+        df = trade_feed.fetch_trades(exchange, asset, start, cur_end)
 
-        if len(df) > 0:
+        if len(df) == 0:
+            start += datetime.timedelta(minutes=5)
+        else:
+            fpath = trade_feed.get_rotating_trades_fpath(ex_id, asset, start)
+            if os.path.exists(fpath):
+                df = trade_feed.merge_trades_dfs(df, fpath)
+            else:
+                df.to_csv(fpath, index=True)
+
             if upload:
                 upload_to_s3(ex_id, asset, start)
 
-            if cleanup:
-                fpath = trade_feed.get_rotating_trades_fpath(
-                    ex_id, asset, start, TRADES_DIR)
-                os.remove(fpath)
-
-                start = df[['trade_time']].max()[0]
-        else:
-            # For periods of time with no data, we increment 5 minutes and try again
-            # This may cause us to lose data for some less liquid pairs
-            start += datetime.timedelta(minutes=5)
+            if cleanup and fpath != last_fpath:
+                os.remove(last_fpath)
+                last_fpath = fpath
+            start = df[['trade_time']].max()[0]
 
         time.sleep(refresh)
     return df, start

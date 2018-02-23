@@ -15,8 +15,8 @@ class Asset():
     """
 
     def __init__(self, base, quote):
-        self.base = self.validate_base(base)
-        self.quote = self.validate_quote(quote)
+        self.base = base #self.validate_base(base)
+        self.quote = quote #self.validate_quote(quote)
 
     def validate_base(self, base):
         if base not in coins.COINS:

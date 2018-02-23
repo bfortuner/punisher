@@ -52,10 +52,31 @@ class CCXTExchange(Exchange):
         params = self.get_default_params_if_none(params)
         return self.client.fetch_l2_order_book(asset.symbol, params)
 
-    def fetch_public_trades(self, asset, start=None, limit=None):
+    def fetch_raw_order_book(self, asset, limit=1000, level=3):
+        """
+        https://github.com/ccxt/ccxt/wiki/Manual#order-book--mnrket-depth
+        Each exchange has a different parameter for raw order book
+        # https://docs.gdax.com/#get-product-order-book
+        # https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md
+        # Is Binance aggregated or raw?
+        """
+        params = {}
+        if self.id == BINANCE:
+            params['limit'] = limit
+        elif self.id == GDAX:
+            params['level'] = level
+        return self.client.fetch_order_book(asset.symbol, params)
+
+    def fetch_public_trades(self, asset, start=None, end=None, limit=None):
         """Returns list of trades for a particular symbol"""
-        start = utc_to_epoch(start)*1000 if start is not None else start
-        response = self.client.fetch_trades(asset.symbol, start, limit)
+        params = {}
+        if self.id == POLONIEX:
+            params = {
+                'start': utc_to_epoch(start) if start is not None else None,
+                'end': utc_to_epoch(end) if end is not None else utc_to_epoch(datetime.utcnow())
+            }
+        start = utc_to_epoch(start)*1000 if start is not None else utc_to_epoch(start)
+        response = self.client.fetch_trades(asset.symbol, start, limit, params)
         return self._build_trades(response)
 
     def fetch_my_trades(self, asset, start=None, limit=None, params=None):
@@ -203,6 +224,17 @@ class CCXTExchange(Exchange):
             return OrderStatus.CANCELED.name
         raise Exception("Order status not found", status)
 
+    def is_active_symbol(self, markets, symbol):
+        return ('.' not in symbol) and (
+            ('active' not in markets[symbol])
+            or (markets[symbol]['active']))
+
+    @property
+    def symbols(self):
+        markets = self.get_markets()
+        symbols = self.client.symbols
+        return [s for s in symbols if self.is_active_symbol(markets, s)]
+
     @property
     def timeframes(self):
         return self.client.timeframes
@@ -214,6 +246,10 @@ class CCXTExchange(Exchange):
     @property
     def usd_coin(self):
         return self.config['usd_coin']
+
+    @property
+    def rate_limit(self):
+        return self.client.rate_limit / 1000
 
     def __repr__(self):
         return 'CCXTExchange({:s})'.format(self.id)

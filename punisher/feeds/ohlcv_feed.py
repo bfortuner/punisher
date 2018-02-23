@@ -226,16 +226,14 @@ def get_cash_value(df, field, asset, ex_id, cash_coin):
     return (col * cash_col).values
 
 def is_asset_supported(exchange, asset):
-    markets = exchange.get_markets()
-    return asset.symbol in markets
+    return asset.symbol in exchange.symbols
 
 def get_benchmark_asset(exchange):
     BTC_USD = Asset(coins.BTC, coins.USD)
     BTC_USDT = Asset(coins.BTC, coins.USDT)
-    markets = exchange.get_markets()
-    if BTC_USD.symbol in markets:
+    if BTC_USD.symbol in exchange.symbols:
         return BTC_USD
-    elif BTC_USDT.symbol in markets:
+    elif BTC_USDT.symbol in exchange.symbols:
         return BTC_USDT
     return None
 

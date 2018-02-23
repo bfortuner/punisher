@@ -77,27 +77,27 @@ def get_rotating_trades_fpath(ex_id, asset, start, outdir=TRADES_DIR):
     fname = get_rotating_trades_fname(ex_id, asset, start)
     return Path(outdir, fname)
 
-def fetch_trades(exchange, asset, start=None):
+def fetch_trades(exchange, asset, start=None, end=None):
     print("Downloading trades:", asset.symbol)
-    trades = exchange.fetch_public_trades(asset, start)
+    trades = exchange.fetch_public_trades(asset, start, end)
     data = [t.to_dict() for t in trades]
     df = make_trades_df(data)
     print("Downloaded rows:", len(df))
     return df
 
-def fetch_and_save_trades(exchange, asset, start):
-    df = fetch_trades(exchange, asset, start)
+def fetch_and_save_trades(exchange, asset, start, end=None):
+    df = fetch_trades(exchange, asset, start, end)
     fpath = get_rotating_trades_fpath(exchange.id, asset, start)
     df.to_csv(fpath, index=True)
     return df
 
-def update_local_trades_cache(exchange, asset, start):
+def update_local_trades_cache(exchange, asset, start, end=None):
     fpath = get_rotating_trades_fpath(exchange.id, asset, start)
     if os.path.exists(fpath):
-        df = fetch_trades(exchange, asset, start)
+        df = fetch_trades(exchange, asset, start, end)
         df = merge_trades_dfs(df, fpath)
     else:
-        df = fetch_and_save_trades(exchange, asset, start)
+        df = fetch_and_save_trades(exchange, asset, start, end)
     return df
 
 def load_trades(ex_id, asset, start):
@@ -126,11 +126,8 @@ def merge_trades_dfs(new_data, fpath):
         parse_dates=['trade_time'],
         date_parser=str_to_date)
     new_df = pd.DataFrame(new_data)
-    if len(cur_df) > 0:        
-        cur_df = pd.concat([cur_df, new_df])
-        cur_df = cur_df[~cur_df.index.duplicated(keep='last')]
-    else:
-        cur_df = new_df
+    cur_df = pd.concat([cur_df, new_df])
+    cur_df = cur_df[~cur_df.index.duplicated(keep='last')]
     cur_df.to_csv(fpath, index=True)
     cur_df.sort_values(by='trade_time', inplace=True)
     return cur_df
