@@ -52,3 +52,6 @@ def get_id(base, quote):
 
 def get_symbol(base, quote):
     return base + '/' + quote
+
+def get_product(base, quote):
+    return base + '-' + quote

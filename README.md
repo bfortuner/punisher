@@ -34,6 +34,12 @@ source activate punisher
 **No API keys?**
 You can still download data from our S3 bucket for backtesting. Or access the Exchange public APIs by emptying the dictionary we pass in as a config to the CCXTExchange class.
 
+4. Initialize [submodules](https://chrisjean.com/git-submodules-adding-using-removing-and-updating/)
+```
+git submodule init
+git submodule update
+```
+
 4. Install Extras (Optional)
 ```
 conda install ipywidgets

@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - aiofiles=0.3.1
   - bleach=2.0.0
   - entrypoints=0.2.3
   - html5lib=1.0.1
@@ -88,6 +89,7 @@ dependencies:
   - setuptools=36.5.0
   - six=1.11.0
   - sqlite=3.20.1
+  - sortedcontainers=1.5.9
   - statsmodels=0.8.0
   - tk=8.6.7
   - traitlets=4.3.2

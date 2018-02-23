@@ -143,8 +143,7 @@ def merge_files(fpaths, ex_id, asset, timeframe, cleanup=False):
     out_df.to_csv(out_fpath, index=True)
 
 def list_files():
-    prefix = 'ohlcv/'
-    keys = s3_client.list_files(prefix=prefix)
+    keys = s3_client.list_files(pattern=OHLCV)
     reg = re.compile('ohlcv\/([a-z]+)_([A-Z]+_[A-Z]+)_([0-9]+[mhd])_(20[0-9]+)_([0-9]+)_([0-9]+).csv')
     meta = {}
     for key in keys:

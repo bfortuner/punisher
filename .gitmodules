@@ -1,3 +1,6 @@
 [submodule "clients/gdax_client"]
 	path = clients/gdax_client
 	url = git@github.com:bfortuner/gdax-python.git
+[submodule "punisher/clients/gdax"]
+	path = punisher/clients/gdax
+	url = git@github.com:csko/gdax-python-api.git

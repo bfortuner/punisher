@@ -120,8 +120,7 @@ def download(ex_id, asset, start, end=None):
             s3_client.download_file(str(fpath), key)
 
 def list_files():
-    prefix = 'trades/'
-    keys = s3_client.list_files(prefix=prefix)
+    keys = s3_client.list_files(pattern=TRADES)
     reg = re.compile('trades\/[a-z]+\/[A-Z]+_[A-Z]+\/([a-z]+)_([A-Z]+_[A-Z]+)_(20[0-9]+)_([0-9]+)_([0-9]+)_([0-9]+).csv')
     meta = {}
     for key in keys:

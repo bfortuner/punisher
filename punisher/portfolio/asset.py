@@ -36,6 +36,10 @@ class Asset():
     def symbol(self):
         return coins.get_symbol(self.base, self.quote)
 
+    @property
+    def product(self):
+        return coins.get_product(self.base, self.quote)
+
     def reverse_symbol(self):
         return self.quote + '/' + self.base
 

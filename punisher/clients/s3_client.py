@@ -19,13 +19,12 @@ def get_object_str(key, bucket=cfg.S3_BUCKET):
     obj = s3.Object(bucket, key)
     return obj.get()['Body'].read().decode('utf-8')
 
-def list_files(prefix='', bucket=cfg.S3_BUCKET):
-    s3 = get_client()
-    objs = s3.list_objects(Prefix=prefix, Bucket=bucket)
+def list_files(pattern='', bucket=cfg.S3_BUCKET):
+    bucket = get_resource().Bucket(bucket)
     keys = []
-    for obj in objs['Contents']:
-        if obj['Key'] != prefix+'/':
-            keys.append(obj['Key'])
+    for key in bucket.objects.all():
+        if pattern in key.key:
+            keys.append(key.key)
     return keys
 
 def download_file(dest_fpath, s3_fpath, bucket=cfg.S3_BUCKET):

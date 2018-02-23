@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
 import dash
+import asyncio
 
 # Machine learning
 # import torch

@@ -117,8 +117,7 @@ def download_from_s3(query, start_date):
         s3_client.download_file(str(fpath), key)
 
 def list_files():
-    prefix = TWITTER + '/'
-    keys = s3_client.list_files(prefix=prefix)
+    keys = s3_client.list_files(pattern=TWITTER)
     reg = re.compile('twitter\/([a-z0-9A-Z#\$\_]+)\/([a-z0-9A-Z#\$\_]+)_(20[0-9]+)_([0-9]+)_([0-9]+).json')
     meta = {}
     for key in keys:
