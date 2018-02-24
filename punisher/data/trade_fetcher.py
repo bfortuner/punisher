@@ -55,11 +55,11 @@ def upload_to_s3(ex_id, asset, start):
     print('Uploading to s3:', s3_path)
     s3_client.upload_file(str(fpath), s3_path)
 
-# @backoff.on_exception(backoff.expo,
-#                       Exception, #TODO: include ccxt exceptions only
-#                       on_backoff=logger_utils.retry_hdlr,
-#                       on_giveup=logger_utils.giveup_hdlr,
-#                       max_tries=MAX_RETRIES)
+@backoff.on_exception(backoff.expo,
+                      Exception, #TODO: include ccxt exceptions only
+                      on_backoff=logger_utils.retry_hdlr,
+                      on_giveup=logger_utils.giveup_hdlr,
+                      max_tries=MAX_RETRIES)
 def fetch_once(ex_id, asset, start, end, upload, refresh, cleanup):
     print("Fetching for period Start:", start, "End:", end)
     exchange = load_exchange(ex_id)

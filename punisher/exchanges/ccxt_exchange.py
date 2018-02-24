@@ -52,7 +52,7 @@ class CCXTExchange(Exchange):
         params = self.get_default_params_if_none(params)
         return self.client.fetch_l2_order_book(asset.symbol, params)
 
-    def fetch_raw_order_book(self, asset, limit=1000, level=3):
+    def fetch_raw_order_book(self, asset, depth=1000, level=3):
         """
         https://github.com/ccxt/ccxt/wiki/Manual#order-book--mnrket-depth
         Each exchange has a different parameter for raw order book
@@ -62,9 +62,11 @@ class CCXTExchange(Exchange):
         """
         params = {}
         if self.id == BINANCE:
-            params['limit'] = limit
+            params['limit'] = depth
         elif self.id == GDAX:
             params['level'] = level
+        elif self.id == POLONIEX:
+            params['depth'] = 200000
         return self.client.fetch_order_book(asset.symbol, params)
 
     def fetch_public_trades(self, asset, start=None, end=None, limit=None):
