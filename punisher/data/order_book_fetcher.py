@@ -45,6 +45,7 @@ def get_s3_path(ex_id, asset, level, epoch_time):
     fname = get_order_book_fname(ex_id, asset, level, epoch_time)
     return ORDER_BOOK + '/' + fname
 
+# https://github.com/ccxt/ccxt/wiki/Manual#error-handling
 @backoff.on_exception(backoff.expo,
                       Exception, #TODO: include ccxt exceptions only
                       on_backoff=logger_utils.retry_hdlr,
@@ -85,11 +86,6 @@ async def fetch_async(exchange_ids, assets, level, upload, cleanup):
     for task in done:
         print(task.result())
 
-    # with ThreadPoolExecutor(max_workers=workers) as executor:
-    #     res = executor.map(
-    #         fetch_order_book, exchange_args, asset_args, itertools.repeat(level),
-    #         itertools.repeat(upload), itertools.repeat(cleanup)
-    #     )
 
 if __name__ == "__main__":
     args = parser.parse_args()

@@ -8,16 +8,7 @@ from punisher.utils import files
 from punisher.utils.dates import str_to_date, date_to_str
 from punisher.utils.encoders import EnumEncoder
 
-
-class DataStore():
-    def __init__(self):
-        pass
-
-    def save(self):
-        pass
-
-    def load(self):
-        pass
+from .store import DataStore
 
 
 class FileStore(DataStore):
@@ -86,12 +77,3 @@ class FileStore(DataStore):
 
     def s3_download(self):
         pass
-
-
-FILE_STORE = 'FILE_STORE'
-TIMESCALE_STORE = 'FILE_STORE'
-
-DATA_STORES = {
-    FILE_STORE: FileStore,
-    TIMESCALE_STORE: None
-}

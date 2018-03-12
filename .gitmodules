@@ -4,3 +4,9 @@
 [submodule "punisher/clients/gdax"]
 	path = punisher/clients/gdax
 	url = git@github.com:csko/gdax-python-api.git
+[submodule "python-binance"]
+	path = python-binance
+	url = https://github.com/sammchardy/python-binance
+[submodule "punisher/clients/binance"]
+	path = punisher/clients/binance
+	url = https://github.com/sammchardy/python-binance

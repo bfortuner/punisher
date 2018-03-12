@@ -88,6 +88,7 @@ dependencies:
   - seaborn=0.8.1
   - setuptools=36.5.0
   - six=1.11.0
+  - sqlalchemy=1.2.3
   - sqlite=3.20.1
   - sortedcontainers=1.5.9
   - statsmodels=0.8.0
@@ -101,6 +102,7 @@ dependencies:
     - aiodns==1.1.1
     - aiohttp==2.3.7
     - async-timeout==2.0.0
+    - autobahn==17.10.1
     - backoff==1.4.3
     - boto3==1.5.22
     - cchardet==2.1.1
@@ -112,6 +114,7 @@ dependencies:
     - dash-html-components==0.8.0
     - dash-renderer==0.11.1
     - dash-table-experiments==0.5.3
+    - dateparser==0.7.0
     - filelock==2.0.7
     - flask==0.12.2
     - flask-compress==1.4.0
@@ -124,11 +127,14 @@ dependencies:
     - poloniex==0.0.12
     - praw==5.3.0
     - prawcore==0.13.0
+    - psycopg2==2.7.4
     - pycares==2.3.0
     - pymongo==3.6.0
     - pyquery==1.4.0
     - python-dotenv==0.7.1
+    - SQLAlchemy-Utils==0.33.0
     - tenacity==4.8.0
     - textblob==0.15.1
+    - Twisted==17.9.0
     - werkzeug==0.14.1
     - yarl==0.18.0

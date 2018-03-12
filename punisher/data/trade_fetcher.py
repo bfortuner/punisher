@@ -20,9 +20,11 @@ from punisher.exchanges import load_exchange
 from punisher.feeds import trade_feed
 from punisher.portfolio.asset import Asset
 from punisher.utils.dates import str_to_date
+from punisher.utils.dates import utc_to_epoch
 from punisher.utils.encoders import EnumEncoder
 import punisher.utils.logger as logger_utils
 
+from . import timescale_store as sql_store
 
 parser = argparse.ArgumentParser(description='Trade Fetcher')
 parser.add_argument('-ex', '--exchange', help='one exchange id', type=str)
@@ -32,11 +34,12 @@ parser.add_argument('--end', help='end time yyyy-mm-dd', default=None, type=str)
 parser.add_argument('--action', help='"fetch" from exchange, "download" from s3, or "list" files in S3',
                     choices=['fetch','download', 'list'])
 parser.add_argument('--upload', help='upload to s3 after fetching from exchange', action='store_true')
-parser.add_argument('--refresh', help='sleep seconds for rate limit', default=2, type=int)
+parser.add_argument('--refresh', help='sleep seconds for rate limit', default=5, type=int)
 parser.add_argument('--outdir', help='output directory to save files', default=cfg.DATA_DIR, type=str)
 parser.add_argument('--cleanup', help='remove local copy of files after s3 upload', action='store_true')
+parser.add_argument('--store', help='save to sql or file', choices=['sql','file'], default='file', type=str)
 
-# python -m punisher.data.trade_fetcher -ex binance -sym ETH/BTC --start 2018-01-01 --action fetch --cleanup --upload
+# python -m punisher.data.trade_fetcher -ex binance -sym ETH/BTC --start 2018-01-01 --action fetch --cleanup --upload --store file
 
 args = parser.parse_args()
 TRADES = 'trades'
@@ -94,6 +97,53 @@ def fetch_forever(exchange_id, asset, start, end, upload, refresh, cleanup):
         df, start = fetch_once(
             exchange_id, asset, start,
             end, upload, refresh, cleanup)
+        end = datetime.datetime.utcnow()
+        time.sleep(refresh)
+
+def write_df_to_sql(df, table):
+    trades = []
+    for idx,row in df.iterrows():
+        trades.append({
+            'seq':idx,
+            'ts': utc_to_epoch(row['trade_time'])*1000,
+            'is_trade': True,
+            'is_bid': row['side']=='BUY',
+            'price': row['price'],
+            'quantity': row['quantity']
+        })
+    sql_store.insert_or_update_trades(table, trades)
+
+# @backoff.on_exception(backoff.expo,
+#                       Exception, #TODO: include ccxt exceptions only
+#                       on_backoff=logger_utils.retry_hdlr,
+#                       on_giveup=logger_utils.giveup_hdlr,
+#                       max_tries=MAX_RETRIES)
+def fetch_once_sql(ex_id, asset, start, end, refresh):
+    print("Fetching / storing SQL for period Start:", start, "End:", end)
+    exchange = load_exchange(ex_id)
+    table = sql_store.get_trades_table(ex_id, asset)
+    while start < end:
+        cur_end = start + datetime.timedelta(hours=24)
+        print("Start:", start, "End:", cur_end)
+        df = trade_feed.fetch_trades(exchange, asset, start, cur_end)
+        if len(df) == 0:
+            delta = datetime.timedelta(minutes=5)
+            if datetime.datetime.utcnow() > start + delta:
+                start += datetime.timedelta(minutes=5)
+            else:
+                start += datetime.timedelta(seconds=1)
+        else:
+            write_df_to_sql(df, table)
+            start = df[['trade_time']].max()[0]
+
+        time.sleep(refresh)
+    return start
+
+def fetch_forever_sql(ex_id, asset, start, end, refresh):
+    while True:
+        start = fetch_once_sql(
+            exchange_id, asset, start,
+            end, refresh)
         end = datetime.datetime.utcnow()
         time.sleep(refresh)
 
@@ -168,11 +218,16 @@ if __name__ == "__main__":
         if end is None:
             print("Running forever!")
             end = datetime.datetime.utcnow()
-            fetch_forever(exchange_id, asset, start, end, upload, refresh, cleanup)
+            if args.store == 'file':
+                fetch_forever(exchange_id, asset, start, end, upload, refresh, cleanup)
+            else:
+                fetch_forever_sql(exchange_id, asset, start, end, refresh)
         else:
             print("Backfilling!")
-            fetch_once(exchange_id, asset, start, end, upload, refresh, cleanup)
-
+            if args.store == 'file':
+                fetch_once(exchange_id, asset, start, end, upload, refresh, cleanup)
+            else:
+                fetch_once_sql(exchange_id, asset, start, end, refresh)
     elif action == 'download':
         print('Downloading Trades from S3. ExchangeId:', exchange_id,
                'Asset:', asset.symbol, 'start:', start, 'end:', end)
