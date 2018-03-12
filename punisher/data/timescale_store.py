@@ -52,11 +52,12 @@ def get_engine():
         db_uri,
         convert_unicode=True,
         isolation_level=DB_ISOLATION_LEVEL,
-        pool_recycle=DB_POOL_RECYCLE
+        pool_recycle=DB_POOL_RECYCLE,
+        pool_size=1
     )
 
-def setup_db():
-    engine = get_engine()
+
+def setup_db(engine):
     if not database_exists(engine.url):
         create_database(engine.url)
     db = scoped_session(sessionmaker(autocommit=False,
@@ -64,24 +65,23 @@ def setup_db():
     								 bind=engine))
     base = declarative_base()
     base.query = db.query_property()
-    return base, engine
+    return base
 
+# Global Pool
 if cfg.TIMESCALE_DB_ENABLED:
-    setup_db()
+    engine = get_engine()
+    base = setup_db(engine)
 
 def get_session():
-    engine = get_engine()
     return scoped_session(
         sessionmaker(autocommit=False,
         autoflush=False,
         bind=engine))
 
 def get_conn():
-    engine = get_engine()
     return engine.connect()
 
 def get_meta():
-    engine = get_engine()
     meta = MetaData(engine)
     meta.reflect()
     return meta
@@ -93,14 +93,13 @@ def get_table_name(prefix, ex_id, asset):
     return '{}_{}_{}'.format(prefix, ex_id, asset.symbol).lower()
 
 def get_trades_table(ex_id, asset):
-    engine = get_engine()
     meta = get_meta()
     name = get_table_name('trades', ex_id, asset)
     if name in meta.tables:
         table = Table(name, meta)
     else:
         table = Table(name, meta,
-            Column('seq', Integer, primary_key=True),
+            Column('seq', BigInteger, primary_key=True),
             Column('ts', BigInteger, nullable=False), #ms
             Column('is_trade', Boolean, nullable=False),
             Column('is_bid', Boolean, nullable=False),
@@ -124,7 +123,7 @@ def get_trades(table, start=None, end=None):
     query = select([table]).where(
         between(table.c.ts, start, end))
     try:
-        res = conn.execute(query)
+        res = conn.execute(query).fetchall()
         return res
     except SQLAlchemyError as e:
         print (e)
