@@ -40,12 +40,12 @@ DB_POOL_RECYCLE = 3600
 
 def get_engine():
     postgres_db = {
-        'drivername': 'postgres',
-        'username': 'postgres',
-        'password': 'myman',
-        'host': 'localhost',
-        'database': 'punisher',
-        'port': 5432
+        'drivername': cfg.TIMESCALE_DB_DRIVER,
+        'username': cfg.TIMESCALE_DB_USERNAME,
+        'password': cfg.TIMESCALE_DB_PASSWORD,
+        'host': cfg.TIMESCALE_DB_HOSTNAME,
+        'database': cfg.TIMESCALE_DB_NAME,
+        'port': cfg.TIMESCALE_DB_PORT
     }
     db_uri = URL(**postgres_db)
     return create_engine(

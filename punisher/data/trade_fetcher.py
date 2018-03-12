@@ -113,11 +113,11 @@ def write_df_to_sql(df, table):
         })
     sql_store.insert_or_update_trades(table, trades)
 
-# @backoff.on_exception(backoff.expo,
-#                       Exception, #TODO: include ccxt exceptions only
-#                       on_backoff=logger_utils.retry_hdlr,
-#                       on_giveup=logger_utils.giveup_hdlr,
-#                       max_tries=MAX_RETRIES)
+@backoff.on_exception(backoff.expo,
+                      Exception, #TODO: include ccxt exceptions only
+                      on_backoff=logger_utils.retry_hdlr,
+                      on_giveup=logger_utils.giveup_hdlr,
+                      max_tries=MAX_RETRIES)
 def fetch_once_sql(ex_id, asset, start, end, refresh):
     print("Fetching / storing SQL for period Start:", start, "End:", end)
     exchange = load_exchange(ex_id)

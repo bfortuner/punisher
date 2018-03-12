@@ -24,17 +24,12 @@ ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', None)
 
 # Timescale Database
 TIMESCALE_DB_ENABLED = os.environ.get('TIMESCALE_DB_ENABLED', False)
-TIMESCALE_DB_DRIVER = 'mysql+pymysql://'
-TIMESCALE_DB_HOSTNAME = os.getenv('TIMESCALE_DB_HOSTNAME', 'hostname') #'bigneuron.clwja7eltdnj.us-west-2.rds.amazonaws.com'
-TIMESCALE_DB_PORT = '3306'
-TIMESCALE_DB_NAME = os.getenv('TIMESCALE_DB_NAME', 'hostname')
-TIMESCALE_DB_USERNAME = os.getenv('TIMESCALE_DB_USERNAME', 'hostname')
-TIMESCALE_DB_PASSWORD = os.getenv('TIMESCALE_DB_PASSWORD', 'password')
-TIMESCALE_DB_DATABASE_URI = (
-    TIMESCALE_DB_DRIVER + TIMESCALE_DB_USERNAME
-    + ':' + TIMESCALE_DB_PASSWORD + '@' + TIMESCALE_DB_HOSTNAME
-    + ':' + TIMESCALE_DB_PORT + '/' + TIMESCALE_DB_NAME
-)
+TIMESCALE_DB_DRIVER = 'postgres'
+TIMESCALE_DB_HOSTNAME = os.getenv('TIMESCALE_DB_HOSTNAME', 'localhost')
+TIMESCALE_DB_PORT = 5432
+TIMESCALE_DB_NAME = os.getenv('TIMESCALE_DB_NAME', 'punisher')
+TIMESCALE_DB_USERNAME = os.getenv('TIMESCALE_DB_USERNAME', 'postgres')
+TIMESCALE_DB_PASSWORD = os.getenv('TIMESCALE_DB_PASSWORD', 'myman')
 
 # Logging
 APP_LOG_LEVEL = logging.INFO
